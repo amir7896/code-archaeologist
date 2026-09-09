@@ -183,6 +183,9 @@ export class RepositoryResponseDto {
   @ApiProperty({ type: String, required: false, nullable: true })
   lastParsedRevision?: string | null;
 
+  @ApiProperty({ type: String, required: false, nullable: true })
+  lastGraphRevision?: string | null;
+
   @ApiProperty({ type: String })
   status!: string;
 

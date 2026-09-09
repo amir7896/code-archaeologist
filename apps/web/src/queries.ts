@@ -27,6 +27,12 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'file', fileId] as const,
   filePreview: (workspaceId: string, repositoryId: string, fileId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'preview', fileId] as const,
+  graph: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'graph'] as const,
+  graphDependencies: (workspaceId: string, repositoryId: string, fileId: string, depth?: number) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'graph', 'dependencies', fileId, depth ?? 2] as const,
+  graphDependents: (workspaceId: string, repositoryId: string, fileId: string, depth?: number) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'graph', 'dependents', fileId, depth ?? 2] as const,
   symbols: (
     workspaceId: string,
     repositoryId: string,
@@ -279,6 +285,9 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
         queryClient.invalidateQueries({
           queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'code'],
         }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.graph(workspaceId, repositoryId),
+        }),
       ]);
     },
   });
@@ -372,6 +381,40 @@ export function useSymbolsQuery(
     ),
     queryFn: () => repositoryApi.symbols(workspaceId, repositoryId, query),
     enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
+export function useGraphMapQuery(workspaceId: string, repositoryId: string) {
+  return useQuery({
+    queryKey: queryKeys.graph(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.graph(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId),
+  });
+}
+
+export function useGraphDependenciesQuery(
+  workspaceId: string,
+  repositoryId: string,
+  fileId: string,
+  depth = 2,
+) {
+  return useQuery({
+    queryKey: queryKeys.graphDependencies(workspaceId, repositoryId, fileId, depth),
+    queryFn: () => repositoryApi.graphDependencies(workspaceId, repositoryId, { fileId, depth }),
+    enabled: Boolean(workspaceId && repositoryId && fileId),
+  });
+}
+
+export function useGraphDependentsQuery(
+  workspaceId: string,
+  repositoryId: string,
+  fileId: string,
+  depth = 2,
+) {
+  return useQuery({
+    queryKey: queryKeys.graphDependents(workspaceId, repositoryId, fileId, depth),
+    queryFn: () => repositoryApi.graphDependents(workspaceId, repositoryId, { fileId, depth }),
+    enabled: Boolean(workspaceId && repositoryId && fileId),
   });
 }
 

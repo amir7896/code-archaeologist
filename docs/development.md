@@ -62,6 +62,10 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/files/:fileId/preview` | Source preview. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/symbols` | Optional `q`, `kind`, `fileId`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/symbols/:symbolId` | Symbol details and relations. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph` | Architecture map (modules, depends-on, cycles). |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/dependencies` | Requires `fileId`. Optional `depth` (1–6). |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/dependents` | Requires `fileId`. Optional `depth` (1–6). |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/cycles` | File and folder dependency cycles. |
 
 ## API DTOs and ValidationPipe
 
@@ -99,9 +103,9 @@ pnpm db:migrate:deploy   # apply committed migrations
 
 ## Ollama (optional, later phases)
 
-Ollama is not required for Phase 4. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
+Ollama is not required for Phase 5. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
 
-After pulling Phase 4, apply `pnpm db:migrate:deploy` so symbol tables exist, then re-sync existing repositories to parse source files (TypeScript, JavaScript, Python, Go, Rust, Java, and other supported languages). The worker keeps a bare mirror under `.data/repositories/mirrors` (or `REPOSITORY_WORK_DIR`).
+After pulling Phase 5, apply `pnpm db:migrate:deploy` so `graph_edges` exists, then re-sync existing repositories to parse source and build the architecture map. The worker keeps a bare mirror under `.data/repositories/mirrors` (or `REPOSITORY_WORK_DIR`).
 
 ```bash
 docker compose --profile ai up -d ollama

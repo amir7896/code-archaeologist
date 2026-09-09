@@ -15,7 +15,7 @@ Git repository → ingestion → Git history + AST → normalized symbols → de
 | `apps/web` | React dashboard, explorer, graph, and investigation UI. |
 | PostgreSQL | System of record, graph edges, search, analytics. |
 | Redis | Queue backend. |
-| Ollama | Optional local inference. Not used in Phase 4. |
+| Ollama | Optional local inference. Not used in Phase 5. |
 
 ## Packages
 
@@ -31,11 +31,11 @@ Provider implementations stay behind interfaces so they can change independently
 
 auth • users • workspaces • repositories • git • analysis • parsers • files • symbols • graph • metrics • risks • insights • investigations • ai • embeddings • integrations • webhooks • reports • notifications • audit
 
-Phase 4 wires `auth`, `users`, `workspaces`, `repositories`, history, source/symbols, `audit`, and the `repository-sync` worker (clone, Git history, and TS/JS AST parse). Remaining modules stay planned. Controllers stay thin. Business rules live in services and domain packages.
+Phase 5 wires `auth`, `users`, `workspaces`, `repositories`, history, source/symbols, graph, `audit`, and the `repository-sync` worker (clone, Git history, AST parse, and graph build). Remaining modules stay planned. Controllers stay thin. Business rules live in services and domain packages.
 
 ## Data
 
-PostgreSQL tables are listed in the project scope. Phase 4 ships identity, repository ingestion, Git history, and AST tables (`symbols`, `symbol_relations`). `pgvector` is enabled only when semantic embeddings are on.
+PostgreSQL tables are listed in the project scope. Phase 5 ships identity, repository ingestion, Git history, AST tables (`symbols`, `symbol_relations`), and derived `graph_edges`. `pgvector` is enabled only when semantic embeddings are on.
 
 ## Queues
 

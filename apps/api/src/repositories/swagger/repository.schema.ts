@@ -64,6 +64,7 @@ export const repositoryResponseExample = {
   fileCount: 232,
   symbolCount: 180,
   lastParsedRevision: '20a7150',
+  lastGraphRevision: '20a7150',
   status: 'READY',
   hasCredential: true,
   lastError: null,

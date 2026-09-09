@@ -41,6 +41,7 @@ const TASK_LABELS: Record<string, string> = {
   DETECT_REVISION: 'Reading the current revision',
   INDEX_HISTORY: 'Reading commit history',
   PARSE_AST: 'Reading source files',
+  BUILD_GRAPH: 'Building the architecture map',
 };
 
 const SYMBOL_LABELS: Record<string, string> = {
@@ -63,6 +64,8 @@ const RELATION_LABELS: Record<string, string> = {
   REFERENCES: 'References',
   EXTENDS: 'Extends',
   IMPLEMENTS: 'Implements',
+  CONTAINS: 'Contains',
+  DEPENDS_ON: 'Depends on',
 };
 
 const CHANGE_LABELS: Record<string, string> = {

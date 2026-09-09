@@ -49,6 +49,7 @@ type RepositoryRecord = {
   currentRevision: string | null;
   lastIndexedRevision?: string | null;
   lastParsedRevision?: string | null;
+  lastGraphRevision?: string | null;
   status: string;
   lastError: string | null;
   lastSyncedAt: Date | null;
@@ -248,6 +249,7 @@ export class RepositoriesService {
             { taskType: 'DETECT_REVISION' },
             { taskType: 'INDEX_HISTORY' },
             { taskType: 'PARSE_AST' },
+            { taskType: 'BUILD_GRAPH' },
           ],
         },
       },
@@ -357,6 +359,7 @@ function toRepositoryResponse(
     currentRevision: repository.currentRevision,
     lastIndexedRevision: repository.lastIndexedRevision ?? null,
     lastParsedRevision: repository.lastParsedRevision ?? null,
+    lastGraphRevision: repository.lastGraphRevision ?? null,
     commitCount: counts?.commitCount,
     fileCount: counts?.fileCount,
     symbolCount: counts?.symbolCount,
