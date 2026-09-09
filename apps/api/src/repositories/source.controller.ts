@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkspaceGuard } from '../workspaces/guards/workspace.guard';
 import {
@@ -12,6 +12,13 @@ import {
   SymbolListResponseDto,
 } from './dto/source.dto';
 import { SourceService } from './source.service';
+import {
+  GetFileDocs,
+  GetSymbolDocs,
+  ListFilesDocs,
+  ListSymbolsDocs,
+  PreviewFileDocs,
+} from './swagger/source.swagger';
 
 @ApiTags('source')
 @ApiBearerAuth()
@@ -21,8 +28,7 @@ export class SourceController {
   constructor(@Inject(SourceService) private readonly source: SourceService) {}
 
   @Get('code/files')
-  @ApiOperation({ summary: 'List indexed source files' })
-  @ApiOkResponse({ type: SourceFileListResponseDto })
+  @ListFilesDocs()
   listFiles(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -32,8 +38,7 @@ export class SourceController {
   }
 
   @Get('code/files/:fileId')
-  @ApiOperation({ summary: 'Get a source file' })
-  @ApiOkResponse({ type: SourceFileResponseDto })
+  @GetFileDocs()
   getFile(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -43,8 +48,7 @@ export class SourceController {
   }
 
   @Get('code/files/:fileId/preview')
-  @ApiOperation({ summary: 'Get a source preview' })
-  @ApiOkResponse({ type: SourcePreviewResponseDto })
+  @PreviewFileDocs()
   preview(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -54,8 +58,7 @@ export class SourceController {
   }
 
   @Get('code/symbols')
-  @ApiOperation({ summary: 'List indexed symbols' })
-  @ApiOkResponse({ type: SymbolListResponseDto })
+  @ListSymbolsDocs()
   listSymbols(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -65,8 +68,7 @@ export class SourceController {
   }
 
   @Get('code/symbols/:symbolId')
-  @ApiOperation({ summary: 'Get a symbol and its relations' })
-  @ApiOkResponse({ type: SymbolDetailResponseDto })
+  @GetSymbolDocs()
   getSymbol(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,

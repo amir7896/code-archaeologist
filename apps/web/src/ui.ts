@@ -19,6 +19,13 @@ export const dangerButton =
 
 export const card = 'rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm';
 
+export const navItem =
+  'flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm transition';
+
+export const navItemActive = `${navItem} bg-indigo-50 font-medium text-indigo-700`;
+
+export const navItemIdle = `${navItem} text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900`;
+
 export const errorText = 'mt-1 text-sm text-red-600';
 
 export const muted = 'text-sm text-zinc-500';

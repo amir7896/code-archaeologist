@@ -120,3 +120,27 @@ export function shortRevision(value: string | null | undefined): string {
   }
   return value.length > 12 ? value.slice(0, 7) : value;
 }
+
+export function repositoryHost(url: string): string {
+  try {
+    return new URL(url.replace(/\.git$/, '')).host.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
+export function repositorySummary(input: {
+  status: string;
+  defaultBranch?: string | null;
+  currentRevision?: string | null;
+  url?: string;
+}): string {
+  const revision = shortRevision(input.currentRevision);
+  return [
+    formatStatus(input.status),
+    input.defaultBranch,
+    revision !== '—' ? revision : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}

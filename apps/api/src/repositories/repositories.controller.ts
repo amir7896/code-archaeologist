@@ -11,13 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { type RequestUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -39,6 +33,15 @@ import {
   UpdateRepositoryDto,
 } from './dto/repository.dto';
 import { RepositoriesService } from './repositories.service';
+import {
+  CreateRepositoryDocs,
+  DeleteRepositoryDocs,
+  GetRepositoryDocs,
+  GetRepositoryStatusDocs,
+  ListRepositoriesDocs,
+  SyncRepositoryDocs,
+  UpdateRepositoryDocs,
+} from './swagger/repository.swagger';
 
 @ApiTags('repositories')
 @ApiBearerAuth()
@@ -48,8 +51,7 @@ export class RepositoriesController {
   constructor(@Inject(RepositoriesService) private readonly repositories: RepositoriesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List repositories in a workspace' })
-  @ApiOkResponse({ type: RepositoryListResponseDto })
+  @ListRepositoriesDocs()
   list(
     @Param('workspaceId') workspaceId: string,
     @Query() query: PaginationQueryDto,
@@ -60,8 +62,7 @@ export class RepositoriesController {
   @Post()
   @RequireRole('ADMIN')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Add a Git repository and start ingestion' })
-  @ApiCreatedResponse({ type: RepositoryResponseDto })
+  @CreateRepositoryDocs()
   create(
     @Param('workspaceId') workspaceId: string,
     @CurrentUser() user: RequestUser,
@@ -71,8 +72,7 @@ export class RepositoriesController {
   }
 
   @Get(':repositoryId')
-  @ApiOperation({ summary: 'Get a repository' })
-  @ApiOkResponse({ type: RepositoryResponseDto })
+  @GetRepositoryDocs()
   getOne(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -81,8 +81,7 @@ export class RepositoriesController {
   }
 
   @Get(':repositoryId/status')
-  @ApiOperation({ summary: 'Get repository ingestion status and latest run' })
-  @ApiOkResponse({ type: RepositoryStatusResponseDto })
+  @GetRepositoryStatusDocs()
   status(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -92,8 +91,7 @@ export class RepositoriesController {
 
   @Patch(':repositoryId')
   @RequireRole('ADMIN')
-  @ApiOperation({ summary: 'Update repository name, branch, or credentials' })
-  @ApiOkResponse({ type: RepositoryResponseDto })
+  @UpdateRepositoryDocs()
   update(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -106,8 +104,7 @@ export class RepositoriesController {
   @Delete(':repositoryId')
   @HttpCode(200)
   @RequireRole('ADMIN')
-  @ApiOperation({ summary: 'Remove a repository' })
-  @ApiOkResponse({ type: MessageResponseDto })
+  @DeleteRepositoryDocs()
   async remove(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -120,8 +117,7 @@ export class RepositoriesController {
   @Post(':repositoryId/sync')
   @RequireRole('ANALYST')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Re-sync a repository' })
-  @ApiOkResponse({ type: RepositoryResponseDto })
+  @SyncRepositoryDocs()
   sync(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,

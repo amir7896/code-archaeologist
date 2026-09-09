@@ -14,7 +14,7 @@ import { PaginationMetaDto } from '../../common/pagination.dto';
 export const CREDENTIAL_TYPES = ['HTTPS_TOKEN'] as const;
 
 export class RepositoryCredentialInputDto {
-  @ApiProperty({ type: String, enum: CREDENTIAL_TYPES })
+  @ApiProperty({ type: String, enum: CREDENTIAL_TYPES, example: 'HTTPS_TOKEN' })
   @IsIn(CREDENTIAL_TYPES)
   type!: (typeof CREDENTIAL_TYPES)[number];
 
@@ -24,7 +24,7 @@ export class RepositoryCredentialInputDto {
   @MaxLength(120)
   username?: string;
 
-  @ApiProperty({ type: String, minLength: 1, maxLength: 4096 })
+  @ApiProperty({ type: String, minLength: 1, maxLength: 4096, example: 'ghp_example_access_token' })
   @IsString()
   @MinLength(1)
   @MaxLength(4096)
@@ -32,20 +32,20 @@ export class RepositoryCredentialInputDto {
 }
 
 export class CreateRepositoryDto {
-  @ApiProperty({ type: String, example: 'https://github.com/acme/platform.git' })
+  @ApiProperty({ type: String, example: 'https://github.com/amir7896/fastapi-nexus.git' })
   @IsString()
   @MinLength(12)
   @MaxLength(500)
   url!: string;
 
-  @ApiPropertyOptional({ type: String, maxLength: 80 })
+  @ApiPropertyOptional({ type: String, maxLength: 80, example: 'Nexus Backend' })
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(80)
   name?: string;
 
-  @ApiPropertyOptional({ type: String, maxLength: 120 })
+  @ApiPropertyOptional({ type: String, maxLength: 120, example: 'main' })
   @IsOptional()
   @IsString()
   @MinLength(1)
@@ -60,14 +60,14 @@ export class CreateRepositoryDto {
 }
 
 export class UpdateRepositoryDto {
-  @ApiPropertyOptional({ type: String, maxLength: 80 })
+  @ApiPropertyOptional({ type: String, maxLength: 80, example: 'Nexus Backend' })
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(80)
   name?: string;
 
-  @ApiPropertyOptional({ type: String, maxLength: 120 })
+  @ApiPropertyOptional({ type: String, maxLength: 120, example: 'main' })
   @IsOptional()
   @IsString()
   @MinLength(1)
@@ -87,7 +87,12 @@ export class UpdateRepositoryDto {
 }
 
 export class SyncRepositoryDto {
-  @ApiPropertyOptional({ type: String, maxLength: 120, description: 'Branch or revision to sync' })
+  @ApiPropertyOptional({
+    type: String,
+    maxLength: 120,
+    description: 'Branch or revision to sync',
+    example: 'main',
+  })
   @IsOptional()
   @IsString()
   @MinLength(1)

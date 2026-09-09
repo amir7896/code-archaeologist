@@ -14,14 +14,14 @@ export class CreateWorkspaceDto {
 }
 
 export class UpdateWorkspaceDto {
-  @ApiPropertyOptional({ type: String, minLength: 1, maxLength: 80 })
+  @ApiPropertyOptional({ type: String, minLength: 1, maxLength: 80, example: 'Platform Research' })
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(80)
   name?: string;
 
-  @ApiPropertyOptional({ type: String, enum: WORKSPACE_STATUSES })
+  @ApiPropertyOptional({ type: String, enum: WORKSPACE_STATUSES, example: 'ACTIVE' })
   @IsOptional()
   @IsIn(WORKSPACE_STATUSES)
   status?: (typeof WORKSPACE_STATUSES)[number];
@@ -32,25 +32,25 @@ export class InviteMemberDto {
   @IsEmail()
   email!: string;
 
-  @ApiProperty({ type: String, enum: ASSIGNABLE_ROLES })
+  @ApiProperty({ type: String, enum: ASSIGNABLE_ROLES, example: 'ANALYST' })
   @IsIn(ASSIGNABLE_ROLES)
   role!: (typeof ASSIGNABLE_ROLES)[number];
 }
 
 export class UpdateMemberDto {
-  @ApiProperty({ type: String, enum: ASSIGNABLE_ROLES })
+  @ApiProperty({ type: String, enum: ASSIGNABLE_ROLES, example: 'VIEWER' })
   @IsIn(ASSIGNABLE_ROLES)
   role!: (typeof ASSIGNABLE_ROLES)[number];
 }
 
 export class WorkspaceResponseDto {
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, example: '3619367b-119f-48fe-b21c-0138b04f69bc' })
   id!: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, example: 'Platform' })
   name!: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, example: 'platform' })
   slug!: string;
 
   @ApiProperty({ type: String })

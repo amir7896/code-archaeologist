@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkspaceGuard } from '../workspaces/guards/workspace.guard';
 import {
@@ -11,6 +11,7 @@ import {
   FileHistoryResponseDto,
 } from './dto/history.dto';
 import { HistoryService } from './history.service';
+import { FileHistoryDocs, GetCommitDocs, ListBranchesDocs, ListCommitsDocs } from './swagger/history.swagger';
 
 @ApiTags('history')
 @ApiBearerAuth()
@@ -20,8 +21,7 @@ export class HistoryController {
   constructor(@Inject(HistoryService) private readonly history: HistoryService) {}
 
   @Get('branches')
-  @ApiOperation({ summary: 'List indexed branches' })
-  @ApiOkResponse({ type: BranchListResponseDto })
+  @ListBranchesDocs()
   listBranches(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -30,8 +30,7 @@ export class HistoryController {
   }
 
   @Get('commits')
-  @ApiOperation({ summary: 'List indexed commits' })
-  @ApiOkResponse({ type: CommitListResponseDto })
+  @ListCommitsDocs()
   listCommits(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -41,8 +40,7 @@ export class HistoryController {
   }
 
   @Get('commits/:sha')
-  @ApiOperation({ summary: 'Get a commit and its changed files' })
-  @ApiOkResponse({ type: CommitDetailResponseDto })
+  @GetCommitDocs()
   getCommit(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
@@ -52,8 +50,7 @@ export class HistoryController {
   }
 
   @Get('files/history')
-  @ApiOperation({ summary: 'Get history for a file path' })
-  @ApiOkResponse({ type: FileHistoryResponseDto })
+  @FileHistoryDocs()
   fileHistory(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,

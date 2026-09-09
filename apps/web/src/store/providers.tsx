@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useEffect, type ReactNode } from 'react';
 import { Provider } from 'react-redux';
+import { ConfirmProvider } from '../components/ConfirmDialog';
 import { authApi } from '../api';
 import { queryKeys } from '../queries';
 import { markedReady, sessionCleared, userLoaded } from './auth-slice';
@@ -60,7 +61,9 @@ export function AppProviders({
   return (
     <Provider store={appStore}>
       <QueryClientProvider client={queryClient}>
-        <SessionBootstrap>{children}</SessionBootstrap>
+        <SessionBootstrap>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </SessionBootstrap>
       </QueryClientProvider>
     </Provider>
   );

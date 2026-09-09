@@ -6,7 +6,7 @@ export class RegisterDto {
   @IsEmail()
   email!: string;
 
-  @ApiProperty({ type: String, minLength: 8, maxLength: 128 })
+  @ApiProperty({ type: String, minLength: 8, maxLength: 128, example: 'password123' })
   @IsString()
   @MinLength(8)
   @MaxLength(128)

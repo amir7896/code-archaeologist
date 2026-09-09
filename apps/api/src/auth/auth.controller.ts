@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, Inject, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -9,6 +9,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LoginDocs, LogoutDocs, RefreshDocs, RegisterDocs } from './swagger/auth.swagger';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -17,8 +18,7 @@ export class AuthController {
 
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Register with email and password and create a personal workspace' })
-  @ApiCreatedResponse({ type: AuthResponseDto })
+  @RegisterDocs()
   register(@Body() body: RegisterDto): Promise<AuthResponseDto> {
     return this.auth.register(body);
   }
@@ -26,16 +26,14 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Login with email and password' })
-  @ApiOkResponse({ type: AuthResponseDto })
+  @LoginDocs()
   login(@Body() body: LoginDto): Promise<AuthResponseDto> {
     return this.auth.login(body);
   }
 
   @Post('refresh')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Rotate refresh token and issue a new access token' })
-  @ApiOkResponse({ type: TokenResponseDto })
+  @RefreshDocs()
   refresh(@Body() body: RefreshDto): Promise<TokenResponseDto> {
     return this.auth.refresh(body.refreshToken);
   }
@@ -43,9 +41,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Revoke the current refresh session' })
-  @ApiOkResponse({ type: MessageResponseDto })
+  @LogoutDocs()
   async logout(@CurrentUser() user: RequestUser): Promise<MessageResponseDto> {
     await this.auth.logout(user);
     return { status: 'ok' };

@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { LivenessDocs, ReadinessDocs } from './swagger/health.swagger';
 import { APP_VERSION } from '@code-archaeologist/shared';
 import { PrismaService } from '../database/prisma.service';
 import { RedisService } from '../database/redis.service';
@@ -14,8 +15,7 @@ export class HealthController {
   ) {}
 
   @Get('health')
-  @ApiOperation({ summary: 'Liveness probe' })
-  @ApiOkResponse({ type: HealthResponseDto })
+  @LivenessDocs()
   liveness(): HealthResponseDto {
     return {
       status: 'ok',
@@ -25,9 +25,7 @@ export class HealthController {
   }
 
   @Get('health/ready')
-  @ApiOperation({ summary: 'Readiness probe for PostgreSQL and Redis' })
-  @ApiOkResponse({ type: HealthResponseDto })
-  @ApiServiceUnavailableResponse({ type: HealthResponseDto })
+  @ReadinessDocs()
   async readiness(): Promise<HealthResponseDto> {
     const checks = {
       postgres: await this.safePing(() => this.prisma.ping()),

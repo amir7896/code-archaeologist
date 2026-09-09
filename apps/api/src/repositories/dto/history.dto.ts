@@ -12,7 +12,7 @@ export class CommitListQueryDto extends PaginationQueryDto {
 }
 
 export class FileHistoryQueryDto extends PaginationQueryDto {
-  @ApiProperty({ type: String, maxLength: 1024 })
+  @ApiProperty({ type: String, maxLength: 1024, example: 'alembic/env.py' })
   @IsString()
   @MinLength(1)
   @MaxLength(1024)
