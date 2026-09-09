@@ -169,6 +169,15 @@ export class RepositoryResponseDto {
   @ApiProperty({ type: Number, required: false })
   branchCount?: number;
 
+  @ApiProperty({ type: Number, required: false })
+  fileCount?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  symbolCount?: number;
+
+  @ApiProperty({ type: String, required: false, nullable: true })
+  lastParsedRevision?: string | null;
+
   @ApiProperty({ type: String })
   status!: string;
 

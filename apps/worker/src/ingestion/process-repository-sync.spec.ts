@@ -1,13 +1,14 @@
 import { processRepositorySync } from './process-repository-sync';
 
 describe('processRepositorySync', () => {
-  it('marks the repository ready after clone, revision detection, and history index', async () => {
+  it('marks the repository ready after clone, history index, and AST parse', async () => {
     const git = {
       ensureMirror: jest.fn().mockResolvedValue(undefined),
       detectDefaultBranch: jest.fn().mockResolvedValue('main'),
       resolveRevision: jest.fn().mockResolvedValue('abc123'),
     };
     const indexHistory = jest.fn().mockResolvedValue(undefined);
+    const parseAst = jest.fn().mockResolvedValue(undefined);
     const updates: unknown[] = [];
     const prisma = {
       analysisRun: {
@@ -20,6 +21,7 @@ describe('processRepositorySync', () => {
             { id: 't1', taskType: 'CLONE' },
             { id: 't2', taskType: 'DETECT_REVISION' },
             { id: 't3', taskType: 'INDEX_HISTORY' },
+            { id: 't4', taskType: 'PARSE_AST' },
           ],
           repository: {
             id: 'repo-1',
@@ -47,6 +49,7 @@ describe('processRepositorySync', () => {
         } as never,
         git: git as never,
         indexHistory,
+        parseAst,
       },
     );
 
@@ -54,6 +57,13 @@ describe('processRepositorySync', () => {
       expect.objectContaining({
         destination: '/tmp/ca-test/mirrors/repo-1',
         url: 'https://github.com/acme/platform.git',
+      }),
+    );
+    expect(parseAst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repositoryId: 'repo-1',
+        revision: 'abc123',
+        gitDir: '/tmp/ca-test/mirrors/repo-1',
       }),
     );
     expect(indexHistory).toHaveBeenCalledWith(

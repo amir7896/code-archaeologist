@@ -24,6 +24,7 @@ describe('format', () => {
     expect(formatActivity('REPOSITORY_CREATE')).toBe('Added a repository');
     expect(formatTask('CLONE')).toBe('Copying the repository');
     expect(formatTask('INDEX_HISTORY')).toBe('Reading commit history');
+    expect(formatTask('PARSE_AST')).toBe('Reading source files');
     expect(formatChange('RENAMED')).toBe('Renamed');
     expect(commitSubject('Add login\n\nDetails')).toBe('Add login');
     expect(formatDiffstat(4, 1)).toBe('+4 / −1');

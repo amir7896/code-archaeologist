@@ -11,7 +11,7 @@
     "build:watch": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "devDependencies": {
+  "dependencies": {
     "typescript": "^5.8.2"
   }
 }

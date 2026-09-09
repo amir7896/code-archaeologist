@@ -6,6 +6,7 @@ import {
   commitSubject,
   formatDiffstat,
   formatStatus,
+  formatSymbolKind,
   formatTask,
   formatWhen,
   shortRevision,
@@ -14,6 +15,8 @@ import {
   useCommitsQuery,
   useDeleteRepositoryMutation,
   useRepositoryQuery,
+  useSourceFilesQuery,
+  useSymbolsQuery,
   useSyncRepositoryMutation,
   useUpdateRepositoryMutation,
   useWorkspaceQuery,
@@ -133,6 +136,14 @@ export function RepositoryPage() {
           </button>
         ) : null}
       </section>
+
+      <CodePreview
+        workspaceId={workspaceId}
+        repositoryId={repositoryId}
+        ready={repository.status === 'READY'}
+        fileCount={repository.fileCount}
+        symbolCount={repository.symbolCount}
+      />
 
       <HistoryPreview
         workspaceId={workspaceId}
@@ -290,6 +301,75 @@ function HistoryPreview({
       {ready && (commitCount ?? commitsQuery.data?.pagination.total) ? (
         <p className={`mt-4 ${muted}`}>
           {commitCount ?? commitsQuery.data?.pagination.total} commits indexed
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function CodePreview({
+  workspaceId,
+  repositoryId,
+  ready,
+  fileCount,
+  symbolCount,
+}: {
+  workspaceId: string;
+  repositoryId: string;
+  ready: boolean;
+  fileCount?: number;
+  symbolCount?: number;
+}) {
+  const repoPath = `/workspaces/${workspaceId}/repositories/${repositoryId}`;
+  const filesQuery = useSourceFilesQuery(workspaceId, repositoryId, { page: 1 }, ready);
+  const symbolsQuery = useSymbolsQuery(workspaceId, repositoryId, { page: 1 }, ready);
+  const files = (filesQuery.data?.items ?? []).slice(0, 6);
+  const symbols = (symbolsQuery.data?.items ?? []).filter((item) => item.kind !== 'MODULE').slice(0, 6);
+
+  return (
+    <section className={card}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-zinc-900">Code</h2>
+        {ready ? (
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link className="font-medium text-indigo-600 hover:text-indigo-500" to={`${repoPath}/code`}>
+              All files
+            </Link>
+            <Link className="font-medium text-indigo-600 hover:text-indigo-500" to={`${repoPath}/code/symbols`}>
+              All symbols
+            </Link>
+          </div>
+        ) : null}
+      </div>
+      {!ready ? (
+        <p className={`mt-3 ${muted}`}>Symbols appear after the first successful sync.</p>
+      ) : null}
+      {ready && files.length > 0 ? (
+        <ul className="mt-4 divide-y divide-zinc-100">
+          {files.map((file) => (
+            <li key={file.id} className="py-2 first:pt-0 last:pb-0">
+              <Link className="text-sm font-medium text-indigo-600 hover:text-indigo-500" to={`${repoPath}/code/files/${file.id}`}>
+                {file.path}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {ready && symbols.length > 0 ? (
+        <ul className="mt-4 divide-y divide-zinc-100">
+          {symbols.map((symbol) => (
+            <li key={symbol.id} className="py-2 first:pt-0 last:pb-0">
+              <Link className="text-sm font-medium text-zinc-900 hover:text-indigo-600" to={`${repoPath}/code/symbols/${symbol.id}`}>
+                {symbol.name}
+                <span className={`ml-2 ${muted}`}>{formatSymbolKind(symbol.kind)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {ready && (fileCount || symbolCount) ? (
+        <p className={`mt-4 ${muted}`}>
+          {fileCount ?? 0} files · {symbolCount ?? 0} symbols
         </p>
       ) : null}
     </section>

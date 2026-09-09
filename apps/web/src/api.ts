@@ -131,6 +131,9 @@ export type Repository = {
   lastIndexedRevision?: string | null;
   commitCount?: number;
   branchCount?: number;
+  fileCount?: number;
+  symbolCount?: number;
+  lastParsedRevision?: string | null;
   status: string;
   hasCredential: boolean;
   lastError: string | null;
@@ -220,6 +223,32 @@ export const repositoryApi = {
     api<FileHistory>(
       `/workspaces/${workspaceId}/repositories/${repositoryId}/files/history${toQuery(query)}`,
     ),
+  files: (
+    workspaceId: string,
+    repositoryId: string,
+    query?: { q?: string; language?: string; page?: number },
+  ) =>
+    api<Paginated<SourceFile>>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/code/files${toQuery(query)}`,
+    ),
+  file: (workspaceId: string, repositoryId: string, fileId: string) =>
+    api<SourceFile>(`/workspaces/${workspaceId}/repositories/${repositoryId}/code/files/${fileId}`),
+  filePreview: (workspaceId: string, repositoryId: string, fileId: string) =>
+    api<SourcePreview>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/code/files/${fileId}/preview`,
+    ),
+  symbols: (
+    workspaceId: string,
+    repositoryId: string,
+    query?: { q?: string; kind?: string; fileId?: string; page?: number },
+  ) =>
+    api<Paginated<SourceSymbol>>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/code/symbols${toQuery(query)}`,
+    ),
+  symbol: (workspaceId: string, repositoryId: string, symbolId: string) =>
+    api<SourceSymbolDetail>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/code/symbols/${symbolId}`,
+    ),
 };
 
 export type RepoBranch = {
@@ -273,6 +302,49 @@ export type FileHistory = {
   path: string;
   items: FileHistoryItem[];
   pagination: Paginated<FileHistoryItem>['pagination'];
+};
+
+export type SourceFile = {
+  id: string;
+  path: string;
+  language: string | null;
+  size: number | null;
+  loc: number | null;
+  complexity: number | null;
+  symbolCount: number;
+  lastRevision: string | null;
+};
+
+export type SourcePreview = {
+  fileId: string;
+  path: string;
+  language: string | null;
+  content: string;
+  truncated: boolean;
+};
+
+export type SourceSymbol = {
+  id: string;
+  fileId: string;
+  path: string;
+  kind: string;
+  name: string;
+  qualifiedName: string;
+  startLine: number;
+  endLine: number;
+  loc: number;
+  complexity: number;
+  nesting: number;
+};
+
+export type SourceSymbolDetail = SourceSymbol & {
+  parentSymbolId: string | null;
+  relations: Array<{
+    type: string;
+    targetQualifiedName: string;
+    targetSymbolId: string | null;
+    confidence: number;
+  }>;
 };
 
 function toQuery(query?: Record<string, string | number | undefined>): string {
