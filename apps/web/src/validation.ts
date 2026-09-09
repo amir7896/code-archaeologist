@@ -1,0 +1,37 @@
+import * as Yup from 'yup';
+
+export const loginSchema = Yup.object({
+  email: Yup.string().trim().email('Enter a valid email').required('Email is required'),
+  password: Yup.string().required('Password is required'),
+});
+
+export const registerSchema = Yup.object({
+  name: Yup.string()
+    .trim()
+    .required('Name is required')
+    .max(80, 'Name must be at most 80 characters'),
+  email: Yup.string().trim().email('Enter a valid email').required('Email is required'),
+  password: Yup.string()
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must be at most 128 characters'),
+});
+
+export const workspaceNameSchema = Yup.object({
+  name: Yup.string()
+    .trim()
+    .required('Workspace name is required')
+    .max(80, 'Name must be at most 80 characters'),
+});
+
+export const inviteMemberSchema = Yup.object({
+  email: Yup.string().trim().email('Enter a valid email').required('Email is required'),
+  role: Yup.string()
+    .oneOf(['ADMIN', 'ANALYST', 'VIEWER'], 'Choose a valid role')
+    .required('Role is required'),
+});
+
+export type LoginValues = Yup.InferType<typeof loginSchema>;
+export type RegisterValues = Yup.InferType<typeof registerSchema>;
+export type WorkspaceNameValues = Yup.InferType<typeof workspaceNameSchema>;
+export type InviteMemberValues = Yup.InferType<typeof inviteMemberSchema>;

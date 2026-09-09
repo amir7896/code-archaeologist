@@ -16,6 +16,8 @@ test('validateEnv accepts postgres parts and builds a URL', () => {
     env.DATABASE_URL,
     'postgresql://codearch:codearch@localhost:5432/code_archaeologist?schema=public',
   );
+  assert.equal(env.JWT_ACCESS_TTL, '15m');
+  assert.equal(env.JWT_REFRESH_TTL_DAYS, 7);
 });
 
 test('validateEnv rejects missing postgres user', () => {
@@ -31,16 +33,17 @@ test('validateEnv rejects missing postgres user', () => {
 });
 
 test('buildDatabaseUrl encodes special characters in the password', () => {
+  const password = 'Amir-AS@*7896';
   const url = buildDatabaseUrl({
     POSTGRES_HOST: 'localhost',
     POSTGRES_USER: 'root',
-    POSTGRES_PASSWORD: 'Amir-AS@*7896',
+    POSTGRES_PASSWORD: password,
     POSTGRES_DB: 'code_archaeologist',
     POSTGRES_PORT: 5432,
   });
 
   assert.equal(
     url,
-    'postgresql://root:Amir-AS%40%2A7896@localhost:5432/code_archaeologist?schema=public',
+    `postgresql://root:${encodeURIComponent(password)}@localhost:5432/code_archaeologist?schema=public`,
   );
 });

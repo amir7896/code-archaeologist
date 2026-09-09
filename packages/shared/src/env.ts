@@ -17,6 +17,10 @@ export const envSchema = z.object({
   WORKER_CONCURRENCY: z.coerce.number().int().positive().default(2),
   OLLAMA_BASE_URL: z.string().optional().default('http://localhost:11434'),
   OLLAMA_MODEL: z.string().optional().default('llama3.1:8b'),
+  JWT_ACCESS_SECRET: z.string().min(32).default('local-dev-access-secret-change-me-32'),
+  JWT_REFRESH_SECRET: z.string().min(32).default('local-dev-refresh-secret-change-me-32'),
+  JWT_ACCESS_TTL: z.string().default('15m'),
+  JWT_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(7),
 });
 
 type ParsedEnv = z.infer<typeof envSchema>;
@@ -42,7 +46,11 @@ export function buildDatabaseUrl(source: {
   return `postgresql://${user}:${password}@${source.POSTGRES_HOST}:${source.POSTGRES_PORT}/${source.POSTGRES_DB}?schema=public`;
 }
 
-export function buildRedisUrl(source: { REDIS_URL?: string; REDIS_HOST: string; REDIS_PORT: number }): string {
+export function buildRedisUrl(source: {
+  REDIS_URL?: string;
+  REDIS_HOST: string;
+  REDIS_PORT: number;
+}): string {
   if (source.REDIS_URL && source.REDIS_URL.length > 0) {
     return source.REDIS_URL;
   }

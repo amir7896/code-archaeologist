@@ -9,11 +9,17 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --pool=vmThreads --maxWorkers=1"
+    "test": "vitest run --pool=forks --maxWorkers=1"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.12.0",
+    "@tanstack/react-query": "^5.102.8",
+    "formik": "^2.4.9",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-redux": "^9.3.0",
+    "react-router-dom": "7.4.0",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.14",

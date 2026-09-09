@@ -9,10 +9,10 @@ async function main() {
   try {
     await prisma.schemaMeta.upsert({
       where: { id: 'code-archaeologist' },
-      create: { id: 'code-archaeologist', phase: '0-foundation' },
-      update: { phase: '0-foundation' },
+      create: { id: 'code-archaeologist', phase: '1-identity' },
+      update: { phase: '1-identity' },
     });
-    console.log('Seed complete: schema_meta phase 0-foundation');
+    console.log('Seed complete: schema_meta phase 1-identity');
   } finally {
     await prisma.$disconnect();
   }

@@ -15,7 +15,7 @@ Git repository → ingestion → Git history + AST → normalized symbols → de
 | `apps/web` | React dashboard, explorer, graph, and investigation UI. |
 | PostgreSQL | System of record, graph edges, search, analytics. |
 | Redis | Queue backend. |
-| Ollama | Optional local inference. Not used in Phase 0. |
+| Ollama | Optional local inference. Not used in Phase 1. |
 
 ## Packages
 
@@ -25,17 +25,17 @@ Provider implementations stay behind interfaces so they can change independently
 - `@code-archaeologist/parser` — `parse` / `normalize` / `compare`
 - `@code-archaeologist/ai` — `LlmProvider.chat` / `embed` / `health` (Ollama first)
 
-`@code-archaeologist/core` owns Prisma and domain constants. `@code-archaeologist/shared` owns environment validation, queue names, and the API prefix.
+`@code-archaeologist/core` owns Prisma and domain constants. `@code-archaeologist/shared` owns environment validation, queue names, workspace roles, and the API prefix.
 
 ## NestJS modules (planned)
 
 auth • users • workspaces • repositories • git • analysis • parsers • files • symbols • graph • metrics • risks • insights • investigations • ai • embeddings • integrations • webhooks • reports • notifications • audit
 
-Phase 0 only wires config, database, and health. Controllers stay thin. Business rules live in services and domain packages.
+Phase 1 wires `auth`, `users`, `workspaces`, and `audit`. Remaining modules stay planned. Controllers stay thin. Business rules live in services and domain packages.
 
 ## Data
 
-PostgreSQL tables are listed in the project scope. Phase 0 ships `schema_meta` so migrations are proven. Identity tables arrive in Phase 1. `pgvector` is enabled only when semantic embeddings are on.
+PostgreSQL tables are listed in the project scope. Phase 1 ships identity tables: `users`, `workspaces`, `workspace_members`, `sessions`, and `audit_logs`. Repository and analysis tables arrive later. `pgvector` is enabled only when semantic embeddings are on.
 
 ## Queues
 

@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **Phase 0 — Foundation**: monorepo, NestJS API and worker, React web app, PostgreSQL, Redis, environment validation, and the Prisma migration framework.
+This repository is at **Phase 1 — Identity**: users, email/password sessions, workspaces, RBAC, audit events, and a basic dashboard on top of the Phase 0 monorepo.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ This repository is at **Phase 0 — Foundation**: monorepo, NestJS API and worke
 - pnpm 10
 - Docker and Docker Compose (for PostgreSQL and Redis)
 
-Ollama is optional and not required for Phase 0. If you enable it later, plan for about 8 GB RAM for a 7B/8B model. 16 GB is more comfortable. This project is designed to run locally.
+Ollama is optional and not required yet. If you enable it later, plan for about 8 GB RAM for a 7B/8B model. 16 GB is more comfortable. This project is designed to run locally.
 
 ## Quick start
 

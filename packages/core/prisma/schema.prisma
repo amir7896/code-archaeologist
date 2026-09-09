@@ -1,6 +1,5 @@
-// Code Archaeologist — Phase 0 foundation schema.
-// Identity tables (users, workspaces, memberships) land in Phase 1.
-// Remaining tables follow the project scope data model in later phases.
+// Code Archaeologist data model.
+// Phase 1 adds identity tables. Remaining tables follow the project scope later.
 // JSONB is reserved for variable metadata. pgvector is not enabled until embeddings are on.
 
 generator client {
@@ -15,18 +14,122 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Installation marker so Phase 0 can prove migrations work without product tables.
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("0-foundation")
+  phase     String   @default("1-identity")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")
 }
 
-// Planned tables (do not create yet):
-// users, workspaces, workspace_members, repositories, repository_credentials,
-// branches, commits, commit_files, files, symbols, symbol_versions, graph_edges,
-// developers, issues, pull_requests, reviews, analysis_runs, analysis_tasks,
-// metrics_snapshots, risk_scores, documents, document_chunks, investigations,
-// investigation_evidence, investigation_messages, integrations, webhook_events, audit_logs
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum WorkspaceStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  name         String
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  ownedWorkspaces Workspace[]         @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[]
+  sessions        Session[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String          @id @default(cuid())
+  name      String
+  slug      String          @unique
+  ownerId   String          @map("owner_id")
+  settings  Json            @default("{}")
+  status    WorkspaceStatus @default(ACTIVE)
+  deletedAt DateTime?       @map("deleted_at")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  owner     User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members   WorkspaceMember[]
+  auditLogs AuditLog[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  workspaceId String           @map("workspace_id")
+  userId      String           @map("user_id")
+  role        WorkspaceRole
+  status      MembershipStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@id([workspaceId, userId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String?  @map("workspace_id")
+  userId      String?  @map("user_id")
+  action      String
+  resource    String
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("timestamp")
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  user      User?      @relation(fields: [userId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+// Planned later:
+// repositories, repository_credentials, branches, commits, commit_files, files,
+// symbols, symbol_versions, graph_edges, developers, issues, pull_requests,
+// reviews, analysis_runs, analysis_tasks, metrics_snapshots, risk_scores,
+// documents, document_chunks, investigations, investigation_evidence,
+// investigation_messages, integrations, webhook_events

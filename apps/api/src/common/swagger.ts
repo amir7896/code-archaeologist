@@ -14,6 +14,9 @@ export function setupSwagger(app: INestApplication): void {
     .setVersion(APP_VERSION)
     .addBearerAuth()
     .addTag('health', 'Liveness and readiness')
+    .addTag('auth', 'Email/password sessions')
+    .addTag('users', 'Current user')
+    .addTag('workspaces', 'Workspaces, members, and audit')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

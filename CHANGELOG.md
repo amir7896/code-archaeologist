@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Phase 1 identity: email/password auth with Argon2id, refresh-session revocation, workspaces, RBAC, audit log, and a basic dashboard.
 - Phase 0 foundation: pnpm monorepo, NestJS API, NestJS worker, React web app.
 - Docker Compose for PostgreSQL and Redis, with optional full-stack and Ollama profiles.
 - Zod environment validation, Prisma migration framework, and `/api/v1/health` endpoints.

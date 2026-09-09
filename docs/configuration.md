@@ -19,5 +19,9 @@ Copy `.env.example` to `.env`. The API and worker validate environment variables
 | `WORKER_CONCURRENCY` | `2` | Worker concurrency |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Optional local LLM |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Default local model name |
+| `JWT_ACCESS_SECRET` | local-dev placeholder (32+ chars) | Access-token signing secret |
+| `JWT_REFRESH_SECRET` | local-dev placeholder (32+ chars) | Refresh-token signing secret |
+| `JWT_ACCESS_TTL` | `15m` | Access token lifetime |
+| `JWT_REFRESH_TTL_DAYS` | `7` | Refresh session lifetime in days |
 
-Auth secrets, credential encryption keys, and GitHub app settings are added in later phases. Do not log secrets.
+GitHub OAuth and credential-encryption keys are added in later phases. Do not log secrets.
