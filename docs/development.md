@@ -53,6 +53,10 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET/PATCH/DELETE | `/workspaces/:workspaceId/repositories/:repositoryId` | Object-level RBAC. Delete is Admin+. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/status` | Ingestion progress and latest run. |
 | POST | `/workspaces/:workspaceId/repositories/:repositoryId/sync` | Analyst+. Rate-limited. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/branches` | Indexed branches. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/commits` | Optional `branch` query. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/commits/:sha` | Commit details and changed files. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/files/history` | Requires `path`. |
 
 ## API DTOs and ValidationPipe
 
@@ -90,9 +94,9 @@ pnpm db:migrate:deploy   # apply committed migrations
 
 ## Ollama (optional, later phases)
 
-Ollama is not required for Phase 2. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
+Ollama is not required for Phase 3. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
 
-After pulling Phase 2, apply `pnpm db:migrate:deploy` so repository tables exist. The worker clones into an isolated temp directory and deletes it when the run finishes.
+After pulling Phase 3, apply `pnpm db:migrate:deploy` so Git history tables exist, then re-sync existing repositories to index commits. The worker keeps a bare mirror under `.data/repositories/mirrors` (or `REPOSITORY_WORK_DIR`) so later syncs can fetch incrementally.
 
 ```bash
 docker compose --profile ai up -d ollama

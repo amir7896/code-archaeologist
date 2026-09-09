@@ -1,5 +1,5 @@
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { z } from 'zod';
 
 export const envSchema = z.object({
@@ -65,6 +65,21 @@ export function buildRedisUrl(source: {
   return `redis://${source.REDIS_HOST}:${source.REDIS_PORT}`;
 }
 
+export function defaultRepositoryWorkDir(cwd = process.cwd()): string {
+  let dir = cwd;
+  for (let i = 0; i < 6; i += 1) {
+    if (existsSync(join(dir, 'pnpm-workspace.yaml'))) {
+      return join(dir, '.data', 'repositories');
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return join(cwd, '.data', 'repositories');
+}
+
 export function validateEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   const parsed = envSchema.safeParse(source);
   if (!parsed.success) {
@@ -79,8 +94,7 @@ export function validateEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     POSTGRES_PASSWORD: unwrap(parsed.data.POSTGRES_PASSWORD),
     DATABASE_URL: buildDatabaseUrl(parsed.data),
     REDIS_URL: buildRedisUrl(parsed.data),
-    REPOSITORY_WORK_DIR:
-      parsed.data.REPOSITORY_WORK_DIR ?? join(tmpdir(), 'code-archaeologist', 'repositories'),
+    REPOSITORY_WORK_DIR: parsed.data.REPOSITORY_WORK_DIR ?? defaultRepositoryWorkDir(),
   };
 
   process.env.DATABASE_URL = env.DATABASE_URL;

@@ -1,9 +1,17 @@
 import { Field, Form, Formik } from 'formik';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { PageNav } from '../components/PageNav';
 import { errorMessage } from '../lib/errors';
-import { formatStatus, formatTask, formatWhen, shortRevision } from '../lib/format';
 import {
+  commitSubject,
+  formatDiffstat,
+  formatStatus,
+  formatTask,
+  formatWhen,
+  shortRevision,
+} from '../lib/format';
+import {
+  useCommitsQuery,
   useDeleteRepositoryMutation,
   useRepositoryQuery,
   useSyncRepositoryMutation,
@@ -126,6 +134,13 @@ export function RepositoryPage() {
         ) : null}
       </section>
 
+      <HistoryPreview
+        workspaceId={workspaceId}
+        repositoryId={repositoryId}
+        ready={repository.status === 'READY'}
+        commitCount={repository.commitCount}
+      />
+
       {canManage ? (
         <section className={card}>
           <h2 className="text-sm font-semibold text-zinc-900">Settings</h2>
@@ -214,5 +229,69 @@ export function RepositoryPage() {
 
       <PageNav backTo={workspacePath} backLabel="Back to workspace" />
     </div>
+  );
+}
+
+function HistoryPreview({
+  workspaceId,
+  repositoryId,
+  ready,
+  commitCount,
+}: {
+  workspaceId: string;
+  repositoryId: string;
+  ready: boolean;
+  commitCount?: number;
+}) {
+  const repoPath = `/workspaces/${workspaceId}/repositories/${repositoryId}`;
+  const commitsQuery = useCommitsQuery(workspaceId, repositoryId, { page: 1 }, ready);
+  const commits = (commitsQuery.data?.items ?? []).slice(0, 8);
+
+  return (
+    <section className={card}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-zinc-900">History</h2>
+        {ready ? (
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link className="font-medium text-indigo-600 hover:text-indigo-500" to={`${repoPath}/commits`}>
+              All commits
+            </Link>
+            <Link className="font-medium text-indigo-600 hover:text-indigo-500" to={`${repoPath}/files`}>
+              File history
+            </Link>
+          </div>
+        ) : null}
+      </div>
+      {!ready ? (
+        <p className={`mt-3 ${muted}`}>History appears after the first successful sync.</p>
+      ) : null}
+      {ready && commitsQuery.isPending ? <p className={`mt-3 ${muted}`}>Loading recent commits…</p> : null}
+      {ready && !commitsQuery.isPending && commits.length === 0 ? (
+        <p className={`mt-3 ${muted}`}>No commits indexed yet.</p>
+      ) : null}
+      {commits.length > 0 ? (
+        <ul className="mt-4 divide-y divide-zinc-100">
+          {commits.map((commit) => (
+            <li key={commit.sha} className="py-3 first:pt-0 last:pb-0">
+              <Link
+                className="block rounded-xl px-1 py-1 transition hover:bg-indigo-50/60"
+                to={`${repoPath}/commits/${commit.sha}`}
+              >
+                <p className="font-medium text-zinc-900">{commitSubject(commit.message)}</p>
+                <p className={`mt-1 ${muted}`}>
+                  {commit.authorName} · {formatWhen(commit.committedAt)} · {shortRevision(commit.sha)} ·{' '}
+                  {formatDiffstat(commit.additions, commit.deletions)}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {ready && (commitCount ?? commitsQuery.data?.pagination.total) ? (
+        <p className={`mt-4 ${muted}`}>
+          {commitCount ?? commitsQuery.data?.pagination.total} commits indexed
+        </p>
+      ) : null}
+    </section>
   );
 }

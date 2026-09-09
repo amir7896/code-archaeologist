@@ -1,12 +1,13 @@
 import { processRepositorySync } from './process-repository-sync';
 
 describe('processRepositorySync', () => {
-  it('marks the repository ready after clone and revision detection', async () => {
+  it('marks the repository ready after clone, revision detection, and history index', async () => {
     const git = {
-      clone: jest.fn().mockResolvedValue(undefined),
+      ensureMirror: jest.fn().mockResolvedValue(undefined),
       detectDefaultBranch: jest.fn().mockResolvedValue('main'),
       resolveRevision: jest.fn().mockResolvedValue('abc123'),
     };
+    const indexHistory = jest.fn().mockResolvedValue(undefined);
     const updates: unknown[] = [];
     const prisma = {
       analysisRun: {
@@ -18,6 +19,7 @@ describe('processRepositorySync', () => {
           tasks: [
             { id: 't1', taskType: 'CLONE' },
             { id: 't2', taskType: 'DETECT_REVISION' },
+            { id: 't3', taskType: 'INDEX_HISTORY' },
           ],
           repository: {
             id: 'repo-1',
@@ -44,10 +46,24 @@ describe('processRepositorySync', () => {
           CREDENTIALS_ENCRYPTION_KEY: 'local-dev-credentials-secret-change-me-32',
         } as never,
         git: git as never,
+        indexHistory,
       },
     );
 
-    expect(git.clone).toHaveBeenCalled();
+    expect(git.ensureMirror).toHaveBeenCalledWith(
+      expect.objectContaining({
+        destination: '/tmp/ca-test/mirrors/repo-1',
+        url: 'https://github.com/acme/platform.git',
+      }),
+    );
+    expect(indexHistory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repositoryId: 'repo-1',
+        defaultBranch: 'main',
+        currentRevision: 'abc123',
+        gitDir: '/tmp/ca-test/mirrors/repo-1',
+      }),
+    );
     expect(prisma.repository.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: 'READY', currentRevision: 'abc123' }),
@@ -72,7 +88,7 @@ describe('processRepositorySync', () => {
       {
         prisma: prisma as never,
         env: { REPOSITORY_WORK_DIR: '/tmp/ca-test' } as never,
-        git: { clone: jest.fn() } as never,
+        git: { ensureMirror: jest.fn() } as never,
       },
     );
 

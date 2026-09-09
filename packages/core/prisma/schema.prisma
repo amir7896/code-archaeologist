@@ -1,5 +1,5 @@
 // Code Archaeologist data model.
-// Phase 2 adds repositories, encrypted credentials, and analysis runs.
+// Phase 3 adds Git history: branches, commits, files, commit_files, developers.
 // Entity ids are PostgreSQL UUIDs. schema_meta.id stays a stable string.
 // Remaining tables follow the project scope later.
 // JSONB is reserved for variable metadata. pgvector is not enabled until embeddings are on.
@@ -18,7 +18,7 @@ datasource db {
 
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("2-ingestion")
+  phase     String   @default("3-git-engine")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")
@@ -79,6 +79,15 @@ enum AnalysisRunStatus {
 enum AnalysisTaskType {
   CLONE
   DETECT_REVISION
+  INDEX_HISTORY
+}
+
+enum FileChangeType {
+  ADDED
+  MODIFIED
+  DELETED
+  RENAMED
+  COPIED
 }
 
 enum AnalysisTaskStatus {
@@ -173,24 +182,29 @@ model AuditLog {
 }
 
 model Repository {
-  id              String             @id @default(uuid()) @db.Uuid
-  workspaceId     String             @map("workspace_id") @db.Uuid
-  name            String
-  url             String
-  provider        RepositoryProvider
-  defaultBranch   String?            @map("default_branch")
-  currentRevision String?            @map("current_revision")
-  settings        Json               @default("{}")
-  status          RepositoryStatus   @default(PENDING)
-  lastError       String?            @map("last_error")
-  lastSyncedAt    DateTime?          @map("last_synced_at")
-  deletedAt       DateTime?          @map("deleted_at")
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
+  id                  String             @id @default(uuid()) @db.Uuid
+  workspaceId         String             @map("workspace_id") @db.Uuid
+  name                String
+  url                 String
+  provider            RepositoryProvider
+  defaultBranch       String?            @map("default_branch")
+  currentRevision     String?            @map("current_revision")
+  lastIndexedRevision String?            @map("last_indexed_revision")
+  settings            Json               @default("{}")
+  status              RepositoryStatus   @default(PENDING)
+  lastError           String?            @map("last_error")
+  lastSyncedAt        DateTime?          @map("last_synced_at")
+  deletedAt           DateTime?          @map("deleted_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
 
   workspace    Workspace             @relation(fields: [workspaceId], references: [id])
   credential   RepositoryCredential?
   analysisRuns AnalysisRun[]
+  developers   Developer[]
+  branches     Branch[]
+  commits      Commit[]
+  files        RepoFile[]
 
   @@index([workspaceId, createdAt])
   @@index([status])
@@ -250,9 +264,120 @@ model AnalysisTask {
   @@map("analysis_tasks")
 }
 
+model Developer {
+  id              String   @id @default(uuid()) @db.Uuid
+  repositoryId    String   @map("repository_id") @db.Uuid
+  canonicalName   String   @map("canonical_name")
+  canonicalEmail  String   @map("canonical_email")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  repository Repository @relation(fields: [repositoryId], references: [id])
+  commits    Commit[]
+
+  @@unique([repositoryId, canonicalEmail])
+  @@index([repositoryId])
+  @@map("developers")
+}
+
+model Branch {
+  id           String   @id @default(uuid()) @db.Uuid
+  repositoryId String   @map("repository_id") @db.Uuid
+  name         String
+  headCommitId String?  @map("head_commit_id") @db.Uuid
+  isDefault    Boolean  @default(false) @map("is_default")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  repository Repository     @relation(fields: [repositoryId], references: [id])
+  headCommit Commit?        @relation("BranchHead", fields: [headCommitId], references: [id], onDelete: SetNull)
+  commits    BranchCommit[]
+
+  @@unique([repositoryId, name])
+  @@index([repositoryId])
+  @@map("branches")
+}
+
+model Commit {
+  id           String   @id @default(uuid()) @db.Uuid
+  repositoryId String   @map("repository_id") @db.Uuid
+  sha          String
+  message      String
+  authorName   String   @map("author_name")
+  authorEmail  String   @map("author_email")
+  authoredAt   DateTime @map("authored_at")
+  committedAt  DateTime @map("committed_at")
+  parentShas   String[] @map("parent_shas")
+  isMerge      Boolean  @default(false) @map("is_merge")
+  developerId  String?  @map("developer_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  repository     Repository     @relation(fields: [repositoryId], references: [id])
+  developer      Developer?     @relation(fields: [developerId], references: [id], onDelete: SetNull)
+  files          CommitFile[]
+  branches       BranchCommit[]
+  headOfBranches Branch[]       @relation("BranchHead")
+
+  @@unique([repositoryId, sha])
+  @@index([repositoryId, committedAt])
+  @@index([developerId])
+  @@map("commits")
+}
+
+model BranchCommit {
+  branchId String @map("branch_id") @db.Uuid
+  commitId String @map("commit_id") @db.Uuid
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  commit Commit @relation(fields: [commitId], references: [id], onDelete: Cascade)
+
+  @@id([branchId, commitId])
+  @@index([commitId])
+  @@map("branch_commits")
+}
+
+model RepoFile {
+  id            String   @id @default(uuid()) @db.Uuid
+  repositoryId  String   @map("repository_id") @db.Uuid
+  path          String
+  language      String?
+  hash          String?
+  size          Int?
+  firstRevision String   @map("first_revision")
+  lastRevision  String   @map("last_revision")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  repository  Repository   @relation(fields: [repositoryId], references: [id])
+  commitFiles CommitFile[]
+
+  @@unique([repositoryId, path])
+  @@index([repositoryId])
+  @@map("files")
+}
+
+model CommitFile {
+  id           String         @id @default(uuid()) @db.Uuid
+  commitId     String         @map("commit_id") @db.Uuid
+  fileId       String         @map("file_id") @db.Uuid
+  changeType   FileChangeType @map("change_type")
+  oldPath      String?        @map("old_path")
+  newPath      String         @map("new_path")
+  additions    Int            @default(0)
+  deletions    Int            @default(0)
+  similarity   Int?
+  patchPreview String?        @map("patch_preview")
+
+  commit Commit   @relation(fields: [commitId], references: [id], onDelete: Cascade)
+  file   RepoFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([commitId, fileId])
+  @@index([fileId])
+  @@map("commit_files")
+}
+
 // Planned later:
-// branches, commits, commit_files, files,
-// symbols, symbol_versions, graph_edges, developers, issues, pull_requests,
+// symbols, symbol_versions, graph_edges, issues, pull_requests,
 // reviews, metrics_snapshots, risk_scores,
 // documents, document_chunks, investigations, investigation_evidence,
 // investigation_messages, integrations, webhook_events

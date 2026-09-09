@@ -13,6 +13,14 @@ export const queryKeys = {
   repositories: (workspaceId: string) => ['workspaces', workspaceId, 'repositories'] as const,
   repository: (workspaceId: string, repositoryId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId] as const,
+  branches: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'branches'] as const,
+  commits: (workspaceId: string, repositoryId: string, branch?: string, page?: number) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'commits', branch ?? '', page ?? 1] as const,
+  commit: (workspaceId: string, repositoryId: string, sha: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'commits', sha] as const,
+  fileHistory: (workspaceId: string, repositoryId: string, path: string, page?: number) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'files', path, page ?? 1] as const,
 };
 
 export function useWorkspacesQuery() {
@@ -233,8 +241,57 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
           queryKey: queryKeys.repository(workspaceId, repositoryId),
         }),
         queryClient.invalidateQueries({ queryKey: queryKeys.repositories(workspaceId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.branches(workspaceId, repositoryId) }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'commits'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'files'],
+        }),
       ]);
     },
+  });
+}
+
+export function useBranchesQuery(workspaceId: string, repositoryId: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.branches(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.branches(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
+export function useCommitsQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { branch?: string; page?: number } = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.commits(workspaceId, repositoryId, query.branch, query.page),
+    queryFn: () => repositoryApi.commits(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
+export function useCommitQuery(workspaceId: string, repositoryId: string, sha: string) {
+  return useQuery({
+    queryKey: queryKeys.commit(workspaceId, repositoryId, sha),
+    queryFn: () => repositoryApi.commit(workspaceId, repositoryId, sha),
+    enabled: Boolean(workspaceId && repositoryId && sha),
+  });
+}
+
+export function useFileHistoryQuery(
+  workspaceId: string,
+  repositoryId: string,
+  path: string,
+  page = 1,
+) {
+  return useQuery({
+    queryKey: queryKeys.fileHistory(workspaceId, repositoryId, path, page),
+    queryFn: () => repositoryApi.fileHistory(workspaceId, repositoryId, { path, page }),
+    enabled: Boolean(workspaceId && repositoryId && path),
   });
 }
 

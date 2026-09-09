@@ -47,6 +47,7 @@ type RepositoryRecord = {
   provider: string;
   defaultBranch: string | null;
   currentRevision: string | null;
+  lastIndexedRevision?: string | null;
   status: string;
   lastError: string | null;
   lastSyncedAt: Date | null;
@@ -129,7 +130,11 @@ export class RepositoriesService {
 
   async get(workspaceId: string, repositoryId: string): Promise<RepositoryResponseDto> {
     const repository = await this.requireRepository(workspaceId, repositoryId);
-    return toRepositoryResponse(repository);
+    const [commitCount, branchCount] = await this.prisma.$transaction([
+      this.prisma.commit.count({ where: { repositoryId } }),
+      this.prisma.branch.count({ where: { repositoryId } }),
+    ]);
+    return toRepositoryResponse(repository, { commitCount, branchCount });
   }
 
   async update(
@@ -235,7 +240,7 @@ export class RepositoriesService {
         status: 'QUEUED',
         progress: 0,
         tasks: {
-          create: [{ taskType: 'CLONE' }, { taskType: 'DETECT_REVISION' }],
+          create: [{ taskType: 'CLONE' }, { taskType: 'DETECT_REVISION' }, { taskType: 'INDEX_HISTORY' }],
         },
       },
     });
@@ -330,7 +335,10 @@ function parseRepositoryUrl(url: string) {
   }
 }
 
-function toRepositoryResponse(repository: RepositoryRecord): RepositoryResponseDto {
+function toRepositoryResponse(
+  repository: RepositoryRecord,
+  counts?: { commitCount: number; branchCount: number },
+): RepositoryResponseDto {
   return {
     id: repository.id,
     workspaceId: repository.workspaceId,
@@ -339,6 +347,9 @@ function toRepositoryResponse(repository: RepositoryRecord): RepositoryResponseD
     provider: repository.provider,
     defaultBranch: repository.defaultBranch,
     currentRevision: repository.currentRevision,
+    lastIndexedRevision: repository.lastIndexedRevision ?? null,
+    commitCount: counts?.commitCount,
+    branchCount: counts?.branchCount,
     status: repository.status,
     hasCredential: Boolean(repository.credential),
     lastError: repository.lastError,
