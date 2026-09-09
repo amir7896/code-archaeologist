@@ -12,6 +12,7 @@ import {
   shortRevision,
 } from '../lib/format';
 import {
+  repositoryAskPath,
   repositoryCodePath,
   repositoryDnaPath,
   repositoryEvolutionPath,
@@ -218,6 +219,15 @@ function EvolutionResult({
             to={repositoryHistoryPath(workspaceId, repositoryId, { path: evolution.origin.path })}
           >
             File history
+          </Link>
+          <Link
+            className="text-indigo-600 hover:text-indigo-500"
+            to={repositoryAskPath(workspaceId, repositoryId, {
+              file: evolution.origin.fileId,
+              symbol: evolution.origin.symbolId ?? undefined,
+            })}
+          >
+            Ask
           </Link>
         </div>
       </section>

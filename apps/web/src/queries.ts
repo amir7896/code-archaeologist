@@ -68,6 +68,12 @@ export const queryKeys = {
       fileId ?? '',
       symbolId ?? '',
     ] as const,
+  aiStatus: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'ai', 'status'] as const,
+  investigations: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'investigations'] as const,
+  investigation: (workspaceId: string, repositoryId: string, investigationId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'investigations', investigationId] as const,
   symbols: (
     workspaceId: string,
     repositoryId: string,
@@ -338,6 +344,9 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
         queryClient.invalidateQueries({
           queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'evidence'],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'investigations'],
+        }),
       ]);
     },
   });
@@ -513,6 +522,60 @@ export function useEvolutionQuery(
     queryKey: queryKeys.evolution(workspaceId, repositoryId, query.fileId, query.symbolId),
     queryFn: () => repositoryApi.evolution(workspaceId, repositoryId, query),
     enabled: Boolean(workspaceId && repositoryId && (query.fileId || query.symbolId)),
+  });
+}
+
+export function useAiStatusQuery(workspaceId: string, repositoryId: string) {
+  return useQuery({
+    queryKey: queryKeys.aiStatus(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.aiStatus(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId),
+  });
+}
+
+export function useInvestigationsQuery(workspaceId: string, repositoryId: string) {
+  return useQuery({
+    queryKey: queryKeys.investigations(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.investigations(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId),
+    refetchInterval: (query) => {
+      const busy = query.state.data?.items.some(
+        (item) => item.status === 'QUEUED' || item.status === 'RUNNING',
+      );
+      return busy ? 800 : false;
+    },
+  });
+}
+
+export function useInvestigationQuery(
+  workspaceId: string,
+  repositoryId: string,
+  investigationId: string,
+) {
+  return useQuery({
+    queryKey: queryKeys.investigation(workspaceId, repositoryId, investigationId),
+    queryFn: () => repositoryApi.investigation(workspaceId, repositoryId, investigationId),
+    enabled: Boolean(workspaceId && repositoryId && investigationId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === 'QUEUED' || status === 'RUNNING' ? 800 : false;
+    },
+  });
+}
+
+export function useCreateInvestigationMutation(workspaceId: string, repositoryId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { question: string; fileId?: string; symbolId?: string }) =>
+      repositoryApi.createInvestigation(workspaceId, repositoryId, body),
+    onSuccess: async (created) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.investigations(workspaceId, repositoryId) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.investigation(workspaceId, repositoryId, created.id),
+        }),
+      ]);
+    },
   });
 }
 

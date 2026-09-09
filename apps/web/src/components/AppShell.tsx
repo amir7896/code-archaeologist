@@ -7,6 +7,7 @@ import {
   repositoryCodePath,
   repositoryDnaPath,
   repositoryGraphPath,
+  repositoryAskPath,
   repositoryEvolutionPath,
   repositoryImpactPath,
   repositoryHistoryPath,
@@ -190,6 +191,7 @@ function SidebarNav() {
           <SideLink to={repositoryDnaPath(workspaceId, repositoryId)}>Code DNA</SideLink>
           <SideLink to={repositoryImpactPath(workspaceId, repositoryId)}>Impact</SideLink>
           <SideLink to={repositoryEvolutionPath(workspaceId, repositoryId)}>Evolution</SideLink>
+          <SideLink to={repositoryAskPath(workspaceId, repositoryId)}>Ask</SideLink>
           <SideLink to={repositoryHistoryPath(workspaceId, repositoryId)}>History</SideLink>
           {canManage ? (
             <SideLink to={repositorySettingsPath(workspaceId, repositoryId)}>Settings</SideLink>

@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Ollama/RAG investigation: cited Ask answers from indexed code, history, and architecture. A local model is optional.
+- Ask retrieval prefers subject tokens over filler (`introduced`), includes commit authors, and answers repository-overview questions from indexed repo facts.
 - Historical evidence: commit-to-symbol links with confidence, a historical resolver, and an Evolution screen.
 - Phase 7 deterministic impact: blast-radius walk from the architecture graph, risk overlays, and an Impact screen.
 - Phase 6 Code DNA: symbol versions, metrics snapshots, explainable risk scores, hotspots, and a DNA profile screen.

@@ -14,11 +14,19 @@ export const QUEUE_NAMES = {
   integrationSync: 'integration-sync',
   reportGeneration: 'report-generation',
   cleanup: 'cleanup',
+  investigation: 'investigation',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 
 export const REPOSITORY_SYNC_JOB = 'sync';
+export const INVESTIGATION_JOB = 'investigate';
+
+export type InvestigationJobData = {
+  investigationId: string;
+  repositoryId: string;
+  workspaceId: string;
+};
 
 export type RepositorySyncJobData = {
   repositoryId: string;

@@ -6,6 +6,7 @@ import { formatRiskLevel, shortRevision } from '../lib/format';
 import {
   repositoryCodePath,
   repositoryDnaPath,
+  repositoryAskPath,
   repositoryEvolutionPath,
   repositoryGraphPath,
   repositoryImpactPath,
@@ -228,6 +229,15 @@ function ImpactResult({
             })}
           >
             Evolution
+          </Link>
+          <Link
+            className="text-indigo-600 hover:text-indigo-500"
+            to={repositoryAskPath(workspaceId, repositoryId, {
+              file: impact.origin.fileId,
+              symbol: impact.origin.symbolId ?? undefined,
+            })}
+          >
+            Ask
           </Link>
         </div>
       </section>

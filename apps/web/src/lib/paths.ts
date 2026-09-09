@@ -73,6 +73,18 @@ export function repositoryEvolutionPath(
   });
 }
 
+export function repositoryAskPath(
+  workspaceId: string,
+  repositoryId: string,
+  query: { file?: string; symbol?: string; question?: string } = {},
+): string {
+  return withQuery(`${repositoryPath(workspaceId, repositoryId)}/ask`, {
+    file: query.file,
+    symbol: query.symbol,
+    question: query.question,
+  });
+}
+
 export function repositoryHistoryPath(
   workspaceId: string,
   repositoryId: string,
