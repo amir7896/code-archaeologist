@@ -17,3 +17,11 @@ export const QUEUE_NAMES = {
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
+
+export const REPOSITORY_SYNC_JOB = 'sync';
+
+export type RepositorySyncJobData = {
+  repositoryId: string;
+  analysisRunId: string;
+  workspaceId: string;
+};

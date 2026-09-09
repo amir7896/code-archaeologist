@@ -23,5 +23,7 @@ Copy `.env.example` to `.env`. The API and worker validate environment variables
 | `JWT_REFRESH_SECRET` | local-dev placeholder (32+ chars) | Refresh-token signing secret |
 | `JWT_ACCESS_TTL` | `15m` | Access token lifetime |
 | `JWT_REFRESH_TTL_DAYS` | `7` | Refresh session lifetime in days |
+| `CREDENTIALS_ENCRYPTION_KEY` | local-dev placeholder (32+ chars) | Encrypts repository tokens. Keep this out of the database. |
+| `REPOSITORY_WORK_DIR` | OS temp dir | Isolated clone directory for the worker |
 
-GitHub OAuth and credential-encryption keys are added in later phases. Do not log secrets.
+GitHub OAuth is later. Do not log secrets.

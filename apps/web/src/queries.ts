@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi, workspaceApi, type AuthSession } from './api';
+import { authApi, repositoryApi, workspaceApi, type AuthSession } from './api';
 import { sessionCleared, sessionEstablished } from './store/auth-slice';
 import { useAppDispatch } from './store/hooks';
 import { type AppDispatch } from './store/store';
@@ -10,6 +10,9 @@ export const queryKeys = {
   workspace: (id: string) => ['workspaces', id] as const,
   members: (id: string) => ['workspaces', id, 'members'] as const,
   auditLogs: (id: string) => ['workspaces', id, 'audit'] as const,
+  repositories: (workspaceId: string) => ['workspaces', workspaceId, 'repositories'] as const,
+  repository: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId] as const,
 };
 
 export function useWorkspacesQuery() {
@@ -151,6 +154,97 @@ export function useRemoveMemberMutation(workspaceId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.workspaces }),
         queryClient.invalidateQueries({ queryKey: queryKeys.auditLogs(workspaceId) }),
       ]);
+    },
+  });
+}
+
+export function useRepositoriesQuery(workspaceId: string) {
+  return useQuery({
+    queryKey: queryKeys.repositories(workspaceId),
+    queryFn: () => repositoryApi.list(workspaceId),
+    enabled: Boolean(workspaceId),
+  });
+}
+
+export function useRepositoryQuery(workspaceId: string, repositoryId: string) {
+  return useQuery({
+    queryKey: queryKeys.repository(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.status(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      const runStatus = query.state.data?.latestRun?.status;
+      return status === 'PENDING' ||
+        status === 'SYNCING' ||
+        runStatus === 'QUEUED' ||
+        runStatus === 'RUNNING'
+        ? 2000
+        : false;
+    },
+  });
+}
+
+export function useCreateRepositoryMutation(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      url: string;
+      name?: string;
+      defaultBranch?: string;
+      credential?: { type: 'HTTPS_TOKEN'; secret: string };
+    }) => repositoryApi.create(workspaceId, body),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.repositories(workspaceId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.auditLogs(workspaceId) }),
+      ]);
+    },
+  });
+}
+
+export function useUpdateRepositoryMutation(workspaceId: string, repositoryId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      name?: string;
+      defaultBranch?: string;
+      credential?: { type: 'HTTPS_TOKEN'; secret: string };
+      removeCredential?: boolean;
+    }) => repositoryApi.update(workspaceId, repositoryId, body),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.repository(workspaceId, repositoryId),
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.repositories(workspaceId) }),
+      ]);
+    },
+  });
+}
+
+export function useSyncRepositoryMutation(workspaceId: string, repositoryId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (revision?: string) =>
+      repositoryApi.sync(workspaceId, repositoryId, revision ? { revision } : {}),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.repository(workspaceId, repositoryId),
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.repositories(workspaceId) }),
+      ]);
+    },
+  });
+}
+
+export function useDeleteRepositoryMutation(workspaceId: string, repositoryId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => repositoryApi.remove(workspaceId, repositoryId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories(workspaceId) });
+      queryClient.removeQueries({ queryKey: queryKeys.repository(workspaceId, repositoryId) });
     },
   });
 }

@@ -34,4 +34,26 @@ export const inviteMemberSchema = Yup.object({
 export type LoginValues = Yup.InferType<typeof loginSchema>;
 export type RegisterValues = Yup.InferType<typeof registerSchema>;
 export type WorkspaceNameValues = Yup.InferType<typeof workspaceNameSchema>;
+export const createRepositorySchema = Yup.object({
+  url: Yup.string()
+    .trim()
+    .required('Repository URL is required')
+    .matches(/^https:\/\//i, 'Use an HTTPS Git URL')
+    .max(500, 'URL must be at most 500 characters'),
+  name: Yup.string().trim().max(80, 'Name must be at most 80 characters'),
+  defaultBranch: Yup.string().trim().max(120, 'Branch must be at most 120 characters'),
+  token: Yup.string().trim().max(4096, 'Token is too long'),
+});
+
+export const repositorySettingsSchema = Yup.object({
+  name: Yup.string()
+    .trim()
+    .required('Name is required')
+    .max(80, 'Name must be at most 80 characters'),
+  defaultBranch: Yup.string().trim().max(120, 'Branch must be at most 120 characters'),
+  token: Yup.string().trim().max(4096, 'Token is too long'),
+});
+
 export type InviteMemberValues = Yup.InferType<typeof inviteMemberSchema>;
+export type CreateRepositoryValues = Yup.InferType<typeof createRepositorySchema>;
+export type RepositorySettingsValues = Yup.InferType<typeof repositorySettingsSchema>;

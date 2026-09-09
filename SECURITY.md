@@ -19,7 +19,7 @@ Please include:
 
 ## Product rules that matter for security
 
-- Repository credentials are stored only through an encrypted secret abstraction (Phase 2).
+- Repository credentials are stored only through an encrypted secret abstraction. The encryption key stays in environment configuration, not in the database.
 - Tokens, passwords, and secrets must never be logged.
 - Analysis must not execute repository code. Parsing and static inspection are the default.
 - Hosted AI providers must be disclosed when source leaves the machine. Local Ollama is the default.

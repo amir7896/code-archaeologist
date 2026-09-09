@@ -1,5 +1,7 @@
 // Code Archaeologist data model.
-// Phase 1 adds identity tables. Remaining tables follow the project scope later.
+// Phase 2 adds repositories, encrypted credentials, and analysis runs.
+// Entity ids are PostgreSQL UUIDs. schema_meta.id stays a stable string.
+// Remaining tables follow the project scope later.
 // JSONB is reserved for variable metadata. pgvector is not enabled until embeddings are on.
 
 generator client {
@@ -16,7 +18,7 @@ datasource db {
 
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("1-identity")
+  phase     String   @default("2-ingestion")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")
@@ -44,8 +46,50 @@ enum MembershipStatus {
   INVITED
 }
 
+enum RepositoryProvider {
+  GITHUB
+  GITLAB
+  BITBUCKET
+  GENERIC
+}
+
+enum RepositoryStatus {
+  PENDING
+  SYNCING
+  READY
+  FAILED
+}
+
+enum CredentialType {
+  HTTPS_TOKEN
+}
+
+enum AnalysisRunType {
+  INGESTION
+}
+
+enum AnalysisRunStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum AnalysisTaskType {
+  CLONE
+  DETECT_REVISION
+}
+
+enum AnalysisTaskStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
 model User {
-  id           String     @id @default(cuid())
+  id           String     @id @default(uuid()) @db.Uuid
   email        String     @unique
   passwordHash String     @map("password_hash")
   name         String
@@ -62,27 +106,28 @@ model User {
 }
 
 model Workspace {
-  id        String          @id @default(cuid())
+  id        String          @id @default(uuid()) @db.Uuid
   name      String
   slug      String          @unique
-  ownerId   String          @map("owner_id")
+  ownerId   String          @map("owner_id") @db.Uuid
   settings  Json            @default("{}")
   status    WorkspaceStatus @default(ACTIVE)
   deletedAt DateTime?       @map("deleted_at")
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
-  owner     User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  members   WorkspaceMember[]
-  auditLogs AuditLog[]
+  owner        User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members      WorkspaceMember[]
+  auditLogs    AuditLog[]
+  repositories Repository[]
 
   @@index([ownerId])
   @@map("workspaces")
 }
 
 model WorkspaceMember {
-  workspaceId String           @map("workspace_id")
-  userId      String           @map("user_id")
+  workspaceId String           @map("workspace_id") @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
   role        WorkspaceRole
   status      MembershipStatus @default(ACTIVE)
   createdAt   DateTime         @default(now()) @map("created_at")
@@ -97,8 +142,8 @@ model WorkspaceMember {
 }
 
 model Session {
-  id               String    @id @default(cuid())
-  userId           String    @map("user_id")
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
   refreshTokenHash String    @unique @map("refresh_token_hash")
   expiresAt        DateTime  @map("expires_at")
   revokedAt        DateTime? @map("revoked_at")
@@ -111,9 +156,9 @@ model Session {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  workspaceId String?  @map("workspace_id")
-  userId      String?  @map("user_id")
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String?  @map("workspace_id") @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
   action      String
   resource    String
   metadata    Json     @default("{}")
@@ -127,9 +172,87 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model Repository {
+  id              String             @id @default(uuid()) @db.Uuid
+  workspaceId     String             @map("workspace_id") @db.Uuid
+  name            String
+  url             String
+  provider        RepositoryProvider
+  defaultBranch   String?            @map("default_branch")
+  currentRevision String?            @map("current_revision")
+  settings        Json               @default("{}")
+  status          RepositoryStatus   @default(PENDING)
+  lastError       String?            @map("last_error")
+  lastSyncedAt    DateTime?          @map("last_synced_at")
+  deletedAt       DateTime?          @map("deleted_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  workspace    Workspace             @relation(fields: [workspaceId], references: [id])
+  credential   RepositoryCredential?
+  analysisRuns AnalysisRun[]
+
+  @@index([workspaceId, createdAt])
+  @@index([status])
+  @@map("repositories")
+}
+
+model RepositoryCredential {
+  id                 String         @id @default(uuid()) @db.Uuid
+  repositoryId       String         @unique @map("repository_id") @db.Uuid
+  encryptedSecretRef String         @unique @map("encrypted_secret_ref")
+  type               CredentialType
+  encryptedPayload   String         @map("encrypted_payload")
+  keyVersion         Int            @default(1) @map("key_version")
+  rotatedAt          DateTime?      @map("rotated_at")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  repository Repository @relation(fields: [repositoryId], references: [id])
+
+  @@map("repository_credentials")
+}
+
+model AnalysisRun {
+  id           String            @id @default(uuid()) @db.Uuid
+  repositoryId String            @map("repository_id") @db.Uuid
+  revision     String?
+  type         AnalysisRunType
+  status       AnalysisRunStatus @default(QUEUED)
+  progress     Int               @default(0)
+  error        String?
+  startedAt    DateTime?         @map("started_at")
+  finishedAt   DateTime?         @map("finished_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  repository Repository     @relation(fields: [repositoryId], references: [id])
+  tasks      AnalysisTask[]
+
+  @@index([repositoryId, createdAt])
+  @@index([status])
+  @@map("analysis_runs")
+}
+
+model AnalysisTask {
+  id            String             @id @default(uuid()) @db.Uuid
+  analysisRunId String             @map("analysis_run_id") @db.Uuid
+  taskType      AnalysisTaskType   @map("task_type")
+  status        AnalysisTaskStatus @default(PENDING)
+  attempts      Int                @default(0)
+  error         String?
+  startedAt     DateTime?          @map("started_at")
+  finishedAt    DateTime?          @map("finished_at")
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  run AnalysisRun @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+
+  @@index([analysisRunId])
+  @@map("analysis_tasks")
+}
+
 // Planned later:
-// repositories, repository_credentials, branches, commits, commit_files, files,
+// branches, commits, commit_files, files,
 // symbols, symbol_versions, graph_edges, developers, issues, pull_requests,
-// reviews, analysis_runs, analysis_tasks, metrics_snapshots, risk_scores,
+// reviews, metrics_snapshots, risk_scores,
 // documents, document_chunks, investigations, investigation_evidence,
 // investigation_messages, integrations, webhook_events

@@ -6,7 +6,7 @@ Thank you for contributing to Code Archaeologist.
 
 Follow the project scope. Do not start with the chatbot. The graph and evidence engine are the product; the AI layer is an interface over that foundation.
 
-Current work is **Phase 1 — Identity**. Next is repositories and ingestion (PDF Phase 2). Do not start with the chatbot.
+Current work is **Phase 2 — Repository ingestion**. Next is the Git history engine (PDF Phase 3). Do not start with the chatbot.
 
 ## Setup
 

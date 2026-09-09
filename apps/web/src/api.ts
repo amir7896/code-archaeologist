@@ -78,7 +78,10 @@ export function configureTokenStore(store: TokenStore): void {
   tokenStore = store;
 }
 
-export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  init: RequestInit & { json?: unknown } = {},
+): Promise<T> {
   const response = await request(path, init);
   if (response.status === 401 && tokenStore.get()?.refreshToken) {
     const refreshed = await refreshTokens();
@@ -98,6 +101,42 @@ export const authApi = {
   me: () => api<User>('/me'),
 };
 
+export type AnalysisTask = {
+  id: string;
+  taskType: string;
+  status: string;
+  attempts: number;
+  error: string | null;
+};
+
+export type AnalysisRun = {
+  id: string;
+  revision: string | null;
+  type: string;
+  status: string;
+  progress: number;
+  error: string | null;
+  createdAt: string;
+  tasks: AnalysisTask[];
+};
+
+export type Repository = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  url: string;
+  provider: string;
+  defaultBranch: string | null;
+  currentRevision: string | null;
+  status: string;
+  hasCredential: boolean;
+  lastError: string | null;
+  lastSyncedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  latestRun: AnalysisRun | null;
+};
+
 export const workspaceApi = {
   list: () => api<Paginated<Workspace>>('/workspaces'),
   create: (name: string) => api<Workspace>('/workspaces', { method: 'POST', json: { name } }),
@@ -113,6 +152,47 @@ export const workspaceApi = {
   removeMember: (id: string, userId: string) =>
     api<{ status: string }>(`/workspaces/${id}/members/${userId}`, { method: 'DELETE' }),
   auditLogs: (id: string) => api<Paginated<AuditEvent>>(`/workspaces/${id}/audit-logs`),
+};
+
+export const repositoryApi = {
+  list: (workspaceId: string) =>
+    api<Paginated<Repository>>(`/workspaces/${workspaceId}/repositories`),
+  create: (
+    workspaceId: string,
+    body: {
+      url: string;
+      name?: string;
+      defaultBranch?: string;
+      credential?: { type: 'HTTPS_TOKEN'; secret: string };
+    },
+  ) => api<Repository>(`/workspaces/${workspaceId}/repositories`, { method: 'POST', json: body }),
+  get: (workspaceId: string, repositoryId: string) =>
+    api<Repository>(`/workspaces/${workspaceId}/repositories/${repositoryId}`),
+  status: (workspaceId: string, repositoryId: string) =>
+    api<Repository>(`/workspaces/${workspaceId}/repositories/${repositoryId}/status`),
+  update: (
+    workspaceId: string,
+    repositoryId: string,
+    body: {
+      name?: string;
+      defaultBranch?: string;
+      credential?: { type: 'HTTPS_TOKEN'; secret: string };
+      removeCredential?: boolean;
+    },
+  ) =>
+    api<Repository>(`/workspaces/${workspaceId}/repositories/${repositoryId}`, {
+      method: 'PATCH',
+      json: body,
+    }),
+  remove: (workspaceId: string, repositoryId: string) =>
+    api<{ status: string }>(`/workspaces/${workspaceId}/repositories/${repositoryId}`, {
+      method: 'DELETE',
+    }),
+  sync: (workspaceId: string, repositoryId: string, body?: { revision?: string }) =>
+    api<Repository>(`/workspaces/${workspaceId}/repositories/${repositoryId}/sync`, {
+      method: 'POST',
+      json: body ?? {},
+    }),
 };
 
 async function refreshTokens(): Promise<boolean> {
@@ -165,7 +245,10 @@ async function parseResponse<T>(response: Response): Promise<T> {
   };
   if (!response.ok) {
     const detail = body.details?.map((item) => item.message).join(' ');
-    const message = detail || (Array.isArray(body.message) ? body.message.join(' ') : body.message) || 'Request failed';
+    const message =
+      detail ||
+      (Array.isArray(body.message) ? body.message.join(' ') : body.message) ||
+      'Request failed';
     throw new ApiError(response.status, message, body.code);
   }
   return body as T;

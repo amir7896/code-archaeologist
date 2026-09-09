@@ -11,6 +11,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.createApplicationContext(WorkerModule);
   const runtime = app.get(WorkerRuntimeService);
   const health = await runtime.check();
+  await runtime.start();
   const logger = new Logger('Worker');
   logger.log(
     `${APP_NAME} worker ready (concurrency=${env.WORKER_CONCURRENCY}). Queues registered: ${Object.values(QUEUE_NAMES).join(', ')}`,
