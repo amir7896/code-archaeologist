@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json --watch --preserveWatchOutput",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/env.test.ts src/graph.test.ts src/queues.test.ts src/risk.test.ts src/roles.test.ts"
+    "test": "node --import tsx --test src/env.test.ts src/graph.test.ts src/impact.test.ts src/queues.test.ts src/resolve-import.test.ts src/risk.test.ts src/roles.test.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

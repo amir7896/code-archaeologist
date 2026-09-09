@@ -5,7 +5,7 @@ import { PageFrame } from '../components/PageFrame';
 import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage } from '../lib/errors';
 import { formatTask, formatWhen, shortRevision } from '../lib/format';
-import { repositoryCodePath, repositoryDnaPath, repositoryGraphPath, repositoryHistoryPath, workspacePath } from '../lib/paths';
+import { repositoryCodePath, repositoryDnaPath, repositoryGraphPath, repositoryHistoryPath, repositoryImpactPath, workspacePath } from '../lib/paths';
 import {
   useDeleteRepositoryMutation,
   useRepositoryQuery,
@@ -122,6 +122,14 @@ export function RepositoryOverviewPage() {
           >
             <p className={muted}>Code DNA</p>
             <p className="mt-2 text-lg font-semibold text-zinc-950">Risk and history</p>
+          </button>
+          <button
+            className={`${card} p-5 text-left transition hover:border-indigo-200`}
+            type="button"
+            onClick={() => navigate(repositoryImpactPath(repo.workspaceId, repo.repositoryId))}
+          >
+            <p className={muted}>Impact</p>
+            <p className="mt-2 text-lg font-semibold text-zinc-950">What would change</p>
           </button>
         </div>
 

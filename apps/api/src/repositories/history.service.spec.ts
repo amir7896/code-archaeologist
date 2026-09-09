@@ -16,13 +16,14 @@ describe('HistoryService', () => {
           isMerge: false,
           files: [
             {
+              fileId: 'file-1',
               newPath: 'src/auth.ts',
               oldPath: null,
               changeType: 'ADDED',
               additions: 12,
               deletions: 0,
               similarity: null,
-              file: { language: 'typescript' },
+              file: { id: 'file-1', language: 'typescript' },
             },
           ],
         }),
@@ -32,7 +33,7 @@ describe('HistoryService', () => {
     const commit = await service.getCommit('ws-1', 'repo-1', 'abc123');
     expect(commit.sha).toBe('abc123');
     expect(commit.additions).toBe(12);
-    expect(commit.files[0]).toMatchObject({ path: 'src/auth.ts', changeType: 'ADDED' });
+    expect(commit.files[0]).toMatchObject({ path: 'src/auth.ts', changeType: 'ADDED', fileId: 'file-1' });
   });
 
   it('404s when a commit is missing', async () => {

@@ -10,14 +10,16 @@ import {
   formatWhen,
   shortRevision,
 } from '../lib/format';
-import { repositoryCodePath } from '../lib/paths';
+import { repositoryCodePath, repositoryDnaPath, repositoryImpactPath } from '../lib/paths';
 import {
   useBranchesQuery,
   useCommitQuery,
   useCommitsQuery,
   useFileHistoryQuery,
+  useSourcePreviewQuery,
 } from '../queries';
 import { fieldClass, muted, secondaryButton } from '../ui';
+import type { RepoCommitFile } from '../api';
 
 export function HistoryExplorerPage() {
   const { workspaceId = '', repositoryId = '' } = useParams();
@@ -25,6 +27,7 @@ export function HistoryExplorerPage() {
   const branch = params.get('branch') ?? '';
   const commit = params.get('commit') ?? '';
   const path = params.get('path') ?? '';
+  const selectedFile = params.get('file') ?? '';
   const page = Number(params.get('page') || '1') || 1;
   const [draft, setDraft] = useState(path);
   const selected = Boolean(commit || path);
@@ -33,16 +36,20 @@ export function HistoryExplorerPage() {
     setDraft(path);
   }, [path]);
 
-  function setQuery(next: { commit?: string; path?: string; branch?: string; page?: number }) {
+  function setQuery(next: { commit?: string; path?: string; file?: string; branch?: string; page?: number }) {
     const search = new URLSearchParams();
-    const nextBranch = next.branch ?? (branch || undefined);
-    const nextPath = next.path ?? (path || undefined);
-    const nextCommit = next.commit;
+    const nextBranch = next.branch !== undefined ? next.branch : branch;
+    const nextPath = next.path !== undefined ? next.path : path;
+    const nextFile = next.file !== undefined ? next.file : selectedFile;
+    const nextCommit = next.commit !== undefined ? next.commit : commit;
     if (nextBranch) {
       search.set('branch', nextBranch);
     }
     if (nextPath) {
       search.set('path', nextPath);
+    }
+    if (nextFile) {
+      search.set('file', nextFile);
     }
     if (nextCommit) {
       search.set('commit', nextCommit);
@@ -68,7 +75,7 @@ export function HistoryExplorerPage() {
             workspaceId={workspaceId}
             repositoryId={repositoryId}
             branch={branch}
-            onChange={(value) => setQuery({ branch: value || undefined, path: path || undefined })}
+            onChange={(value) => setQuery({ branch: value, commit: '' })}
           />
           <input
             className={fieldClass()}
@@ -109,7 +116,7 @@ export function HistoryExplorerPage() {
           <button
             className="m-4 text-sm font-medium text-indigo-600 hover:text-indigo-500 md:hidden"
             type="button"
-            onClick={() => setQuery({ branch: branch || undefined, path: path || undefined })}
+            onClick={() => setQuery({ commit: '' })}
           >
             ← Back to list
           </button>
@@ -119,8 +126,9 @@ export function HistoryExplorerPage() {
             workspaceId={workspaceId}
             repositoryId={repositoryId}
             sha={commit}
-            onOpenCommit={(sha) => setQuery({ commit: sha, branch: branch || undefined, path: path || undefined })}
-            onOpenPath={(nextPath) => setQuery({ path: nextPath, branch: branch || undefined })}
+            selectedPath={selectedFile}
+            onOpenCommit={(sha) => setQuery({ commit: sha })}
+            onOpenPath={(nextPath) => setQuery({ file: nextPath })}
           />
         ) : (
           <div className="flex h-full items-center justify-center p-8">
@@ -272,12 +280,14 @@ function CommitDetail({
   workspaceId,
   repositoryId,
   sha,
+  selectedPath,
   onOpenCommit,
   onOpenPath,
 }: {
   workspaceId: string;
   repositoryId: string;
   sha: string;
+  selectedPath: string;
   onOpenCommit: (sha: string) => void;
   onOpenPath: (path: string) => void;
 }) {
@@ -325,6 +335,12 @@ function CommitDetail({
               </ul>
             </div>
           ) : null}
+          <ChangedFilePreview
+            workspaceId={workspaceId}
+            repositoryId={repositoryId}
+            selectedPath={selectedPath}
+            files={commit.files}
+          />
           <div>
             <h2 className="text-sm font-semibold text-zinc-900">Changed files</h2>
             {commit.files.length === 0 ? (
@@ -334,7 +350,9 @@ function CommitDetail({
                 {commit.files.map((file) => (
                   <li
                     key={`${file.changeType}-${file.path}`}
-                    className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                    className={`flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 ${
+                      selectedPath === file.path ? 'rounded-lg bg-indigo-50 px-3' : ''
+                    }`}
                   >
                     <div>
                       <button
@@ -356,18 +374,80 @@ function CommitDetail({
               </ul>
             )}
             <p className={`mt-4 ${muted}`}>
-              Open{' '}
-              <Link
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-                to={repositoryCodePath(workspaceId, repositoryId)}
-              >
-                Code
-              </Link>{' '}
-              to inspect the current tree, or enter a path to follow one file through history.
+              Click a file to preview the current tree and follow it through history.
             </p>
           </div>
         </>
       ) : null}
     </div>
+  );
+}
+
+function ChangedFilePreview({
+  workspaceId,
+  repositoryId,
+  selectedPath,
+  files,
+}: {
+  workspaceId: string;
+  repositoryId: string;
+  selectedPath: string;
+  files: RepoCommitFile[];
+}) {
+  const selected = files.find((file) => file.path === selectedPath);
+  const fileId = selected?.fileId ?? '';
+  const previewQuery = useSourcePreviewQuery(workspaceId, repositoryId, fileId);
+  if (!selected) {
+    return null;
+  }
+
+  return (
+    <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+      <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Selected change</p>
+      <h2 className="mt-1 text-lg font-semibold text-zinc-950">{selected.path}</h2>
+      <p className={`mt-1 ${muted}`}>
+        {formatChange(selected.changeType)} · {formatDiffstat(selected.additions, selected.deletions)}
+        {selected.language ? ` · ${selected.language}` : ''}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-3 text-sm font-medium">
+        {fileId ? (
+          <>
+            <Link
+              className="text-indigo-600 hover:text-indigo-500"
+              to={repositoryCodePath(workspaceId, repositoryId, { file: fileId })}
+            >
+              Open in Code
+            </Link>
+            <Link
+              className="text-indigo-600 hover:text-indigo-500"
+              to={repositoryDnaPath(workspaceId, repositoryId, { file: fileId })}
+            >
+              Code DNA
+            </Link>
+            <Link
+              className="text-indigo-600 hover:text-indigo-500"
+              to={repositoryImpactPath(workspaceId, repositoryId, { file: fileId })}
+            >
+              Check impact
+            </Link>
+          </>
+        ) : null}
+      </div>
+      {selected.changeType === 'DELETED' ? (
+        <p className={`mt-4 ${muted}`}>This file was removed in this commit.</p>
+      ) : previewQuery.isPending ? (
+        <p className={`mt-4 ${muted}`}>Loading current source…</p>
+      ) : previewQuery.isError ? (
+        <p className={`mt-4 ${muted}`}>Current source is not available for this path.</p>
+      ) : previewQuery.data ? (
+        <>
+          <p className={`mt-4 ${muted}`}>Current tree — not the exact patch from this commit.</p>
+          <pre className="mt-2 overflow-x-auto rounded-xl bg-zinc-50 p-4 text-xs leading-5 text-zinc-800 ring-1 ring-zinc-200">
+            {previewQuery.data.content}
+          </pre>
+          {previewQuery.data.truncated ? <p className={`mt-2 ${muted}`}>Preview is truncated.</p> : null}
+        </>
+      ) : null}
+    </section>
   );
 }

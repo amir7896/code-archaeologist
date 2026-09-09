@@ -50,15 +50,28 @@ export function repositoryDnaPath(
   });
 }
 
+export function repositoryImpactPath(
+  workspaceId: string,
+  repositoryId: string,
+  query: { file?: string; symbol?: string; depth?: string } = {},
+): string {
+  return withQuery(`${repositoryPath(workspaceId, repositoryId)}/impact`, {
+    file: query.file,
+    symbol: query.symbol,
+    depth: query.depth,
+  });
+}
+
 export function repositoryHistoryPath(
   workspaceId: string,
   repositoryId: string,
-  query: { commit?: string; path?: string; branch?: string } = {},
+  query: { commit?: string; path?: string; branch?: string; file?: string } = {},
 ): string {
   return withQuery(`${repositoryPath(workspaceId, repositoryId)}/history`, {
     commit: query.commit,
     path: query.path,
     branch: query.branch,
+    file: query.file,
   });
 }
 

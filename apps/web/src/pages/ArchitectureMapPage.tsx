@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { PageFrame } from '../components/PageFrame';
 import { errorMessage } from '../lib/errors';
 import { shortRevision } from '../lib/format';
-import { repositoryCodePath, repositoryGraphPath } from '../lib/paths';
+import { repositoryCodePath, repositoryGraphPath, repositoryImpactPath } from '../lib/paths';
 import {
   useGraphDependenciesQuery,
   useGraphDependentsQuery,
@@ -314,12 +314,20 @@ function FileNeighbors({
     <div className="mt-5 border-t border-zinc-100 pt-5">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-zinc-900">This file</h3>
-        <Link
-          className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
-          to={repositoryCodePath(workspaceId, repositoryId, { file: fileId })}
-        >
-          Open in Code
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            to={repositoryCodePath(workspaceId, repositoryId, { file: fileId })}
+          >
+            Open in Code
+          </Link>
+          <Link
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            to={repositoryImpactPath(workspaceId, repositoryId, { file: fileId })}
+          >
+            Check impact
+          </Link>
+        </div>
       </div>
       <NeighborList title="Depends on" query={dependencies} />
       <NeighborList title="Used by" query={dependents} />

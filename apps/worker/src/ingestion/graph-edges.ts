@@ -1,3 +1,5 @@
+import { resolveImportPath } from '@code-archaeologist/shared';
+
 export type GraphNodeKind = 'FILE' | 'SYMBOL';
 
 export type GraphEdgeKind =
@@ -9,6 +11,11 @@ export type GraphEdgeKind =
   | 'EXTENDS'
   | 'IMPLEMENTS'
   | 'DEPENDS_ON';
+
+export type GraphFile = {
+  id: string;
+  path: string;
+};
 
 export type GraphSymbol = {
   id: string;
@@ -57,8 +64,13 @@ const EDGE_TYPES = new Set<GraphEdgeKind>([
 export function collectGraphEdges(input: {
   symbols: GraphSymbol[];
   relations: GraphRelation[];
+  files?: GraphFile[];
 }): GraphEdgeDraft[] {
   const symbolsById = new Map(input.symbols.map((symbol) => [symbol.id, symbol]));
+  const files = input.files ?? inferFiles(input.symbols);
+  const pathByFileId = new Map(files.map((file) => [file.id, file.path]));
+  const fileIdByPath = new Map(files.map((file) => [file.path, file.id]));
+  const knownPaths = new Set(files.map((file) => file.path));
   const edges = new Map<string, GraphEdgeDraft>();
 
   for (const symbol of input.symbols) {
@@ -107,16 +119,28 @@ export function collectGraphEdges(input: {
       confidence: clampConfidence(relation.confidence),
     });
 
-    if (target && FILE_DEPENDS_ON_FROM.has(type) && source.fileId !== target.fileId) {
-      addEdge(edges, {
-        sourceType: 'FILE',
-        sourceId: source.fileId,
-        targetType: 'FILE',
-        targetId: target.fileId,
-        targetKey: target.fileId,
-        type: 'DEPENDS_ON',
-        confidence: clampConfidence(relation.confidence),
-      });
+    if (FILE_DEPENDS_ON_FROM.has(type)) {
+      const targetFileId =
+        target && target.fileId !== source.fileId
+          ? target.fileId
+          : resolveImportedFileId(
+              source.fileId,
+              pathByFileId,
+              fileIdByPath,
+              knownPaths,
+              relation.targetQualifiedName,
+            );
+      if (targetFileId && targetFileId !== source.fileId) {
+        addEdge(edges, {
+          sourceType: 'FILE',
+          sourceId: source.fileId,
+          targetType: 'FILE',
+          targetId: targetFileId,
+          targetKey: targetFileId,
+          type: 'DEPENDS_ON',
+          confidence: clampConfidence(relation.confidence),
+        });
+      }
     }
   }
 
@@ -140,4 +164,29 @@ function clampConfidence(value: number): number {
     return 0;
   }
   return Math.min(1, Math.max(0, value));
+}
+
+function inferFiles(symbols: GraphSymbol[]): GraphFile[] {
+  const files = new Map<string, GraphFile>();
+  for (const symbol of symbols) {
+    if (!symbol.parentSymbolId && (symbol.qualifiedName.includes('/') || symbol.qualifiedName.includes('.'))) {
+      files.set(symbol.fileId, { id: symbol.fileId, path: symbol.qualifiedName });
+    }
+  }
+  return [...files.values()];
+}
+
+function resolveImportedFileId(
+  sourceFileId: string,
+  pathByFileId: Map<string, string>,
+  fileIdByPath: Map<string, string>,
+  knownPaths: Set<string>,
+  spec: string,
+): string | undefined {
+  const sourcePath = pathByFileId.get(sourceFileId);
+  if (!sourcePath) {
+    return undefined;
+  }
+  const targetPath = resolveImportPath(spec, sourcePath, knownPaths);
+  return targetPath ? fileIdByPath.get(targetPath) : undefined;
 }

@@ -82,6 +82,9 @@ export class CommitListResponseDto {
 }
 
 export class CommitFileResponseDto {
+  @ApiProperty({ type: String, required: false, nullable: true })
+  fileId!: string | null;
+
   @ApiProperty({ type: String })
   path!: string;
 

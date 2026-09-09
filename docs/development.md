@@ -70,6 +70,7 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/hotspots` | High churn + complexity files. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/risks` | Optional `level`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/health` | Risk summary counts. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/impact` | Deterministic blast radius. Requires `fileId` or `symbolId`. Optional `depth` (1–6). |
 
 ## API DTOs and ValidationPipe
 

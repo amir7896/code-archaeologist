@@ -287,6 +287,12 @@ export const repositoryApi = {
     api<{ items: InsightItem[] }>(
       `/workspaces/${workspaceId}/repositories/${repositoryId}/insights/risks${toQuery(query)}`,
     ),
+  impact: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { fileId?: string; symbolId?: string; depth?: number },
+  ) =>
+    api<ImpactAnalysis>(`/workspaces/${workspaceId}/repositories/${repositoryId}/impact${toQuery(query)}`),
 };
 
 export type RepoBranch = {
@@ -311,6 +317,7 @@ export type RepoCommit = {
 };
 
 export type RepoCommitFile = {
+  fileId?: string | null;
   path: string;
   oldPath: string | null;
   changeType: string;
@@ -498,6 +505,54 @@ export type DnaProfile = {
     message: string;
     authorName: string;
     committedAt: string;
+  }>;
+};
+
+export type ImpactNode = {
+  fileId: string;
+  path: string;
+  depth: number;
+  direction: string;
+  role: string;
+  module: string;
+  riskScore: number;
+  riskLevel: string;
+  complexity: number;
+  confidence: number;
+};
+
+export type ImpactAnalysis = {
+  revision: string | null;
+  depth: number;
+  origin: {
+    subjectType: string;
+    subjectId: string;
+    name: string;
+    path: string;
+    fileId: string;
+    symbolId: string | null;
+    riskScore: number;
+    riskLevel: string;
+  };
+  stats: {
+    affectedFileCount: number;
+    consumerCount: number;
+    dependencyCount: number;
+    testCount: number;
+    endpointCount: number;
+    moduleCount: number;
+    highRiskCount: number;
+    truncated: boolean;
+  };
+  consumers: ImpactNode[];
+  dependencies: ImpactNode[];
+  tests: ImpactNode[];
+  endpoints: ImpactNode[];
+  modules: Array<{
+    id: string;
+    path: string;
+    consumerCount: number;
+    dependencyCount: number;
   }>;
 };
 

@@ -41,6 +41,23 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'graph', 'dependencies', fileId, depth ?? 2] as const,
   graphDependents: (workspaceId: string, repositoryId: string, fileId: string, depth?: number) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'graph', 'dependents', fileId, depth ?? 2] as const,
+  impact: (
+    workspaceId: string,
+    repositoryId: string,
+    fileId?: string,
+    symbolId?: string,
+    depth?: number,
+  ) =>
+    [
+      'workspaces',
+      workspaceId,
+      'repositories',
+      repositoryId,
+      'impact',
+      fileId ?? '',
+      symbolId ?? '',
+      depth ?? 2,
+    ] as const,
   symbols: (
     workspaceId: string,
     repositoryId: string,
@@ -302,6 +319,9 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
         queryClient.invalidateQueries({
           queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'insights'],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'impact'],
+        }),
       ]);
     },
   });
@@ -465,6 +485,18 @@ export function useGraphDependentsQuery(
     queryKey: queryKeys.graphDependents(workspaceId, repositoryId, fileId, depth),
     queryFn: () => repositoryApi.graphDependents(workspaceId, repositoryId, { fileId, depth }),
     enabled: Boolean(workspaceId && repositoryId && fileId),
+  });
+}
+
+export function useImpactQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { fileId?: string; symbolId?: string; depth?: number } = {},
+) {
+  return useQuery({
+    queryKey: queryKeys.impact(workspaceId, repositoryId, query.fileId, query.symbolId, query.depth),
+    queryFn: () => repositoryApi.impact(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId && (query.fileId || query.symbolId)),
   });
 }
 
