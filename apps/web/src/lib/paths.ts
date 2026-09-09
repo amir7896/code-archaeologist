@@ -28,6 +28,17 @@ export function repositoryCodePath(
   });
 }
 
+export function repositoryGraphPath(
+  workspaceId: string,
+  repositoryId: string,
+  query: { module?: string; file?: string } = {},
+): string {
+  return withQuery(`${repositoryPath(workspaceId, repositoryId)}/graph`, {
+    module: query.module,
+    file: query.file,
+  });
+}
+
 export function repositoryHistoryPath(
   workspaceId: string,
   repositoryId: string,

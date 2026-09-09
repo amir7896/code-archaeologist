@@ -5,6 +5,7 @@ import { type AppEnv, type RepositorySyncJobData } from '@code-archaeologist/sha
 import { GitCliProvider } from './git-cli.provider';
 import { indexAst } from './index-ast';
 import { indexGitHistory } from './index-git-history';
+import { indexGraph } from './index-graph';
 
 type LoggerLike = {
   log(message: string): void;
@@ -19,12 +20,14 @@ export async function processRepositorySync(
     git?: GitProvider;
     indexHistory?: typeof indexGitHistory;
     parseAst?: typeof indexAst;
+    buildGraph?: typeof indexGraph;
     logger?: LoggerLike;
   },
 ): Promise<void> {
   const git = deps.git ?? new GitCliProvider();
   const indexHistory = deps.indexHistory ?? indexGitHistory;
   const parseAst = deps.parseAst ?? indexAst;
+  const buildGraph = deps.buildGraph ?? indexGraph;
   const { prisma, env } = deps;
   const run = await prisma.analysisRun.findUnique({
     where: { id: data.analysisRunId },
@@ -97,6 +100,19 @@ export async function processRepositorySync(
       },
     });
     await markTask(prisma, parseTask?.id, 'SUCCEEDED');
+
+    const graphTask = run.tasks.find((task) => task.taskType === 'BUILD_GRAPH');
+    await markTask(prisma, graphTask?.id, 'RUNNING');
+    await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 96 } });
+    await buildGraph({
+      prisma,
+      repositoryId: run.repositoryId,
+      revision: currentRevision,
+      onProgress: async (progress) => {
+        await prisma.analysisRun.update({ where: { id: run.id }, data: { progress } });
+      },
+    });
+    await markTask(prisma, graphTask?.id, 'SUCCEEDED');
 
     await prisma.repository.update({
       where: { id: run.repositoryId },

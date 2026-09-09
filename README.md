@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **Phase 4 — AST engine**: repositories are cloned, Git history is indexed, and TypeScript/JavaScript symbols are extracted for browse and search. The knowledge graph is next.
+This repository is at **Phase 5 — Graph engine**: repositories are cloned, Git history is indexed, symbols are extracted, and a derived architecture graph (dependencies, dependents, cycles) is available in the dashboard.
 
 ## Requirements
 

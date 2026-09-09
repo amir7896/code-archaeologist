@@ -5,7 +5,7 @@ import { PageFrame } from '../components/PageFrame';
 import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage } from '../lib/errors';
 import { formatTask, formatWhen, shortRevision } from '../lib/format';
-import { repositoryCodePath, repositoryHistoryPath, workspacePath } from '../lib/paths';
+import { repositoryCodePath, repositoryGraphPath, repositoryHistoryPath, workspacePath } from '../lib/paths';
 import {
   useDeleteRepositoryMutation,
   useRepositoryQuery,
@@ -82,7 +82,7 @@ export function RepositoryOverviewPage() {
 
         {repository.lastError ? <p className={errorText}>{repository.lastError}</p> : null}
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <button
             className={`${card} p-5 text-left transition hover:border-indigo-200`}
             type="button"
@@ -106,6 +106,14 @@ export function RepositoryOverviewPage() {
           >
             <p className={muted}>Commits</p>
             <p className="mt-2 text-2xl font-semibold text-zinc-950">{repository.commitCount ?? 0}</p>
+          </button>
+          <button
+            className={`${card} p-5 text-left transition hover:border-indigo-200`}
+            type="button"
+            onClick={() => navigate(repositoryGraphPath(repo.workspaceId, repo.repositoryId))}
+          >
+            <p className={muted}>Architecture</p>
+            <p className="mt-2 text-lg font-semibold text-zinc-950">Dependency map</p>
           </button>
         </div>
 

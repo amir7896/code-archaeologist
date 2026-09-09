@@ -134,6 +134,7 @@ export type Repository = {
   fileCount?: number;
   symbolCount?: number;
   lastParsedRevision?: string | null;
+  lastGraphRevision?: string | null;
   status: string;
   hasCredential: boolean;
   lastError: string | null;
@@ -249,6 +250,26 @@ export const repositoryApi = {
     api<SourceSymbolDetail>(
       `/workspaces/${workspaceId}/repositories/${repositoryId}/code/symbols/${symbolId}`,
     ),
+  graph: (workspaceId: string, repositoryId: string) =>
+    api<GraphMap>(`/workspaces/${workspaceId}/repositories/${repositoryId}/graph`),
+  graphDependencies: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { fileId: string; depth?: number },
+  ) =>
+    api<GraphNeighbors>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/graph/dependencies${toQuery(query)}`,
+    ),
+  graphDependents: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { fileId: string; depth?: number },
+  ) =>
+    api<GraphNeighbors>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/graph/dependents${toQuery(query)}`,
+    ),
+  graphCycles: (workspaceId: string, repositoryId: string) =>
+    api<GraphCycles>(`/workspaces/${workspaceId}/repositories/${repositoryId}/graph/cycles`),
 };
 
 export type RepoBranch = {
@@ -345,6 +366,56 @@ export type SourceSymbolDetail = SourceSymbol & {
     targetSymbolId: string | null;
     confidence: number;
   }>;
+};
+
+export type GraphMapFile = {
+  id: string;
+  path: string;
+};
+
+export type GraphModule = {
+  id: string;
+  path: string;
+  fileCount: number;
+  fanIn: number;
+  fanOut: number;
+  inCycle: boolean;
+  files: GraphMapFile[];
+};
+
+export type GraphMapEdge = {
+  sourceId: string;
+  targetId: string;
+  type: string;
+  weight: number;
+  confidence: number;
+};
+
+export type GraphMap = {
+  revision: string | null;
+  modules: GraphModule[];
+  edges: GraphMapEdge[];
+  cycles: Array<{ id: string; nodes: string[] }>;
+  stats: {
+    fileCount: number;
+    moduleCount: number;
+    edgeCount: number;
+    cycleCount: number;
+    unresolvedImportCount: number;
+  };
+};
+
+export type GraphNeighbors = {
+  fileId: string;
+  path: string;
+  direction: string;
+  depth: number;
+  items: Array<{ fileId: string; path: string; depth: number }>;
+};
+
+export type GraphCycles = {
+  modules: Array<{ id: string; nodes: string[] }>;
+  files: Array<{ id: string; nodes: GraphMapFile[] }>;
 };
 
 function toQuery(query?: Record<string, string | number | undefined>): string {

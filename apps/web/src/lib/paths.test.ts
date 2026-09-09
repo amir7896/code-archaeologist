@@ -1,4 +1,4 @@
-import { repositoryCodePath, repositoryHistoryPath, workspacePath } from './paths';
+import { repositoryCodePath, repositoryGraphPath, repositoryHistoryPath, workspacePath } from './paths';
 
 describe('paths', () => {
   it('keeps product routes short and puts details in the query', () => {
@@ -8,6 +8,9 @@ describe('paths', () => {
     );
     expect(repositoryHistoryPath('ws-1', 'repo-1', { commit: 'abc', path: 'app.py' })).toBe(
       '/work-space/ws-1/repository/repo-1/history?commit=abc&path=app.py',
+    );
+    expect(repositoryGraphPath('ws-1', 'repo-1', { module: 'app', file: 'file-1' })).toBe(
+      '/work-space/ws-1/repository/repo-1/graph?module=app&file=file-1',
     );
   });
 });

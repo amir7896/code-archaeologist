@@ -81,6 +81,7 @@ enum AnalysisTaskType {
   DETECT_REVISION
   INDEX_HISTORY
   PARSE_AST
+  BUILD_GRAPH
 }
 
 enum SymbolKind {
@@ -103,6 +104,27 @@ enum SymbolRelationType {
   REFERENCES
   EXTENDS
   IMPLEMENTS
+}
+
+enum GraphNodeType {
+  FILE
+  SYMBOL
+  MODULE
+}
+
+enum GraphEdgeType {
+  CONTAINS
+  IMPORTS
+  EXPORTS
+  CALLS
+  REFERENCES
+  EXTENDS
+  IMPLEMENTS
+  DEPENDS_ON
+}
+
+enum GraphEvidence {
+  AST
 }
 
 enum FileChangeType {
@@ -214,6 +236,7 @@ model Repository {
   currentRevision     String?            @map("current_revision")
   lastIndexedRevision String?            @map("last_indexed_revision")
   lastParsedRevision  String?            @map("last_parsed_revision")
+  lastGraphRevision   String?            @map("last_graph_revision")
   settings            Json               @default("{}")
   status              RepositoryStatus   @default(PENDING)
   lastError           String?            @map("last_error")
@@ -229,6 +252,7 @@ model Repository {
   branches     Branch[]
   commits      Commit[]
   files        RepoFile[]
+  graphEdges   GraphEdge[]
 
   @@index([workspaceId, createdAt])
   @@index([status])
@@ -451,8 +475,32 @@ model SymbolRelation {
   @@map("symbol_relations")
 }
 
+model GraphEdge {
+  id            String         @id @default(uuid()) @db.Uuid
+  repositoryId  String         @map("repository_id") @db.Uuid
+  sourceType    GraphNodeType  @map("source_type")
+  sourceId      String         @map("source_id")
+  targetType    GraphNodeType  @map("target_type")
+  targetId      String?        @map("target_id")
+  targetKey     String         @map("target_key")
+  type          GraphEdgeType  @map("edge_type")
+  confidence    Float
+  evidence      GraphEvidence  @default(AST)
+  firstRevision String         @map("first_revision")
+  lastRevision  String         @map("last_revision")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, sourceType, sourceId, type, targetType, targetKey], map: "graph_edges_unique")
+  @@index([repositoryId, type], map: "graph_edges_repo_type_idx")
+  @@index([sourceId], map: "graph_edges_source_idx")
+  @@index([targetId], map: "graph_edges_target_idx")
+  @@map("graph_edges")
+}
+
 // Planned later:
-// symbol_versions, graph_edges, issues, pull_requests,
+// symbol_versions, issues, pull_requests,
 // reviews, metrics_snapshots, risk_scores,
 // documents, document_chunks, investigations, investigation_evidence,
 // investigation_messages, integrations, webhook_events
