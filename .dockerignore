@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+**/dist
+**/coverage
+.git
+.github
+.env
+*.md
+docs
+examples
+.cursor
+**/.turbo
+**/coverage
+apps/web/dist
+Code_Archaeologist_Full_Project_Scope.pdf

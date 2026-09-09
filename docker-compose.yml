@@ -1,0 +1,122 @@
+name: code-archaeologist
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: code-archaeologist-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-codearch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codearch}
+      POSTGRES_DB: ${POSTGRES_DB:-code_archaeologist}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-codearch} -d ${POSTGRES_DB:-code_archaeologist}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: code-archaeologist-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/api.Dockerfile
+    container_name: code-archaeologist-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      API_PORT: 3000
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-codearch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codearch}
+      POSTGRES_DB: ${POSTGRES_DB:-code_archaeologist}
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:5173}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: ["full"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/worker.Dockerfile
+    container_name: code-archaeologist-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-codearch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-codearch}
+      POSTGRES_DB: ${POSTGRES_DB:-code_archaeologist}
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+    profiles: ["full"]
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    container_name: code-archaeologist-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    profiles: ["full"]
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: code-archaeologist-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    profiles: ["ai"]
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:

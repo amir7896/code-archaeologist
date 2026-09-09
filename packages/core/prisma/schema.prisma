@@ -1,0 +1,32 @@
+// Code Archaeologist — Phase 0 foundation schema.
+// Identity tables (users, workspaces, memberships) land in Phase 1.
+// Remaining tables follow the project scope data model in later phases.
+// JSONB is reserved for variable metadata. pgvector is not enabled until embeddings are on.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma requires a URL. Scripts and the app build this at runtime from
+  // POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT.
+  url      = env("DATABASE_URL")
+}
+
+/// Installation marker so Phase 0 can prove migrations work without product tables.
+model SchemaMeta {
+  id        String   @id @default("code-archaeologist")
+  phase     String   @default("0-foundation")
+  appliedAt DateTime @default(now()) @map("applied_at")
+
+  @@map("schema_meta")
+}
+
+// Planned tables (do not create yet):
+// users, workspaces, workspace_members, repositories, repository_credentials,
+// branches, commits, commit_files, files, symbols, symbol_versions, graph_edges,
+// developers, issues, pull_requests, reviews, analysis_runs, analysis_tasks,
+// metrics_snapshots, risk_scores, documents, document_chunks, investigations,
+// investigation_evidence, investigation_messages, integrations, webhook_events, audit_logs

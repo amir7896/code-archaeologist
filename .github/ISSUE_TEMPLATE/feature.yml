@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose work that fits the published roadmap
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Roadmap phase
+      options:
+        - Phase 0 Foundation
+        - Phase 1 Identity
+        - Phase 2 Repository ingestion
+        - Phase 3 Git engine
+        - Phase 4 AST engine
+        - Later / unsure
