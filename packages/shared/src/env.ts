@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { z } from 'zod';
 
 export const envSchema = z.object({
@@ -21,6 +23,11 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32).default('local-dev-refresh-secret-change-me-32'),
   JWT_ACCESS_TTL: z.string().default('15m'),
   JWT_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(7),
+  CREDENTIALS_ENCRYPTION_KEY: z
+    .string()
+    .min(32)
+    .default('local-dev-credentials-secret-change-me-32'),
+  REPOSITORY_WORK_DIR: z.string().min(1).optional(),
 });
 
 type ParsedEnv = z.infer<typeof envSchema>;
@@ -28,6 +35,7 @@ type ParsedEnv = z.infer<typeof envSchema>;
 export type AppEnv = ParsedEnv & {
   DATABASE_URL: string;
   REDIS_URL: string;
+  REPOSITORY_WORK_DIR: string;
 };
 
 function unwrap(value: string): string {
@@ -71,6 +79,8 @@ export function validateEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     POSTGRES_PASSWORD: unwrap(parsed.data.POSTGRES_PASSWORD),
     DATABASE_URL: buildDatabaseUrl(parsed.data),
     REDIS_URL: buildRedisUrl(parsed.data),
+    REPOSITORY_WORK_DIR:
+      parsed.data.REPOSITORY_WORK_DIR ?? join(tmpdir(), 'code-archaeologist', 'repositories'),
   };
 
   process.env.DATABASE_URL = env.DATABASE_URL;

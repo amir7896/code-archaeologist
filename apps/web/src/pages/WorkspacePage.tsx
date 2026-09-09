@@ -1,5 +1,7 @@
 import { Field, Form, Formik } from 'formik';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { PageNav } from '../components/PageNav';
+import { RepositoriesPanel } from '../components/RepositoriesPanel';
 import { useAuth } from '../hooks/useAuth';
 import { errorMessage } from '../lib/errors';
 import { formatActivity, formatRole, formatStatus, formatWhen } from '../lib/format';
@@ -66,12 +68,9 @@ export function WorkspacePage() {
         <p className="text-red-600">
           {errorMessage(workspaceQuery.error, 'This workspace could not be found.')}
         </p>
-        <Link
-          className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
-          to="/"
-        >
-          Back to workspaces
-        </Link>
+        <div className="mt-6">
+          <PageNav backTo="/" backLabel="Back to workspaces" />
+        </div>
       </div>
     );
   }
@@ -79,9 +78,11 @@ export function WorkspacePage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link className="text-sm font-medium text-indigo-600 hover:text-indigo-500" to="/">
-          Workspaces
-        </Link>
+        <PageNav
+          backTo="/"
+          backLabel="Back to workspaces"
+          crumbs={[{ to: '/', label: 'Workspaces' }, { label: workspace.name }]}
+        />
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
           {workspace.name}
         </h1>
@@ -97,6 +98,8 @@ export function WorkspacePage() {
           <p className={`mt-3 ${errorText}`}>{errorMessage(actionError, 'Something went wrong')}</p>
         ) : null}
       </div>
+
+      <RepositoriesPanel workspaceId={workspaceId} canAdd={canManage} archived={archived} />
 
       {canManage && (canEdit || isOwner) ? (
         <section className={card}>

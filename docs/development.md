@@ -35,7 +35,7 @@ If ports 5432 or 6379 are already in use, set `POSTGRES_PORT` and `REDIS_PORT` i
 | Swagger UI | http://localhost:3000/api/docs |
 | OpenAPI JSON | http://localhost:3000/api/docs/json |
 
-Phase 1 auth/workspace routes (all under `/api/v1`):
+Auth, workspace, and repository routes (all under `/api/v1`):
 
 | Method | Path | Notes |
 |---|---|---|
@@ -49,6 +49,10 @@ Phase 1 auth/workspace routes (all under `/api/v1`):
 | GET/POST | `/workspaces/:id/members` | Invite is Admin+. Invitee must already have an account. |
 | PATCH/DELETE | `/workspaces/:id/members/:userId` | Owner role cannot be changed or removed. |
 | GET | `/workspaces/:id/audit-logs` | Admin+. |
+| GET/POST | `/workspaces/:workspaceId/repositories` | List or add a Git repository. Add is Admin+. |
+| GET/PATCH/DELETE | `/workspaces/:workspaceId/repositories/:repositoryId` | Object-level RBAC. Delete is Admin+. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/status` | Ingestion progress and latest run. |
+| POST | `/workspaces/:workspaceId/repositories/:repositoryId/sync` | Analyst+. Rate-limited. |
 
 ## API DTOs and ValidationPipe
 
@@ -86,7 +90,9 @@ pnpm db:migrate:deploy   # apply committed migrations
 
 ## Ollama (optional, later phases)
 
-Ollama is not required for Phase 1. GitHub OAuth is also later; Phase 1 is email/password only.
+Ollama is not required for Phase 2. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
+
+After pulling Phase 2, apply `pnpm db:migrate:deploy` so repository tables exist. The worker clones into an isolated temp directory and deletes it when the run finishes.
 
 ```bash
 docker compose --profile ai up -d ollama

@@ -10,10 +10,18 @@ export const ApiErrors = {
   unauthorized: (message = 'Authentication required') =>
     new ApiException(HttpStatus.UNAUTHORIZED, 'AUTH_UNAUTHORIZED', message),
   invalidCredentials: () =>
-    new ApiException(HttpStatus.UNAUTHORIZED, 'AUTH_INVALID_CREDENTIALS', 'Invalid email or password'),
-  disabled: () => new ApiException(HttpStatus.FORBIDDEN, 'AUTH_DISABLED', 'This account is disabled'),
+    new ApiException(
+      HttpStatus.UNAUTHORIZED,
+      'AUTH_INVALID_CREDENTIALS',
+      'Invalid email or password',
+    ),
+  disabled: () =>
+    new ApiException(HttpStatus.FORBIDDEN, 'AUTH_DISABLED', 'This account is disabled'),
   forbidden: (message = 'You do not have permission to perform this action') =>
     new ApiException(HttpStatus.FORBIDDEN, 'AUTH_FORBIDDEN', message),
-  notFound: (code: string, message: string) => new ApiException(HttpStatus.NOT_FOUND, code, message),
+  notFound: (code: string, message: string) =>
+    new ApiException(HttpStatus.NOT_FOUND, code, message),
   conflict: (code: string, message: string) => new ApiException(HttpStatus.CONFLICT, code, message),
+  badRequest: (code: string, message: string) =>
+    new ApiException(HttpStatus.BAD_REQUEST, code, message),
 };

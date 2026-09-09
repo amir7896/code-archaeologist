@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **Phase 1 — Identity**: users, email/password sessions, workspaces, RBAC, audit events, and a basic dashboard on top of the Phase 0 monorepo.
+This repository is at **Phase 2 — Repository ingestion**: workspaces can add HTTPS Git repositories, store credentials encrypted, clone/fetch in a worker, and show ingestion progress. The Git history engine is next.
 
 ## Requirements
 

@@ -18,3 +18,4 @@ prisma/*.db
 docker-data
 .pnpm-store
 packages/core/generated
+.data

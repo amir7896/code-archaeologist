@@ -14,7 +14,8 @@
     "db:migrate": "node scripts/run-prisma.cjs migrate dev",
     "db:migrate:deploy": "node scripts/run-prisma.cjs migrate deploy",
     "db:seed": "node prisma/seed.cjs",
-    "postinstall": "node scripts/run-prisma.cjs generate"
+    "postinstall": "node scripts/run-prisma.cjs generate",
+    "test": "node --import tsx --test src/secrets.test.ts"
   },
   "dependencies": {
     "@code-archaeologist/shared": "workspace:*",

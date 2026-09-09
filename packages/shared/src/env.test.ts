@@ -18,6 +18,8 @@ test('validateEnv accepts postgres parts and builds a URL', () => {
   );
   assert.equal(env.JWT_ACCESS_TTL, '15m');
   assert.equal(env.JWT_REFRESH_TTL_DAYS, 7);
+  assert.ok(env.REPOSITORY_WORK_DIR.length > 0);
+  assert.equal(env.CREDENTIALS_ENCRYPTION_KEY.length >= 32, true);
 });
 
 test('validateEnv rejects missing postgres user', () => {
