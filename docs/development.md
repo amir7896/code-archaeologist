@@ -66,6 +66,10 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/dependencies` | Requires `fileId`. Optional `depth` (1–6). |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/dependents` | Requires `fileId`. Optional `depth` (1–6). |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/cycles` | File and folder dependency cycles. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/dna` | Code DNA profile. Requires `fileId`, `symbolId`, or `module`. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/hotspots` | High churn + complexity files. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/risks` | Optional `level`. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/health` | Risk summary counts. |
 
 ## API DTOs and ValidationPipe
 
@@ -103,9 +107,9 @@ pnpm db:migrate:deploy   # apply committed migrations
 
 ## Ollama (optional, later phases)
 
-Ollama is not required for Phase 5. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
+Ollama is not required for Phase 6. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
 
-After pulling Phase 5, apply `pnpm db:migrate:deploy` so `graph_edges` exists, then re-sync existing repositories to parse source and build the architecture map. The worker keeps a bare mirror under `.data/repositories/mirrors` (or `REPOSITORY_WORK_DIR`).
+After pulling Phase 6, apply `pnpm db:migrate:deploy` so Code DNA tables exist, then re-sync existing repositories to score risk and hotspots. The worker keeps a bare mirror under `.data/repositories/mirrors` (or `REPOSITORY_WORK_DIR`).
 
 ```bash
 docker compose --profile ai up -d ollama

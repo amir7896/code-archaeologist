@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { WorkspaceGuard } from '../workspaces/guards/workspace.guard';
+import { DnaController } from './dna.controller';
+import { DnaService } from './dna.service';
 import { GraphController } from './graph.controller';
 import { GraphService } from './graph.service';
 import { HistoryController } from './history.controller';
@@ -10,7 +12,7 @@ import { SourceController } from './source.controller';
 import { SourceService } from './source.service';
 
 @Module({
-  controllers: [RepositoriesController, HistoryController, SourceController, GraphController],
-  providers: [RepositoriesService, HistoryService, SourceService, GraphService, WorkspaceGuard],
+  controllers: [RepositoriesController, HistoryController, SourceController, GraphController, DnaController],
+  providers: [RepositoriesService, HistoryService, SourceService, GraphService, DnaService, WorkspaceGuard],
 })
 export class RepositoriesModule {}

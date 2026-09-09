@@ -135,6 +135,7 @@ export type Repository = {
   symbolCount?: number;
   lastParsedRevision?: string | null;
   lastGraphRevision?: string | null;
+  lastDnaRevision?: string | null;
   status: string;
   hasCredential: boolean;
   lastError: string | null;
@@ -270,6 +271,22 @@ export const repositoryApi = {
     ),
   graphCycles: (workspaceId: string, repositoryId: string) =>
     api<GraphCycles>(`/workspaces/${workspaceId}/repositories/${repositoryId}/graph/cycles`),
+  dna: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { fileId?: string; symbolId?: string; module?: string },
+  ) =>
+    api<DnaProfile>(`/workspaces/${workspaceId}/repositories/${repositoryId}/dna${toQuery(query)}`),
+  dnaHealth: (workspaceId: string, repositoryId: string) =>
+    api<DnaHealth>(`/workspaces/${workspaceId}/repositories/${repositoryId}/insights/health`),
+  hotspots: (workspaceId: string, repositoryId: string) =>
+    api<{ items: InsightItem[] }>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/insights/hotspots`,
+    ),
+  risks: (workspaceId: string, repositoryId: string, query?: { level?: string }) =>
+    api<{ items: InsightItem[] }>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/insights/risks${toQuery(query)}`,
+    ),
 };
 
 export type RepoBranch = {
@@ -416,6 +433,72 @@ export type GraphNeighbors = {
 export type GraphCycles = {
   modules: Array<{ id: string; nodes: string[] }>;
   files: Array<{ id: string; nodes: GraphMapFile[] }>;
+};
+
+export type DnaHealth = {
+  revision: string | null;
+  fileCount: number;
+  hotspotCount: number;
+  highRiskCount: number;
+  averageComplexity: number;
+};
+
+export type InsightItem = {
+  subjectType: string;
+  subjectId: string;
+  name: string;
+  path: string | null;
+  score: number;
+  level: string;
+  changeCount: number;
+  complexity: number;
+  fanIn: number;
+};
+
+export type DnaProfile = {
+  subjectType: string;
+  subjectId: string;
+  name: string;
+  path: string | null;
+  firstRevision: string | null;
+  lastRevision: string | null;
+  firstSeenAt: string | null;
+  lastChangedAt: string | null;
+  changeCount: number;
+  fanIn: number;
+  fanOut: number;
+  complexity: number;
+  loc: number;
+  dependencyCount: number;
+  coupling: string;
+  complexityLabel: string;
+  risk: {
+    score: number;
+    level: string;
+    evidenceConfidence: number;
+    factors: Array<{
+      key: string;
+      label: string;
+      raw: number;
+      normalized: number;
+      weight: number;
+      contribution: number;
+    }>;
+  };
+  contributors: Array<{ name: string; email: string; commits: number }>;
+  versions: Array<{
+    revision: string;
+    changeType: string;
+    loc: number;
+    complexity: number;
+    committedAt: string | null;
+  }>;
+  relatedCommits: Array<{
+    sha: string;
+    message: string;
+    authorName: string;
+    committedAt: string;
+  }>;
 };
 
 function toQuery(query?: Record<string, string | number | undefined>): string {

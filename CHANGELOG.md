@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Phase 6 Code DNA: symbol versions, metrics snapshots, explainable risk scores, hotspots, and a DNA profile screen.
 - Phase 5 graph engine: derived `graph_edges`, dependency walk, cycle detection, and an interactive architecture map.
 - Phase 2 repository ingestion: HTTPS Git repository CRUD, encrypted credentials, clone/fetch worker, analysis runs/tasks, and status UI.
 - Entity primary keys and foreign keys use PostgreSQL UUIDs.
