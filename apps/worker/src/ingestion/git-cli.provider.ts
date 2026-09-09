@@ -15,6 +15,7 @@ import {
   type GitHistoryQuery,
   type GitProvider,
   type GitBranchSummary,
+  type GitTreeEntry,
 } from '@code-archaeologist/git';
 
 const DEFAULT_TIMEOUT_MS = 10 * 60_000;
@@ -146,6 +147,15 @@ export class GitCliProvider implements GitProvider {
     return applyNumstat(nameStatus, numstat)[sha] ?? [];
   }
 
+  async listTree(repositoryPath: string, revision: string): Promise<GitTreeEntry[]> {
+    const raw = await this.run(['ls-tree', '-r', '--long', revision], { cwd: repositoryPath });
+    return parseLsTree(raw);
+  }
+
+  async readBlob(repositoryPath: string, revision: string, path: string): Promise<string> {
+    return this.run(['show', `${revision}:${path}`], { cwd: repositoryPath });
+  }
+
   private run(
     args: string[],
     options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
@@ -193,6 +203,30 @@ export class GitCliProvider implements GitProvider {
 
 const RECORD_SHA = '%x1e%H';
 const RECORD_VALUE = '\x1e';
+
+export function parseLsTree(raw: string): GitTreeEntry[] {
+  const rows: GitTreeEntry[] = [];
+  for (const line of raw.split('\n')) {
+    if (!line) {
+      continue;
+    }
+    const tab = line.indexOf('\t');
+    if (tab < 0) {
+      continue;
+    }
+    const meta = line.slice(0, tab).trim().split(/\s+/);
+    const path = line.slice(tab + 1);
+    if (meta[1] !== 'blob' || !path) {
+      continue;
+    }
+    rows.push({
+      path,
+      hash: meta[2] ?? '',
+      size: Number.parseInt(meta[3] ?? '0', 10) || 0,
+    });
+  }
+  return rows;
+}
 
 function parseBranchRefs(raw: string): Array<{ name: string; sha: string }> {
   return raw

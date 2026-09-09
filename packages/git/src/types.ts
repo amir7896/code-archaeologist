@@ -54,4 +54,12 @@ export interface GitProvider {
   isAncestor(repositoryPath: string, maybeAncestor: string, revision: string): Promise<boolean>;
   listHistory(repositoryPath: string, query: GitHistoryQuery): Promise<GitHistoryPage>;
   listCommitChanges(repositoryPath: string, sha: string): Promise<GitCommitChange[]>;
+  listTree(repositoryPath: string, revision: string): Promise<GitTreeEntry[]>;
+  readBlob(repositoryPath: string, revision: string, path: string): Promise<string>;
+}
+
+export interface GitTreeEntry {
+  path: string;
+  hash: string;
+  size: number;
 }

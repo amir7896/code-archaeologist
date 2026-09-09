@@ -3,6 +3,7 @@ import { decryptSecret, type PrismaClient } from '@code-archaeologist/core';
 import { sanitizeGitError, type GitProvider } from '@code-archaeologist/git';
 import { type AppEnv, type RepositorySyncJobData } from '@code-archaeologist/shared';
 import { GitCliProvider } from './git-cli.provider';
+import { indexAst } from './index-ast';
 import { indexGitHistory } from './index-git-history';
 
 type LoggerLike = {
@@ -17,11 +18,13 @@ export async function processRepositorySync(
     env: AppEnv;
     git?: GitProvider;
     indexHistory?: typeof indexGitHistory;
+    parseAst?: typeof indexAst;
     logger?: LoggerLike;
   },
 ): Promise<void> {
   const git = deps.git ?? new GitCliProvider();
   const indexHistory = deps.indexHistory ?? indexGitHistory;
+  const parseAst = deps.parseAst ?? indexAst;
   const { prisma, env } = deps;
   const run = await prisma.analysisRun.findUnique({
     where: { id: data.analysisRunId },
@@ -79,6 +82,21 @@ export async function processRepositorySync(
       },
     });
     await markTask(prisma, indexTask?.id, 'SUCCEEDED');
+
+    const parseTask = run.tasks.find((task) => task.taskType === 'PARSE_AST');
+    await markTask(prisma, parseTask?.id, 'RUNNING');
+    await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 72 } });
+    await parseAst({
+      prisma,
+      git,
+      gitDir: mirrorDir,
+      repositoryId: run.repositoryId,
+      revision: currentRevision,
+      onProgress: async (progress) => {
+        await prisma.analysisRun.update({ where: { id: run.id }, data: { progress } });
+      },
+    });
+    await markTask(prisma, parseTask?.id, 'SUCCEEDED');
 
     await prisma.repository.update({
       where: { id: run.repositoryId },

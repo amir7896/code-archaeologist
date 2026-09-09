@@ -48,6 +48,7 @@ type RepositoryRecord = {
   defaultBranch: string | null;
   currentRevision: string | null;
   lastIndexedRevision?: string | null;
+  lastParsedRevision?: string | null;
   status: string;
   lastError: string | null;
   lastSyncedAt: Date | null;
@@ -130,11 +131,13 @@ export class RepositoriesService {
 
   async get(workspaceId: string, repositoryId: string): Promise<RepositoryResponseDto> {
     const repository = await this.requireRepository(workspaceId, repositoryId);
-    const [commitCount, branchCount] = await this.prisma.$transaction([
+    const [commitCount, branchCount, fileCount, symbolCount] = await this.prisma.$transaction([
       this.prisma.commit.count({ where: { repositoryId } }),
       this.prisma.branch.count({ where: { repositoryId } }),
+      this.prisma.repoFile.count({ where: { repositoryId } }),
+      this.prisma.codeSymbol.count({ where: { file: { repositoryId } } }),
     ]);
-    return toRepositoryResponse(repository, { commitCount, branchCount });
+    return toRepositoryResponse(repository, { commitCount, branchCount, fileCount, symbolCount });
   }
 
   async update(
@@ -240,7 +243,12 @@ export class RepositoriesService {
         status: 'QUEUED',
         progress: 0,
         tasks: {
-          create: [{ taskType: 'CLONE' }, { taskType: 'DETECT_REVISION' }, { taskType: 'INDEX_HISTORY' }],
+          create: [
+            { taskType: 'CLONE' },
+            { taskType: 'DETECT_REVISION' },
+            { taskType: 'INDEX_HISTORY' },
+            { taskType: 'PARSE_AST' },
+          ],
         },
       },
     });
@@ -337,7 +345,7 @@ function parseRepositoryUrl(url: string) {
 
 function toRepositoryResponse(
   repository: RepositoryRecord,
-  counts?: { commitCount: number; branchCount: number },
+  counts?: { commitCount: number; branchCount: number; fileCount: number; symbolCount: number },
 ): RepositoryResponseDto {
   return {
     id: repository.id,
@@ -348,7 +356,10 @@ function toRepositoryResponse(
     defaultBranch: repository.defaultBranch,
     currentRevision: repository.currentRevision,
     lastIndexedRevision: repository.lastIndexedRevision ?? null,
+    lastParsedRevision: repository.lastParsedRevision ?? null,
     commitCount: counts?.commitCount,
+    fileCount: counts?.fileCount,
+    symbolCount: counts?.symbolCount,
     branchCount: counts?.branchCount,
     status: repository.status,
     hasCredential: Boolean(repository.credential),

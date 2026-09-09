@@ -40,6 +40,29 @@ const TASK_LABELS: Record<string, string> = {
   CLONE: 'Copying the repository',
   DETECT_REVISION: 'Reading the current revision',
   INDEX_HISTORY: 'Reading commit history',
+  PARSE_AST: 'Reading source files',
+};
+
+const SYMBOL_LABELS: Record<string, string> = {
+  MODULE: 'File',
+  CLASS: 'Class',
+  INTERFACE: 'Interface',
+  ENUM: 'Enum',
+  FUNCTION: 'Function',
+  METHOD: 'Method',
+  VARIABLE: 'Variable',
+  CONSTANT: 'Constant',
+  TYPE: 'Type',
+  NAMESPACE: 'Namespace',
+};
+
+const RELATION_LABELS: Record<string, string> = {
+  IMPORTS: 'Imports',
+  EXPORTS: 'Exports',
+  CALLS: 'Calls',
+  REFERENCES: 'References',
+  EXTENDS: 'Extends',
+  IMPLEMENTS: 'Implements',
 };
 
 const CHANGE_LABELS: Record<string, string> = {
@@ -69,6 +92,14 @@ export function formatTask(taskType: string): string {
 export function formatWhen(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
+}
+
+export function formatSymbolKind(kind: string): string {
+  return SYMBOL_LABELS[kind] ?? kind.replaceAll('_', ' ').toLowerCase();
+}
+
+export function formatRelation(type: string): string {
+  return RELATION_LABELS[type] ?? type.replaceAll('_', ' ').toLowerCase();
 }
 
 export function formatChange(changeType: string): string {

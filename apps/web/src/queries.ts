@@ -21,6 +21,16 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'commits', sha] as const,
   fileHistory: (workspaceId: string, repositoryId: string, path: string, page?: number) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'files', path, page ?? 1] as const,
+  files: (workspaceId: string, repositoryId: string, q?: string, page?: number) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'files', q ?? '', page ?? 1] as const,
+  file: (workspaceId: string, repositoryId: string, fileId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'file', fileId] as const,
+  filePreview: (workspaceId: string, repositoryId: string, fileId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'preview', fileId] as const,
+  symbols: (workspaceId: string, repositoryId: string, q?: string, kind?: string, page?: number) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbols', q ?? '', kind ?? '', page ?? 1] as const,
+  symbol: (workspaceId: string, repositoryId: string, symbolId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbol', symbolId] as const,
 };
 
 export function useWorkspacesQuery() {
@@ -248,6 +258,9 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
         queryClient.invalidateQueries({
           queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'files'],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'code'],
+        }),
       ]);
     },
   });
@@ -292,6 +305,56 @@ export function useFileHistoryQuery(
     queryKey: queryKeys.fileHistory(workspaceId, repositoryId, path, page),
     queryFn: () => repositoryApi.fileHistory(workspaceId, repositoryId, { path, page }),
     enabled: Boolean(workspaceId && repositoryId && path),
+  });
+}
+
+export function useSourceFilesQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { q?: string; page?: number } = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.files(workspaceId, repositoryId, query.q, query.page),
+    queryFn: () => repositoryApi.files(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
+export function useSourceFileQuery(workspaceId: string, repositoryId: string, fileId: string) {
+  return useQuery({
+    queryKey: queryKeys.file(workspaceId, repositoryId, fileId),
+    queryFn: () => repositoryApi.file(workspaceId, repositoryId, fileId),
+    enabled: Boolean(workspaceId && repositoryId && fileId),
+  });
+}
+
+export function useSourcePreviewQuery(workspaceId: string, repositoryId: string, fileId: string) {
+  return useQuery({
+    queryKey: queryKeys.filePreview(workspaceId, repositoryId, fileId),
+    queryFn: () => repositoryApi.filePreview(workspaceId, repositoryId, fileId),
+    enabled: Boolean(workspaceId && repositoryId && fileId),
+  });
+}
+
+export function useSymbolsQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { q?: string; kind?: string; fileId?: string; page?: number } = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.symbols(workspaceId, repositoryId, query.q, query.kind, query.page),
+    queryFn: () => repositoryApi.symbols(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
+export function useSymbolQuery(workspaceId: string, repositoryId: string, symbolId: string) {
+  return useQuery({
+    queryKey: queryKeys.symbol(workspaceId, repositoryId, symbolId),
+    queryFn: () => repositoryApi.symbol(workspaceId, repositoryId, symbolId),
+    enabled: Boolean(workspaceId && repositoryId && symbolId),
   });
 }
 

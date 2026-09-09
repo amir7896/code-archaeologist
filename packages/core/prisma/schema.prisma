@@ -1,5 +1,5 @@
 // Code Archaeologist data model.
-// Phase 3 adds Git history: branches, commits, files, commit_files, developers.
+// Phase 4 adds AST symbols and relations for TypeScript/JavaScript.
 // Entity ids are PostgreSQL UUIDs. schema_meta.id stays a stable string.
 // Remaining tables follow the project scope later.
 // JSONB is reserved for variable metadata. pgvector is not enabled until embeddings are on.
@@ -18,7 +18,7 @@ datasource db {
 
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("3-git-engine")
+  phase     String   @default("4-ast-engine")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")
@@ -80,6 +80,29 @@ enum AnalysisTaskType {
   CLONE
   DETECT_REVISION
   INDEX_HISTORY
+  PARSE_AST
+}
+
+enum SymbolKind {
+  MODULE
+  CLASS
+  INTERFACE
+  ENUM
+  FUNCTION
+  METHOD
+  VARIABLE
+  CONSTANT
+  TYPE
+  NAMESPACE
+}
+
+enum SymbolRelationType {
+  IMPORTS
+  EXPORTS
+  CALLS
+  REFERENCES
+  EXTENDS
+  IMPLEMENTS
 }
 
 enum FileChangeType {
@@ -190,6 +213,7 @@ model Repository {
   defaultBranch       String?            @map("default_branch")
   currentRevision     String?            @map("current_revision")
   lastIndexedRevision String?            @map("last_indexed_revision")
+  lastParsedRevision  String?            @map("last_parsed_revision")
   settings            Json               @default("{}")
   status              RepositoryStatus   @default(PENDING)
   lastError           String?            @map("last_error")
@@ -337,19 +361,23 @@ model BranchCommit {
 }
 
 model RepoFile {
-  id            String   @id @default(uuid()) @db.Uuid
-  repositoryId  String   @map("repository_id") @db.Uuid
-  path          String
-  language      String?
-  hash          String?
-  size          Int?
-  firstRevision String   @map("first_revision")
-  lastRevision  String   @map("last_revision")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id                 String   @id @default(uuid()) @db.Uuid
+  repositoryId       String   @map("repository_id") @db.Uuid
+  path               String
+  language           String?
+  hash               String?
+  size               Int?
+  loc                Int?
+  complexity         Int?
+  firstRevision      String   @map("first_revision")
+  lastRevision       String   @map("last_revision")
+  lastParsedRevision String?  @map("last_parsed_revision")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 
   repository  Repository   @relation(fields: [repositoryId], references: [id])
   commitFiles CommitFile[]
+  symbols     CodeSymbol[]
 
   @@unique([repositoryId, path])
   @@index([repositoryId])
@@ -376,8 +404,55 @@ model CommitFile {
   @@map("commit_files")
 }
 
+model CodeSymbol {
+  id                 String     @id @default(uuid()) @db.Uuid
+  fileId             String     @map("file_id") @db.Uuid
+  parentSymbolId     String?    @map("parent_symbol_id") @db.Uuid
+  kind               SymbolKind
+  name               String
+  qualifiedName      String     @map("qualified_name")
+  startLine          Int        @map("start_line")
+  endLine            Int        @map("end_line")
+  astHash            String     @map("ast_hash")
+  loc                Int        @default(0)
+  complexity         Int        @default(0)
+  nesting            Int        @default(0)
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  file     RepoFile          @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  parent   CodeSymbol?       @relation("SymbolTree", fields: [parentSymbolId], references: [id], onDelete: SetNull)
+  children CodeSymbol[]      @relation("SymbolTree")
+  outgoing SymbolRelation[]  @relation("RelationSource")
+  incoming SymbolRelation[]  @relation("RelationTarget")
+
+  @@unique([fileId, qualifiedName])
+  @@index([fileId])
+  @@index([qualifiedName])
+  @@index([kind])
+  @@map("symbols")
+}
+
+model SymbolRelation {
+  id                  String              @id @default(uuid()) @db.Uuid
+  sourceSymbolId      String              @map("source_symbol_id") @db.Uuid
+  targetSymbolId      String?             @map("target_symbol_id") @db.Uuid
+  targetQualifiedName String              @map("target_qualified_name")
+  type                SymbolRelationType
+  confidence          Float
+  createdAt           DateTime            @default(now()) @map("created_at")
+
+  source CodeSymbol  @relation("RelationSource", fields: [sourceSymbolId], references: [id], onDelete: Cascade)
+  target CodeSymbol? @relation("RelationTarget", fields: [targetSymbolId], references: [id], onDelete: SetNull)
+
+  @@index([sourceSymbolId])
+  @@index([targetSymbolId])
+  @@index([type])
+  @@map("symbol_relations")
+}
+
 // Planned later:
-// symbols, symbol_versions, graph_edges, issues, pull_requests,
+// symbol_versions, graph_edges, issues, pull_requests,
 // reviews, metrics_snapshots, risk_scores,
 // documents, document_chunks, investigations, investigation_evidence,
 // investigation_messages, integrations, webhook_events

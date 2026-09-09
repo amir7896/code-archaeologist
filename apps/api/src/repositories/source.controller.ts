@@ -1,0 +1,77 @@
+import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { WorkspaceGuard } from '../workspaces/guards/workspace.guard';
+import {
+  FileListQueryDto,
+  SourceFileListResponseDto,
+  SourceFileResponseDto,
+  SourcePreviewResponseDto,
+  SymbolDetailResponseDto,
+  SymbolListQueryDto,
+  SymbolListResponseDto,
+} from './dto/source.dto';
+import { SourceService } from './source.service';
+
+@ApiTags('source')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, WorkspaceGuard)
+@Controller('workspaces/:workspaceId/repositories/:repositoryId')
+export class SourceController {
+  constructor(@Inject(SourceService) private readonly source: SourceService) {}
+
+  @Get('code/files')
+  @ApiOperation({ summary: 'List indexed source files' })
+  @ApiOkResponse({ type: SourceFileListResponseDto })
+  listFiles(
+    @Param('workspaceId') workspaceId: string,
+    @Param('repositoryId') repositoryId: string,
+    @Query() query: FileListQueryDto,
+  ): Promise<SourceFileListResponseDto> {
+    return this.source.listFiles(workspaceId, repositoryId, query);
+  }
+
+  @Get('code/files/:fileId')
+  @ApiOperation({ summary: 'Get a source file' })
+  @ApiOkResponse({ type: SourceFileResponseDto })
+  getFile(
+    @Param('workspaceId') workspaceId: string,
+    @Param('repositoryId') repositoryId: string,
+    @Param('fileId') fileId: string,
+  ): Promise<SourceFileResponseDto> {
+    return this.source.getFile(workspaceId, repositoryId, fileId);
+  }
+
+  @Get('code/files/:fileId/preview')
+  @ApiOperation({ summary: 'Get a source preview' })
+  @ApiOkResponse({ type: SourcePreviewResponseDto })
+  preview(
+    @Param('workspaceId') workspaceId: string,
+    @Param('repositoryId') repositoryId: string,
+    @Param('fileId') fileId: string,
+  ): Promise<SourcePreviewResponseDto> {
+    return this.source.preview(workspaceId, repositoryId, fileId);
+  }
+
+  @Get('code/symbols')
+  @ApiOperation({ summary: 'List indexed symbols' })
+  @ApiOkResponse({ type: SymbolListResponseDto })
+  listSymbols(
+    @Param('workspaceId') workspaceId: string,
+    @Param('repositoryId') repositoryId: string,
+    @Query() query: SymbolListQueryDto,
+  ): Promise<SymbolListResponseDto> {
+    return this.source.listSymbols(workspaceId, repositoryId, query);
+  }
+
+  @Get('code/symbols/:symbolId')
+  @ApiOperation({ summary: 'Get a symbol and its relations' })
+  @ApiOkResponse({ type: SymbolDetailResponseDto })
+  getSymbol(
+    @Param('workspaceId') workspaceId: string,
+    @Param('repositoryId') repositoryId: string,
+    @Param('symbolId') symbolId: string,
+  ): Promise<SymbolDetailResponseDto> {
+    return this.source.getSymbol(workspaceId, repositoryId, symbolId);
+  }
+}

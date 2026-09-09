@@ -5,6 +5,10 @@ import { CommitPage } from './pages/CommitPage';
 import { CommitsPage } from './pages/CommitsPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { FileHistoryPage } from './pages/FileHistoryPage';
+import { FilePage } from './pages/FilePage';
+import { FilesPage } from './pages/FilesPage';
+import { SymbolPage } from './pages/SymbolPage';
+import { SymbolsPage } from './pages/SymbolsPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -46,6 +50,22 @@ export function App() {
           <Route
             path="/workspaces/:workspaceId/repositories/:repositoryId/files"
             element={<FileHistoryPage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/code"
+            element={<FilesPage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/code/files/:fileId"
+            element={<FilePage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/code/symbols"
+            element={<SymbolsPage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/code/symbols/:symbolId"
+            element={<SymbolPage />}
           />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
