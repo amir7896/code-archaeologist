@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { join } from 'node:path';
 import { test } from 'node:test';
-import { buildDatabaseUrl, validateEnv } from './env';
+import { buildDatabaseUrl, defaultRepositoryWorkDir, validateEnv } from './env';
 
 test('validateEnv accepts postgres parts and builds a URL', () => {
   const env = validateEnv({
@@ -18,7 +19,9 @@ test('validateEnv accepts postgres parts and builds a URL', () => {
   );
   assert.equal(env.JWT_ACCESS_TTL, '15m');
   assert.equal(env.JWT_REFRESH_TTL_DAYS, 7);
-  assert.ok(env.REPOSITORY_WORK_DIR.length > 0);
+  assert.ok(env.REPOSITORY_WORK_DIR.includes('.data'));
+  assert.ok(env.REPOSITORY_WORK_DIR.endsWith('repositories'));
+  assert.ok(defaultRepositoryWorkDir().endsWith(`${join('.data', 'repositories')}`));
   assert.equal(env.CREDENTIALS_ENCRYPTION_KEY.length >= 32, true);
 });
 

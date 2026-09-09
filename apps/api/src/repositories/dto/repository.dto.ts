@@ -160,6 +160,15 @@ export class RepositoryResponseDto {
   @ApiProperty({ type: String, required: false, nullable: true })
   currentRevision!: string | null;
 
+  @ApiProperty({ type: String, required: false, nullable: true })
+  lastIndexedRevision!: string | null;
+
+  @ApiProperty({ type: Number, required: false })
+  commitCount?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  branchCount?: number;
+
   @ApiProperty({ type: String })
   status!: string;
 

@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **Phase 2 — Repository ingestion**: workspaces can add HTTPS Git repositories, store credentials encrypted, clone/fetch in a worker, and show ingestion progress. The Git history engine is next.
+This repository is at **Phase 3 — Git engine**: repositories are cloned into a persistent mirror, commits and branches are indexed, and the dashboard can browse commit and file history. The AST engine is next.
 
 ## Requirements
 
@@ -39,7 +39,7 @@ If host ports 5432 or 6379 are already taken, change `POSTGRES_PORT` and `REDIS_
 
 ```
 apps/api          NestJS REST API (`/api/v1`)
-apps/worker       NestJS worker (BullMQ queues registered, processors later)
+apps/worker       NestJS worker (repository sync and Git history index)
 apps/web          React + TypeScript + Tailwind
 packages/core     Prisma schema and domain constants
 packages/shared   Env validation, queue names, API prefix

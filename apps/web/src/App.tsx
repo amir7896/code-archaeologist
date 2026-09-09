@@ -1,7 +1,10 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { useAuth } from './hooks/useAuth';
+import { CommitPage } from './pages/CommitPage';
+import { CommitsPage } from './pages/CommitsPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { FileHistoryPage } from './pages/FileHistoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -31,6 +34,18 @@ export function App() {
           <Route
             path="/workspaces/:workspaceId/repositories/:repositoryId"
             element={<RepositoryPage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/commits"
+            element={<CommitsPage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/commits/:sha"
+            element={<CommitPage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/files"
+            element={<FileHistoryPage />}
           />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

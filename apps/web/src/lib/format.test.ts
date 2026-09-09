@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { formatActivity, formatRole, formatStatus, formatTask, formatWhen } from './format';
+import {
+  commitSubject,
+  formatActivity,
+  formatChange,
+  formatDiffstat,
+  formatRole,
+  formatStatus,
+  formatTask,
+  formatWhen,
+} from './format';
 
 describe('format', () => {
   it('uses product labels for roles and status', () => {
@@ -14,6 +23,10 @@ describe('format', () => {
     expect(formatActivity('WORKSPACE_ARCHIVED')).toBe('Archived the workspace');
     expect(formatActivity('REPOSITORY_CREATE')).toBe('Added a repository');
     expect(formatTask('CLONE')).toBe('Copying the repository');
+    expect(formatTask('INDEX_HISTORY')).toBe('Reading commit history');
+    expect(formatChange('RENAMED')).toBe('Renamed');
+    expect(commitSubject('Add login\n\nDetails')).toBe('Add login');
+    expect(formatDiffstat(4, 1)).toBe('+4 / −1');
   });
 
   it('returns an empty string for invalid dates', () => {

@@ -39,6 +39,15 @@ const ACTIVITY_LABELS: Record<string, string> = {
 const TASK_LABELS: Record<string, string> = {
   CLONE: 'Copying the repository',
   DETECT_REVISION: 'Reading the current revision',
+  INDEX_HISTORY: 'Reading commit history',
+};
+
+const CHANGE_LABELS: Record<string, string> = {
+  ADDED: 'Added',
+  MODIFIED: 'Changed',
+  DELETED: 'Removed',
+  RENAMED: 'Renamed',
+  COPIED: 'Copied',
 };
 
 export function formatRole(role: string): string {
@@ -60,6 +69,18 @@ export function formatTask(taskType: string): string {
 export function formatWhen(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
+}
+
+export function formatChange(changeType: string): string {
+  return CHANGE_LABELS[changeType] ?? changeType.replaceAll('_', ' ').toLowerCase();
+}
+
+export function commitSubject(message: string): string {
+  return message.split('\n')[0]?.trim() || 'Commit';
+}
+
+export function formatDiffstat(additions: number, deletions: number): string {
+  return `+${additions} / −${deletions}`;
 }
 
 export function shortRevision(value: string | null | undefined): string {

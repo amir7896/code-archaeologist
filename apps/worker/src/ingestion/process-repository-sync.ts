@@ -1,9 +1,9 @@
 import { join } from 'node:path';
-import { rm } from 'node:fs/promises';
 import { decryptSecret, type PrismaClient } from '@code-archaeologist/core';
 import { sanitizeGitError, type GitProvider } from '@code-archaeologist/git';
-import { GitCliProvider } from './git-cli.provider';
 import { type AppEnv, type RepositorySyncJobData } from '@code-archaeologist/shared';
+import { GitCliProvider } from './git-cli.provider';
+import { indexGitHistory } from './index-git-history';
 
 type LoggerLike = {
   log(message: string): void;
@@ -16,10 +16,12 @@ export async function processRepositorySync(
     prisma: PrismaClient;
     env: AppEnv;
     git?: GitProvider;
+    indexHistory?: typeof indexGitHistory;
     logger?: LoggerLike;
   },
 ): Promise<void> {
   const git = deps.git ?? new GitCliProvider();
+  const indexHistory = deps.indexHistory ?? indexGitHistory;
   const { prisma, env } = deps;
   const run = await prisma.analysisRun.findUnique({
     where: { id: data.analysisRunId },
@@ -33,7 +35,7 @@ export async function processRepositorySync(
     return;
   }
 
-  const workDir = join(env.REPOSITORY_WORK_DIR, run.repositoryId, run.id);
+  const mirrorDir = join(env.REPOSITORY_WORK_DIR, 'mirrors', run.repositoryId);
   try {
     await prisma.repository.update({
       where: { id: run.repositoryId },
@@ -47,20 +49,36 @@ export async function processRepositorySync(
     const credential = readCredential(run.repository.credential, env.CREDENTIALS_ENCRYPTION_KEY);
     const cloneTask = run.tasks.find((task) => task.taskType === 'CLONE');
     await markTask(prisma, cloneTask?.id, 'RUNNING');
-    await git.clone({
+    await git.ensureMirror({
       url: run.repository.url,
-      destination: workDir,
+      destination: mirrorDir,
       branch: run.revision || run.repository.defaultBranch || undefined,
       credential,
     });
     await markTask(prisma, cloneTask?.id, 'SUCCEEDED');
-    await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 60 } });
+    await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 40 } });
 
     const detectTask = run.tasks.find((task) => task.taskType === 'DETECT_REVISION');
     await markTask(prisma, detectTask?.id, 'RUNNING');
-    const defaultBranch = run.repository.defaultBranch || (await git.detectDefaultBranch(workDir));
-    const currentRevision = await git.resolveRevision(workDir, run.revision || defaultBranch);
+    const defaultBranch = run.repository.defaultBranch || (await git.detectDefaultBranch(mirrorDir));
+    const currentRevision = await git.resolveRevision(mirrorDir, run.revision || defaultBranch);
     await markTask(prisma, detectTask?.id, 'SUCCEEDED');
+    await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 70 } });
+
+    const indexTask = run.tasks.find((task) => task.taskType === 'INDEX_HISTORY');
+    await markTask(prisma, indexTask?.id, 'RUNNING');
+    await indexHistory({
+      prisma,
+      git,
+      gitDir: mirrorDir,
+      repositoryId: run.repositoryId,
+      defaultBranch,
+      currentRevision,
+      onProgress: async (progress) => {
+        await prisma.analysisRun.update({ where: { id: run.id }, data: { progress } });
+      },
+    });
+    await markTask(prisma, indexTask?.id, 'SUCCEEDED');
 
     await prisma.repository.update({
       where: { id: run.repositoryId },
@@ -89,8 +107,6 @@ export async function processRepositorySync(
     if (isTransient(error)) {
       throw error;
     }
-  } finally {
-    await rm(workDir, { recursive: true, force: true });
   }
 }
 

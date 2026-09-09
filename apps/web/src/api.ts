@@ -128,6 +128,9 @@ export type Repository = {
   provider: string;
   defaultBranch: string | null;
   currentRevision: string | null;
+  lastIndexedRevision?: string | null;
+  commitCount?: number;
+  branchCount?: number;
   status: string;
   hasCredential: boolean;
   lastError: string | null;
@@ -193,7 +196,98 @@ export const repositoryApi = {
       method: 'POST',
       json: body ?? {},
     }),
+  branches: (workspaceId: string, repositoryId: string) =>
+    api<{ items: RepoBranch[] }>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/branches`,
+    ),
+  commits: (
+    workspaceId: string,
+    repositoryId: string,
+    query?: { branch?: string; page?: number; limit?: number },
+  ) =>
+    api<Paginated<RepoCommit>>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/commits${toQuery(query)}`,
+    ),
+  commit: (workspaceId: string, repositoryId: string, sha: string) =>
+    api<RepoCommitDetail>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/commits/${sha}`,
+    ),
+  fileHistory: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { path: string; page?: number; limit?: number },
+  ) =>
+    api<FileHistory>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/files/history${toQuery(query)}`,
+    ),
 };
+
+export type RepoBranch = {
+  id: string;
+  name: string;
+  headSha: string | null;
+  isDefault: boolean;
+};
+
+export type RepoCommit = {
+  sha: string;
+  message: string;
+  authorName: string;
+  authorEmail: string;
+  authoredAt: string;
+  committedAt: string;
+  parentShas: string[];
+  isMerge: boolean;
+  additions: number;
+  deletions: number;
+  changedFileCount: number;
+};
+
+export type RepoCommitFile = {
+  path: string;
+  oldPath: string | null;
+  changeType: string;
+  additions: number;
+  deletions: number;
+  similarity: number | null;
+  language: string | null;
+};
+
+export type RepoCommitDetail = RepoCommit & {
+  files: RepoCommitFile[];
+};
+
+export type FileHistoryItem = {
+  sha: string;
+  message: string;
+  authorName: string;
+  committedAt: string;
+  changeType: string;
+  oldPath: string | null;
+  path: string;
+  additions: number;
+  deletions: number;
+};
+
+export type FileHistory = {
+  path: string;
+  items: FileHistoryItem[];
+  pagination: Paginated<FileHistoryItem>['pagination'];
+};
+
+function toQuery(query?: Record<string, string | number | undefined>): string {
+  if (!query) {
+    return '';
+  }
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== '') {
+      params.set(key, String(value));
+    }
+  }
+  const encoded = params.toString();
+  return encoded ? `?${encoded}` : '';
+}
 
 async function refreshTokens(): Promise<boolean> {
   if (!refreshInFlight) {

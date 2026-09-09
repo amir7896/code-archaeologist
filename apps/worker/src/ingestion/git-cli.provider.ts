@@ -1,44 +1,60 @@
 import { spawn } from 'node:child_process';
-import { mkdir, rm } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { access, mkdir, rm } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import {
-  GitProviderNotImplementedError,
+  applyNumstat,
   classifyCloneFailure,
+  parseCommitLog,
+  parseNameStatusLog,
+  parseNumstatLog,
   sanitizeGitError,
   type GitCloneRequest,
-  type GitCommitSummary,
+  type GitCommitChange,
+  type GitCredential,
+  type GitHistoryPage,
+  type GitHistoryQuery,
   type GitProvider,
+  type GitBranchSummary,
 } from '@code-archaeologist/git';
 
-const DEFAULT_TIMEOUT_MS = 5 * 60_000;
+const DEFAULT_TIMEOUT_MS = 10 * 60_000;
+const COMMIT_FORMAT = `%x1e%H%x1f%an%x1f%ae%x1f%aI%x1f%cI%x1f%P%x1f%B`;
 
 export class GitCliProvider implements GitProvider {
   constructor(private readonly timeoutMs = DEFAULT_TIMEOUT_MS) {}
 
-  async clone(request: GitCloneRequest): Promise<void> {
+  async ensureMirror(request: GitCloneRequest): Promise<void> {
+    if (await isGitDir(request.destination)) {
+      await this.fetch(request.destination, request.credential);
+      return;
+    }
     await rm(request.destination, { recursive: true, force: true });
     await mkdir(dirname(request.destination), { recursive: true });
-    const args = ['clone', '--depth', '1', '--no-tags', '--single-branch'];
-    if (request.branch) {
-      args.push('--branch', request.branch);
-    }
-    args.push('--', request.url, request.destination);
-    await this.run(args, { env: gitAuthEnv(request.credential) });
+    await this.run(['clone', '--bare', '--no-tags', '--', request.url, request.destination], {
+      env: gitAuthEnv(request.credential),
+    });
   }
 
-  async fetch(repositoryPath: string): Promise<void> {
-    await this.run(['fetch', '--depth', '1', '--no-tags', 'origin'], { cwd: repositoryPath });
+  async fetch(repositoryPath: string, credential?: GitCredential): Promise<void> {
+    await this.run(['fetch', '--prune', '--no-tags', 'origin', '+refs/heads/*:refs/heads/*'], {
+      cwd: repositoryPath,
+      env: gitAuthEnv(credential),
+    });
   }
 
   async detectDefaultBranch(repositoryPath: string): Promise<string> {
     try {
-      const remoteHead = await this.run(['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], {
-        cwd: repositoryPath,
-      });
-      return remoteHead.replace(/^origin\//, '') || 'main';
+      const head = await this.run(['symbolic-ref', '--short', 'HEAD'], { cwd: repositoryPath });
+      return head.replace(/^refs\/heads\//, '') || 'main';
     } catch {
-      const current = await this.run(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repositoryPath });
-      return current === 'HEAD' ? 'main' : current;
+      try {
+        const remoteHead = await this.run(['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], {
+          cwd: repositoryPath,
+        });
+        return remoteHead.replace(/^origin\//, '') || 'main';
+      } catch {
+        return 'main';
+      }
     }
   }
 
@@ -46,8 +62,88 @@ export class GitCliProvider implements GitProvider {
     return this.run(['rev-parse', revision?.trim() || 'HEAD'], { cwd: repositoryPath });
   }
 
-  async listCommits(): Promise<GitCommitSummary[]> {
-    throw new GitProviderNotImplementedError();
+  async listBranches(repositoryPath: string): Promise<GitBranchSummary[]> {
+    const defaultBranch = await this.detectDefaultBranch(repositoryPath);
+    let raw = '';
+    try {
+      raw = await this.run(['for-each-ref', '--format=%(refname:short)%00%(objectname)', 'refs/heads'], {
+        cwd: repositoryPath,
+      });
+    } catch {
+      raw = '';
+    }
+    let rows = parseBranchRefs(raw);
+    if (rows.length === 0) {
+      try {
+        const remotes = await this.run(
+          ['for-each-ref', '--format=%(refname:short)%00%(objectname)', 'refs/remotes/origin'],
+          { cwd: repositoryPath },
+        );
+        rows = parseBranchRefs(remotes)
+          .map((row) => ({ ...row, name: row.name.replace(/^origin\//, '') }))
+          .filter((row) => row.name && row.name !== 'HEAD');
+      } catch {
+        rows = [];
+      }
+    }
+    return rows.map((row) => ({
+      ...row,
+      isDefault: row.name === defaultBranch,
+    }));
+  }
+
+  async isAncestor(repositoryPath: string, maybeAncestor: string, revision: string): Promise<boolean> {
+    try {
+      await this.run(['merge-base', '--is-ancestor', maybeAncestor, revision], {
+        cwd: repositoryPath,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async listHistory(repositoryPath: string, query: GitHistoryQuery): Promise<GitHistoryPage> {
+    const range = query.sinceSha ? `${query.sinceSha}..${query.revision}` : query.revision;
+    const limit = ['--max-count', String(query.maxCount)];
+    const commits = parseCommitLog(
+      await this.run(['log', `--format=${COMMIT_FORMAT}`, ...limit, range], { cwd: repositoryPath }),
+    );
+    const nameStatus = parseNameStatusLog(
+      await this.run(['log', '--name-status', '-M', '-C', `--format=${RECORD_SHA}`, ...limit, range], {
+        cwd: repositoryPath,
+      }),
+    );
+    const numstat = parseNumstatLog(
+      await this.run(['log', '--numstat', '-M', '-C', `--format=${RECORD_SHA}`, ...limit, range], {
+        cwd: repositoryPath,
+      }),
+    );
+    const changes = applyNumstat(nameStatus, numstat);
+    for (const commit of commits) {
+      if (commit.parentShas.length > 1 && (changes[commit.sha]?.length ?? 0) === 0) {
+        changes[commit.sha] = await this.listCommitChanges(repositoryPath, commit.sha);
+      }
+    }
+    return { commits, changes };
+  }
+
+  async listCommitChanges(repositoryPath: string, sha: string): Promise<GitCommitChange[]> {
+    const parents = (await this.run(['rev-list', '--parents', '-n', '1', sha], { cwd: repositoryPath }))
+      .split(/\s+/)
+      .slice(1);
+    const args = ['diff-tree', '--no-commit-id', '-r', '-M', '-C'];
+    if (parents.length === 0) {
+      args.push('--root');
+    }
+    if (parents.length > 1) {
+      args.push('--first-parent');
+    }
+    const nameStatus = parseNameStatusLog(`${RECORD_VALUE}${sha}\n${await this.run([...args, '--name-status', sha], { cwd: repositoryPath })}`);
+    const numstat = parseNumstatLog(
+      `${RECORD_VALUE}${sha}\n${await this.run([...args, '--numstat', sha], { cwd: repositoryPath })}`,
+    );
+    return applyNumstat(nameStatus, numstat)[sha] ?? [];
   }
 
   private run(
@@ -95,7 +191,31 @@ export class GitCliProvider implements GitProvider {
   }
 }
 
-function gitAuthEnv(credential?: { username: string; secret: string }): NodeJS.ProcessEnv {
+const RECORD_SHA = '%x1e%H';
+const RECORD_VALUE = '\x1e';
+
+function parseBranchRefs(raw: string): Array<{ name: string; sha: string }> {
+  return raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, sha] = line.split('\0');
+      return { name: name?.trim() ?? '', sha: sha?.trim() ?? '' };
+    })
+    .filter((row) => row.name && row.sha);
+}
+
+async function isGitDir(path: string): Promise<boolean> {
+  try {
+    await access(join(path, 'HEAD'));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function gitAuthEnv(credential?: GitCredential): NodeJS.ProcessEnv {
   if (!credential?.secret) {
     return {};
   }
