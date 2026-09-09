@@ -1,4 +1,4 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
 import { APP_VERSION } from '@code-archaeologist/shared';
 import { PrismaService } from '../database/prisma.service';
@@ -9,8 +9,8 @@ import { HealthResponseDto } from './dto/health-response.dto';
 @Controller()
 export class HealthController {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly redis: RedisService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(RedisService) private readonly redis: RedisService,
   ) {}
 
   @Get('health')

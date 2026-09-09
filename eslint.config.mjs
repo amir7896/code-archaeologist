@@ -10,6 +10,8 @@ export default tseslint.config(
       '**/node_modules/**',
       'apps/web/dist/**',
       'packages/core/generated/**',
+      'packages/core/prisma/seed.cjs',
+      'packages/core/scripts/**/*.cjs',
       'eslint.config.mjs',
     ],
   },

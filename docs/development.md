@@ -20,6 +20,8 @@ pnpm dev
 
 `pnpm docker:up` starts PostgreSQL and Redis only. The API, worker, and web app run on the host for faster TypeScript reload.
 
+Do not run `pnpm install` while `pnpm dev` is already running. Stop the dev processes first, then install new packages and apply migrations with `pnpm db:migrate:deploy`.
+
 If ports 5432 or 6379 are already in use, set `POSTGRES_PORT` and `REDIS_PORT` in `.env` before starting Compose.
 
 ## URLs
@@ -32,6 +34,21 @@ If ports 5432 or 6379 are already in use, set `POSTGRES_PORT` and `REDIS_PORT` i
 | Readiness | http://localhost:3000/api/v1/health/ready |
 | Swagger UI | http://localhost:3000/api/docs |
 | OpenAPI JSON | http://localhost:3000/api/docs/json |
+
+Phase 1 auth/workspace routes (all under `/api/v1`):
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/auth/register` | Email/password. Creates a personal workspace. Rate-limited. |
+| POST | `/auth/login` | Rate-limited. |
+| POST | `/auth/refresh` | Rotates the refresh session. |
+| POST | `/auth/logout` | Revokes the current session. Bearer required. |
+| GET | `/me` | Current user. |
+| GET/POST | `/workspaces` | List or create. |
+| GET/PATCH/DELETE | `/workspaces/:id` | Object-level RBAC. Owner archives or deletes. |
+| GET/POST | `/workspaces/:id/members` | Invite is Admin+. Invitee must already have an account. |
+| PATCH/DELETE | `/workspaces/:id/members/:userId` | Owner role cannot be changed or removed. |
+| GET | `/workspaces/:id/audit-logs` | Admin+. |
 
 ## API DTOs and ValidationPipe
 
@@ -69,7 +86,7 @@ pnpm db:migrate:deploy   # apply committed migrations
 
 ## Ollama (optional, later phases)
 
-Ollama is not required for Phase 0.
+Ollama is not required for Phase 1. GitHub OAuth is also later; Phase 1 is email/password only.
 
 ```bash
 docker compose --profile ai up -d ollama

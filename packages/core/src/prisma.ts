@@ -1,5 +1,5 @@
 import { validateEnv } from '@code-archaeologist/shared';
-import { PrismaClient } from '../generated/client';
+import { Prisma, PrismaClient } from '../generated/client';
 
 export function createPrismaClient(): PrismaClient {
   const env = validateEnv();
@@ -15,4 +15,4 @@ export async function pingDatabase(client: PrismaClient): Promise<boolean> {
   return true;
 }
 
-export { PrismaClient };
+export { Prisma, PrismaClient };

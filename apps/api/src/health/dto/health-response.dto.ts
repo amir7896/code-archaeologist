@@ -1,23 +1,23 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class HealthChecksDto {
-  @ApiProperty({ example: true })
+  @ApiProperty({ type: Boolean, example: true })
   postgres!: boolean;
 
-  @ApiProperty({ example: true })
+  @ApiProperty({ type: Boolean, example: true })
   redis!: boolean;
 }
 
 export class HealthResponseDto {
-  @ApiProperty({ example: 'ok', enum: ['ok', 'degraded'] })
+  @ApiProperty({ type: String, example: 'ok', enum: ['ok', 'degraded'] })
   status!: string;
 
-  @ApiProperty({ example: 'api' })
+  @ApiProperty({ type: String, example: 'api' })
   service!: string;
 
-  @ApiProperty({ example: '0.1.0' })
+  @ApiProperty({ type: String, example: '0.1.0' })
   version!: string;
 
-  @ApiPropertyOptional({ type: HealthChecksDto })
+  @ApiPropertyOptional({ type: () => HealthChecksDto })
   checks?: HealthChecksDto;
 }
