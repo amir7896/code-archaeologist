@@ -31,7 +31,7 @@ export async function indexDna(input: {
     select: { lastDnaRevision: true },
   });
   if (current?.lastDnaRevision === revision) {
-    await input.onProgress?.(99);
+    await input.onProgress?.(97);
     return;
   }
 
@@ -173,7 +173,7 @@ export async function indexDna(input: {
     where: { id: repositoryId },
     data: { lastDnaRevision: revision },
   });
-  await input.onProgress?.(99);
+  await input.onProgress?.(97);
 }
 
 async function writeSymbolVersions(

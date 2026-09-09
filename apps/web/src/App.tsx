@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell';
 import { useAuth } from './hooks/useAuth';
 import { ArchitectureMapPage } from './pages/ArchitectureMapPage';
 import { CodeDnaPage } from './pages/CodeDnaPage';
+import { EvolutionPage } from './pages/EvolutionPage';
 import { ImpactPage } from './pages/ImpactPage';
 import { CodeExplorerPage } from './pages/CodeExplorerPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -68,6 +69,10 @@ export function App() {
           <Route
             path="/work-space/:workspaceId/repository/:repositoryId/impact"
             element={<ImpactPage />}
+          />
+          <Route
+            path="/work-space/:workspaceId/repository/:repositoryId/evolution"
+            element={<EvolutionPage />}
           />
           <Route
             path="/work-space/:workspaceId/repository/:repositoryId/history"

@@ -136,6 +136,7 @@ export type Repository = {
   lastParsedRevision?: string | null;
   lastGraphRevision?: string | null;
   lastDnaRevision?: string | null;
+  lastEvidenceRevision?: string | null;
   status: string;
   hasCredential: boolean;
   lastError: string | null;
@@ -293,6 +294,32 @@ export const repositoryApi = {
     query: { fileId?: string; symbolId?: string; depth?: number },
   ) =>
     api<ImpactAnalysis>(`/workspaces/${workspaceId}/repositories/${repositoryId}/impact${toQuery(query)}`),
+  evidence: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { fileId?: string; symbolId?: string },
+  ) =>
+    api<EvidenceList>(`/workspaces/${workspaceId}/repositories/${repositoryId}/evidence${toQuery(query)}`),
+  evidenceResolve: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { fileId?: string; symbolId?: string; revision?: string },
+  ) =>
+    api<EvidenceResolve>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/evidence/resolve${toQuery(query)}`,
+    ),
+  evolution: (
+    workspaceId: string,
+    repositoryId: string,
+    query: { fileId?: string; symbolId?: string },
+  ) =>
+    api<EvolutionTimeline>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/insights/evolution${toQuery(query)}`,
+    ),
+  symbolHistory: (workspaceId: string, repositoryId: string, symbolId: string) =>
+    api<EvolutionTimeline>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/code/symbols/${symbolId}/history`,
+    ),
 };
 
 export type RepoBranch = {
@@ -554,6 +581,88 @@ export type ImpactAnalysis = {
     consumerCount: number;
     dependencyCount: number;
   }>;
+};
+
+export type EvidenceOrigin = {
+  subjectType: string;
+  subjectId: string;
+  name: string;
+  path: string;
+  fileId: string;
+  symbolId: string | null;
+};
+
+export type EvidenceItem = {
+  id: string;
+  kind: string;
+  method: string;
+  subjectType: string;
+  subjectId: string;
+  confidence: number;
+  confidenceLabel: string;
+  excerpt: string | null;
+  details: Record<string, unknown>;
+  commit: {
+    sha: string;
+    message: string;
+    authorName: string;
+    committedAt: string;
+  } | null;
+};
+
+export type EvidenceList = {
+  revision: string | null;
+  origin: EvidenceOrigin;
+  note: string;
+  items: EvidenceItem[];
+};
+
+export type EvidenceVersion = {
+  revision: string;
+  contentHash: string;
+  changeType: string;
+  startLine: number;
+  endLine: number;
+  commitSha: string | null;
+};
+
+export type EvidenceResolve = {
+  revision: string | null;
+  requestedRevision: string | null;
+  matched: boolean;
+  origin: EvidenceOrigin;
+  note: string;
+  items: EvidenceItem[];
+  versions: EvidenceVersion[];
+};
+
+export type EvolutionEvent = {
+  sha: string;
+  message: string;
+  authorName: string;
+  committedAt: string;
+  method: string;
+  confidence: number;
+  confidenceLabel: string;
+  changeType: string | null;
+  additions: number;
+  deletions: number;
+  overlapLines: number;
+};
+
+export type EvolutionTimeline = {
+  revision: string | null;
+  origin: EvidenceOrigin;
+  note: string;
+  stats: {
+    commitCount: number;
+    strongCount: number;
+    likelyCount: number;
+    possibleCount: number;
+    versionCount: number;
+  };
+  timeline: EvolutionEvent[];
+  versions: EvidenceVersion[];
 };
 
 function toQuery(query?: Record<string, string | number | undefined>): string {

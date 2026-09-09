@@ -6,6 +6,7 @@ import { formatRiskLevel, shortRevision } from '../lib/format';
 import {
   repositoryCodePath,
   repositoryDnaPath,
+  repositoryEvolutionPath,
   repositoryGraphPath,
   repositoryImpactPath,
 } from '../lib/paths';
@@ -218,6 +219,15 @@ function ImpactResult({
             to={repositoryGraphPath(workspaceId, repositoryId, { file: impact.origin.fileId })}
           >
             Architecture
+          </Link>
+          <Link
+            className="text-indigo-600 hover:text-indigo-500"
+            to={repositoryEvolutionPath(workspaceId, repositoryId, {
+              file: impact.origin.fileId,
+              symbol: impact.origin.symbolId ?? undefined,
+            })}
+          >
+            Evolution
           </Link>
         </div>
       </section>

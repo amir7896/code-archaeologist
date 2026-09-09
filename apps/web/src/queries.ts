@@ -58,6 +58,16 @@ export const queryKeys = {
       symbolId ?? '',
       depth ?? 2,
     ] as const,
+  evolution: (workspaceId: string, repositoryId: string, fileId?: string, symbolId?: string) =>
+    [
+      'workspaces',
+      workspaceId,
+      'repositories',
+      repositoryId,
+      'evolution',
+      fileId ?? '',
+      symbolId ?? '',
+    ] as const,
   symbols: (
     workspaceId: string,
     repositoryId: string,
@@ -322,6 +332,12 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
         queryClient.invalidateQueries({
           queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'impact'],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'evolution'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'evidence'],
+        }),
       ]);
     },
   });
@@ -485,6 +501,18 @@ export function useGraphDependentsQuery(
     queryKey: queryKeys.graphDependents(workspaceId, repositoryId, fileId, depth),
     queryFn: () => repositoryApi.graphDependents(workspaceId, repositoryId, { fileId, depth }),
     enabled: Boolean(workspaceId && repositoryId && fileId),
+  });
+}
+
+export function useEvolutionQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { fileId?: string; symbolId?: string } = {},
+) {
+  return useQuery({
+    queryKey: queryKeys.evolution(workspaceId, repositoryId, query.fileId, query.symbolId),
+    queryFn: () => repositoryApi.evolution(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId && (query.fileId || query.symbolId)),
   });
 }
 

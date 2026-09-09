@@ -6,6 +6,7 @@ import { GitCliProvider } from './git-cli.provider';
 import { indexAst } from './index-ast';
 import { indexGitHistory } from './index-git-history';
 import { indexDna } from './index-dna';
+import { indexEvidence } from './index-evidence';
 import { indexGraph } from './index-graph';
 
 type LoggerLike = {
@@ -23,6 +24,7 @@ export async function processRepositorySync(
     parseAst?: typeof indexAst;
     buildGraph?: typeof indexGraph;
     computeDna?: typeof indexDna;
+    linkEvidence?: typeof indexEvidence;
     logger?: LoggerLike;
   },
 ): Promise<void> {
@@ -31,6 +33,7 @@ export async function processRepositorySync(
   const parseAst = deps.parseAst ?? indexAst;
   const buildGraph = deps.buildGraph ?? indexGraph;
   const computeDna = deps.computeDna ?? indexDna;
+  const linkEvidence = deps.linkEvidence ?? indexEvidence;
   const { prisma, env } = deps;
   const run = await prisma.analysisRun.findUnique({
     where: { id: data.analysisRunId },
@@ -129,6 +132,21 @@ export async function processRepositorySync(
       },
     });
     await markTask(prisma, dnaTask?.id, 'SUCCEEDED');
+
+    const evidenceTask = run.tasks.find((task) => task.taskType === 'LINK_EVIDENCE');
+    await markTask(prisma, evidenceTask?.id, 'RUNNING');
+    await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 97 } });
+    await linkEvidence({
+      prisma,
+      git,
+      gitDir: mirrorDir,
+      repositoryId: run.repositoryId,
+      revision: currentRevision,
+      onProgress: async (progress) => {
+        await prisma.analysisRun.update({ where: { id: run.id }, data: { progress } });
+      },
+    });
+    await markTask(prisma, evidenceTask?.id, 'SUCCEEDED');
 
     await prisma.repository.update({
       where: { id: run.repositoryId },

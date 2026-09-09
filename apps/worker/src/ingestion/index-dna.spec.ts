@@ -9,7 +9,7 @@ describe('indexDna', () => {
     const onProgress = jest.fn();
     await indexDna({ prisma: prisma as never, repositoryId: 'repo-1', revision: 'abc', onProgress });
     expect(prisma.repoFile.findMany).not.toHaveBeenCalled();
-    expect(onProgress).toHaveBeenCalledWith(99);
+    expect(onProgress).toHaveBeenCalledWith(97);
   });
 
   it('writes risk scores and stamps the DNA revision', async () => {

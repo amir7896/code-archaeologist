@@ -11,7 +11,10 @@ import {
   SymbolListQueryDto,
   SymbolListResponseDto,
 } from './dto/source.dto';
+import { EvolutionResponseDto } from './dto/evidence.dto';
+import { EvidenceService } from './evidence.service';
 import { SourceService } from './source.service';
+import { GetSymbolHistoryDocs } from './swagger/evidence.swagger';
 import {
   GetFileDocs,
   GetSymbolDocs,
@@ -25,7 +28,10 @@ import {
 @UseGuards(JwtAuthGuard, WorkspaceGuard)
 @Controller('workspaces/:workspaceId/repositories/:repositoryId')
 export class SourceController {
-  constructor(@Inject(SourceService) private readonly source: SourceService) {}
+  constructor(
+    @Inject(SourceService) private readonly source: SourceService,
+    @Inject(EvidenceService) private readonly evidence: EvidenceService,
+  ) {}
 
   @Get('code/files')
   @ListFilesDocs()
@@ -65,6 +71,16 @@ export class SourceController {
     @Query() query: SymbolListQueryDto,
   ): Promise<SymbolListResponseDto> {
     return this.source.listSymbols(workspaceId, repositoryId, query);
+  }
+
+  @Get('code/symbols/:symbolId/history')
+  @GetSymbolHistoryDocs()
+  symbolHistory(
+    @Param('workspaceId') workspaceId: string,
+    @Param('repositoryId') repositoryId: string,
+    @Param('symbolId') symbolId: string,
+  ): Promise<EvolutionResponseDto> {
+    return this.evidence.symbolHistory(workspaceId, repositoryId, symbolId);
   }
 
   @Get('code/symbols/:symbolId')

@@ -51,6 +51,7 @@ type RepositoryRecord = {
   lastParsedRevision?: string | null;
   lastGraphRevision?: string | null;
   lastDnaRevision?: string | null;
+  lastEvidenceRevision?: string | null;
   status: string;
   lastError: string | null;
   lastSyncedAt: Date | null;
@@ -252,6 +253,7 @@ export class RepositoriesService {
             { taskType: 'PARSE_AST' },
             { taskType: 'BUILD_GRAPH' },
             { taskType: 'COMPUTE_DNA' },
+            { taskType: 'LINK_EVIDENCE' },
           ],
         },
       },
@@ -363,6 +365,7 @@ function toRepositoryResponse(
     lastParsedRevision: repository.lastParsedRevision ?? null,
     lastGraphRevision: repository.lastGraphRevision ?? null,
     lastDnaRevision: repository.lastDnaRevision ?? null,
+    lastEvidenceRevision: repository.lastEvidenceRevision ?? null,
     commitCount: counts?.commitCount,
     fileCount: counts?.fileCount,
     symbolCount: counts?.symbolCount,

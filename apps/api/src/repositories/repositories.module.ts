@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { WorkspaceGuard } from '../workspaces/guards/workspace.guard';
 import { DnaController } from './dna.controller';
 import { DnaService } from './dna.service';
+import { EvidenceController } from './evidence.controller';
+import { EvidenceService } from './evidence.service';
 import { GraphController } from './graph.controller';
 import { GraphService } from './graph.service';
 import { HistoryController } from './history.controller';
@@ -21,6 +23,7 @@ import { SourceService } from './source.service';
     GraphController,
     DnaController,
     ImpactController,
+    EvidenceController,
   ],
   providers: [
     RepositoriesService,
@@ -29,6 +32,7 @@ import { SourceService } from './source.service';
     GraphService,
     DnaService,
     ImpactService,
+    EvidenceService,
     WorkspaceGuard,
   ],
 })

@@ -43,6 +43,7 @@ const TASK_LABELS: Record<string, string> = {
   PARSE_AST: 'Reading source files',
   BUILD_GRAPH: 'Building the architecture map',
   COMPUTE_DNA: 'Scoring history and risk',
+  LINK_EVIDENCE: 'Linking history to code',
 };
 
 const SYMBOL_LABELS: Record<string, string> = {
@@ -67,6 +68,19 @@ const RELATION_LABELS: Record<string, string> = {
   IMPLEMENTS: 'Implements',
   CONTAINS: 'Contains',
   DEPENDS_ON: 'Depends on',
+};
+
+const EVIDENCE_METHOD_LABELS: Record<string, string> = {
+  LINE_OVERLAP: 'Overlapping lines',
+  FILE_TOUCH: 'Same file',
+  FILE_ADDED: 'File added',
+  FILE_RENAMED: 'File renamed',
+};
+
+const CONFIDENCE_LABELS: Record<string, string> = {
+  possible: 'Possible',
+  likely: 'Likely',
+  strong: 'Strong',
 };
 
 const CHANGE_LABELS: Record<string, string> = {
@@ -120,6 +134,14 @@ export function formatRiskLevel(level: string): string {
     return 'Low';
   }
   return level.replaceAll('_', ' ').toLowerCase();
+}
+
+export function formatEvidenceMethod(method: string): string {
+  return EVIDENCE_METHOD_LABELS[method] ?? method.replaceAll('_', ' ').toLowerCase();
+}
+
+export function formatConfidenceLabel(label: string): string {
+  return CONFIDENCE_LABELS[label] ?? label.replaceAll('_', ' ').toLowerCase();
 }
 
 export function formatChange(changeType: string): string {

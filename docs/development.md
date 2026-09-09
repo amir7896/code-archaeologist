@@ -71,6 +71,10 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/risks` | Optional `level`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/health` | Risk summary counts. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/impact` | Deterministic blast radius. Requires `fileId` or `symbolId`. Optional `depth` (1–6). |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/evidence` | Scored historical links. Requires `fileId` or `symbolId`. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/evidence/resolve` | What is known as of an optional `revision`. Requires `fileId` or `symbolId`. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/evolution` | Evolution timeline. Requires `fileId` or `symbolId`. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/symbols/:symbolId/history` | Scored commit history for a symbol. |
 
 ## API DTOs and ValidationPipe
 
