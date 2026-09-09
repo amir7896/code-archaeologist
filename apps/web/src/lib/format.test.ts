@@ -29,6 +29,7 @@ describe('format', () => {
     expect(formatTask('PARSE_AST')).toBe('Reading source files');
     expect(formatTask('BUILD_GRAPH')).toBe('Building the architecture map');
     expect(formatTask('COMPUTE_DNA')).toBe('Scoring history and risk');
+    expect(formatTask('LINK_EVIDENCE')).toBe('Linking history to code');
     expect(formatChange('RENAMED')).toBe('Renamed');
     expect(commitSubject('Add login\n\nDetails')).toBe('Add login');
     expect(formatDiffstat(4, 1)).toBe('+4 / −1');

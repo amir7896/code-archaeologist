@@ -3,6 +3,7 @@ import {
   repositoryDnaPath,
   repositoryGraphPath,
   repositoryHistoryPath,
+  repositoryEvolutionPath,
   repositoryImpactPath,
   workspacePath,
 } from './paths';
@@ -24,6 +25,9 @@ describe('paths', () => {
     );
     expect(repositoryImpactPath('ws-1', 'repo-1', { file: 'file-1', depth: '3' })).toBe(
       '/work-space/ws-1/repository/repo-1/impact?file=file-1&depth=3',
+    );
+    expect(repositoryEvolutionPath('ws-1', 'repo-1', { file: 'file-1' })).toBe(
+      '/work-space/ws-1/repository/repo-1/evolution?file=file-1',
     );
   });
 });

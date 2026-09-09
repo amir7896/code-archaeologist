@@ -1,5 +1,5 @@
 // Code Archaeologist data model.
-// Phase 4 adds AST symbols and relations for TypeScript/JavaScript.
+// Historical evidence links commits to files and symbols with confidence.
 // Entity ids are PostgreSQL UUIDs. schema_meta.id stays a stable string.
 // Remaining tables follow the project scope later.
 // JSONB is reserved for variable metadata. pgvector is not enabled until embeddings are on.
@@ -18,7 +18,7 @@ datasource db {
 
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("4-ast-engine")
+  phase     String   @default("8-historical-evidence")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")
@@ -83,6 +83,7 @@ enum AnalysisTaskType {
   PARSE_AST
   BUILD_GRAPH
   COMPUTE_DNA
+  LINK_EVIDENCE
 }
 
 enum SymbolKind {
@@ -147,6 +148,18 @@ enum FileChangeType {
   DELETED
   RENAMED
   COPIED
+}
+
+enum EvidenceKind {
+  COMMIT_SYMBOL
+  FILE_COMMIT
+}
+
+enum EvidenceMethod {
+  LINE_OVERLAP
+  FILE_TOUCH
+  FILE_ADDED
+  FILE_RENAMED
 }
 
 enum AnalysisTaskStatus {
@@ -251,7 +264,8 @@ model Repository {
   lastIndexedRevision String?            @map("last_indexed_revision")
   lastParsedRevision  String?            @map("last_parsed_revision")
   lastGraphRevision   String?            @map("last_graph_revision")
-  lastDnaRevision     String?            @map("last_dna_revision")
+  lastDnaRevision      String?            @map("last_dna_revision")
+  lastEvidenceRevision String?            @map("last_evidence_revision")
   settings            Json               @default("{}")
   status              RepositoryStatus   @default(PENDING)
   lastError           String?            @map("last_error")
@@ -270,6 +284,7 @@ model Repository {
   graphEdges        GraphEdge[]
   metricsSnapshots  MetricsSnapshot[]
   riskScores        RiskScore[]
+  evidence          Evidence[]
 
   @@index([workspaceId, createdAt])
   @@index([status])
@@ -383,6 +398,7 @@ model Commit {
   branches       BranchCommit[]
   headOfBranches Branch[]       @relation("BranchHead")
   symbolVersions SymbolVersion[]
+  evidence       Evidence[]
 
   @@unique([repositoryId, sha])
   @@index([repositoryId, committedAt])
@@ -421,6 +437,7 @@ model RepoFile {
   commitFiles    CommitFile[]
   symbols        CodeSymbol[]
   symbolVersions SymbolVersion[]
+  evidence       Evidence[]
 
   @@unique([repositoryId, path])
   @@index([repositoryId])
@@ -469,6 +486,7 @@ model CodeSymbol {
   outgoing SymbolRelation[]  @relation("RelationSource")
   incoming SymbolRelation[]  @relation("RelationTarget")
   versions SymbolVersion[]
+  evidence Evidence[]
 
   @@unique([fileId, qualifiedName])
   @@index([fileId])
@@ -579,6 +597,34 @@ model RiskScore {
   @@unique([repositoryId, subjectType, subjectId], map: "risk_scores_unique")
   @@index([repositoryId, level], map: "risk_scores_repo_level_idx")
   @@map("risk_scores")
+}
+
+model Evidence {
+  id           String         @id @default(uuid()) @db.Uuid
+  repositoryId String         @map("repository_id") @db.Uuid
+  kind         EvidenceKind
+  method       EvidenceMethod
+  subjectType  DnaSubjectType @map("subject_type")
+  subjectId    String         @map("subject_id")
+  sourceType   String         @map("source_type")
+  sourceId     String         @map("source_id")
+  commitId     String?        @map("commit_id") @db.Uuid
+  fileId       String?        @map("file_id") @db.Uuid
+  symbolId     String?        @map("symbol_id") @db.Uuid
+  confidence   Float
+  excerpt      String?
+  details      Json           @default("{}")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  repository Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  commit     Commit?     @relation(fields: [commitId], references: [id], onDelete: Cascade)
+  file       RepoFile?   @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  symbol     CodeSymbol? @relation(fields: [symbolId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, kind, subjectId, sourceId], map: "evidence_unique")
+  @@index([repositoryId, subjectType, subjectId], map: "evidence_subject_idx")
+  @@index([commitId], map: "evidence_commit_idx")
+  @@map("evidence")
 }
 
 // Planned later:

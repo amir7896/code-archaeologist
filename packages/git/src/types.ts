@@ -34,6 +34,11 @@ export interface GitCommitChange {
   similarity: number | null;
 }
 
+export type GitLineSpan = {
+  startLine: number;
+  endLine: number;
+};
+
 export interface GitHistoryQuery {
   revision: string;
   sinceSha?: string;
@@ -54,6 +59,7 @@ export interface GitProvider {
   isAncestor(repositoryPath: string, maybeAncestor: string, revision: string): Promise<boolean>;
   listHistory(repositoryPath: string, query: GitHistoryQuery): Promise<GitHistoryPage>;
   listCommitChanges(repositoryPath: string, sha: string): Promise<GitCommitChange[]>;
+  listChangedSpans?(repositoryPath: string, sha: string, path: string): Promise<GitLineSpan[]>;
   listTree(repositoryPath: string, revision: string): Promise<GitTreeEntry[]>;
   readBlob(repositoryPath: string, revision: string, path: string): Promise<string>;
 }

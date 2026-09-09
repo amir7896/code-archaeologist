@@ -13,10 +13,12 @@ import {
   type GitCredential,
   type GitHistoryPage,
   type GitHistoryQuery,
+  type GitLineSpan,
   type GitProvider,
   type GitBranchSummary,
   type GitTreeEntry,
 } from '@code-archaeologist/git';
+import { parseUnifiedHunks } from '@code-archaeologist/shared';
 
 const DEFAULT_TIMEOUT_MS = 10 * 60_000;
 const COMMIT_FORMAT = `%x1e%H%x1f%an%x1f%ae%x1f%aI%x1f%cI%x1f%P%x1f%B`;
@@ -127,6 +129,17 @@ export class GitCliProvider implements GitProvider {
       }
     }
     return { commits, changes };
+  }
+
+  async listChangedSpans(repositoryPath: string, sha: string, path: string): Promise<GitLineSpan[]> {
+    try {
+      const raw = await this.run(['diff-tree', '-U0', '--no-commit-id', '-p', sha, '--', path], {
+        cwd: repositoryPath,
+      });
+      return parseUnifiedHunks(raw);
+    } catch {
+      return [];
+    }
   }
 
   async listCommitChanges(repositoryPath: string, sha: string): Promise<GitCommitChange[]> {

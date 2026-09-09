@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { PageFrame } from '../components/PageFrame';
 import { errorMessage } from '../lib/errors';
 import { shortRevision } from '../lib/format';
-import { repositoryCodePath, repositoryGraphPath, repositoryImpactPath } from '../lib/paths';
+import { repositoryCodePath, repositoryEvolutionPath, repositoryGraphPath, repositoryImpactPath } from '../lib/paths';
 import {
   useGraphDependenciesQuery,
   useGraphDependentsQuery,
@@ -326,6 +326,12 @@ function FileNeighbors({
             to={repositoryImpactPath(workspaceId, repositoryId, { file: fileId })}
           >
             Check impact
+          </Link>
+          <Link
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            to={repositoryEvolutionPath(workspaceId, repositoryId, { file: fileId })}
+          >
+            Evolution
           </Link>
         </div>
       </div>

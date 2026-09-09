@@ -10,7 +10,7 @@ import {
   formatWhen,
   shortRevision,
 } from '../lib/format';
-import { repositoryCodePath, repositoryDnaPath, repositoryImpactPath } from '../lib/paths';
+import { repositoryCodePath, repositoryDnaPath, repositoryEvolutionPath, repositoryImpactPath } from '../lib/paths';
 import {
   useBranchesQuery,
   useCommitQuery,
@@ -429,6 +429,12 @@ function ChangedFilePreview({
               to={repositoryImpactPath(workspaceId, repositoryId, { file: fileId })}
             >
               Check impact
+            </Link>
+            <Link
+              className="text-indigo-600 hover:text-indigo-500"
+              to={repositoryEvolutionPath(workspaceId, repositoryId, { file: fileId })}
+            >
+              Evolution
             </Link>
           </>
         ) : null}

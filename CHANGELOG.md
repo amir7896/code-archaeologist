@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Historical evidence: commit-to-symbol links with confidence, a historical resolver, and an Evolution screen.
 - Phase 7 deterministic impact: blast-radius walk from the architecture graph, risk overlays, and an Impact screen.
 - Phase 6 Code DNA: symbol versions, metrics snapshots, explainable risk scores, hotspots, and a DNA profile screen.
 - Phase 5 graph engine: derived `graph_edges`, dependency walk, cycle detection, and an interactive architecture map.

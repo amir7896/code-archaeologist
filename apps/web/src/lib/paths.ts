@@ -62,6 +62,17 @@ export function repositoryImpactPath(
   });
 }
 
+export function repositoryEvolutionPath(
+  workspaceId: string,
+  repositoryId: string,
+  query: { file?: string; symbol?: string } = {},
+): string {
+  return withQuery(`${repositoryPath(workspaceId, repositoryId)}/evolution`, {
+    file: query.file,
+    symbol: query.symbol,
+  });
+}
+
 export function repositoryHistoryPath(
   workspaceId: string,
   repositoryId: string,

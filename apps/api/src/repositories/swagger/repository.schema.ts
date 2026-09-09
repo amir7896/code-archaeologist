@@ -66,6 +66,7 @@ export const repositoryResponseExample = {
   lastParsedRevision: '20a7150',
   lastGraphRevision: '20a7150',
   lastDnaRevision: '20a7150',
+  lastEvidenceRevision: '20a7150',
   status: 'READY',
   hasCredential: true,
   lastError: null,
