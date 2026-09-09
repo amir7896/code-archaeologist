@@ -15,7 +15,7 @@ Git repository → ingestion → Git history + AST → normalized symbols → de
 | `apps/web` | React dashboard, explorer, graph, and investigation UI. |
 | PostgreSQL | System of record, graph edges, search, analytics. |
 | Redis | Queue backend. |
-| Ollama | Optional local inference. Not used for historical evidence. |
+| Ollama | Optional local inference for Ask explanations. Answers still require indexed citations. |
 
 ## Packages
 
@@ -31,15 +31,15 @@ Provider implementations stay behind interfaces so they can change independently
 
 auth • users • workspaces • repositories • git • analysis • parsers • files • symbols • graph • metrics • risks • insights • investigations • ai • embeddings • integrations • webhooks • reports • notifications • audit
 
-Historical evidence wires `auth`, `users`, `workspaces`, `repositories`, history, source/symbols, graph, Code DNA/risk insights, deterministic impact, evidence, `audit`, and the `repository-sync` worker (clone, Git history, AST parse, graph build, DNA scoring, and commit-to-symbol linking). Remaining modules stay planned. Controllers stay thin. Business rules live in services and domain packages.
+Investigation wires `auth`, `users`, `workspaces`, `repositories`, history, source/symbols, graph, Code DNA/risk insights, deterministic impact, evidence, investigations, `audit`, the `repository-sync` worker, and the `investigation` worker. Remaining modules stay planned. Controllers stay thin. Business rules live in services and domain packages.
 
 ## Data
 
-PostgreSQL tables are listed in the project scope. Historical evidence adds `evidence` and `last_evidence_revision`. Impact reuses `graph_edges` and `risk_scores` for on-request blast-radius analysis. Code DNA already shipped `symbol_versions`, `metrics_snapshots`, and `risk_scores`. `pgvector` is enabled only when semantic embeddings are on.
+PostgreSQL tables are listed in the project scope. Investigation adds `investigations`, `investigation_evidence`, and `investigation_messages`. Retrieval is structured (SQL, graph, and historical evidence). `pgvector` stays off until semantic document embeddings are enabled.
 
 ## Queues
 
-`repository-sync`, `analysis-run`, `git-history`, `ast-parse`, `graph-build`, `metrics`, `risk`, `embedding`, `integration-sync`, `report-generation`, `cleanup`
+`repository-sync`, `analysis-run`, `git-history`, `ast-parse`, `graph-build`, `metrics`, `risk`, `embedding`, `integration-sync`, `report-generation`, `cleanup`, `investigation`
 
 ## Principles
 

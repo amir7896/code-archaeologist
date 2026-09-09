@@ -1,5 +1,5 @@
 // Code Archaeologist data model.
-// Historical evidence links commits to files and symbols with confidence.
+// Investigations store cited Ask answers. pgvector stays off.
 // Entity ids are PostgreSQL UUIDs. schema_meta.id stays a stable string.
 // Remaining tables follow the project scope later.
 // JSONB is reserved for variable metadata. pgvector is not enabled until embeddings are on.
@@ -18,7 +18,7 @@ datasource db {
 
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("8-historical-evidence")
+  phase     String   @default("9-ollama-rag")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")
@@ -182,6 +182,7 @@ model User {
   memberships     WorkspaceMember[]
   sessions        Session[]
   auditLogs       AuditLog[]
+  investigations  Investigation[]
 
   @@map("users")
 }
@@ -285,6 +286,7 @@ model Repository {
   metricsSnapshots  MetricsSnapshot[]
   riskScores        RiskScore[]
   evidence          Evidence[]
+  investigations    Investigation[]
 
   @@index([workspaceId, createdAt])
   @@index([status])
@@ -627,7 +629,73 @@ model Evidence {
   @@map("evidence")
 }
 
+enum InvestigationStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+model Investigation {
+  id              String               @id @default(uuid()) @db.Uuid
+  repositoryId    String               @map("repository_id") @db.Uuid
+  userId          String               @map("user_id") @db.Uuid
+  question        String
+  status          InvestigationStatus  @default(QUEUED)
+  model           String
+  confidence      Float?
+  usedModel       Boolean              @default(false) @map("used_model")
+  subjectFileId   String?              @map("subject_file_id") @db.Uuid
+  subjectSymbolId String?              @map("subject_symbol_id") @db.Uuid
+  error           String?
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  repository Repository              @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  user       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evidence   InvestigationEvidence[]
+  messages   InvestigationMessage[]
+
+  @@index([repositoryId, createdAt], map: "investigations_repo_created_idx")
+  @@index([userId], map: "investigations_user_idx")
+  @@map("investigations")
+}
+
+model InvestigationEvidence {
+  id              String   @id @default(uuid()) @db.Uuid
+  investigationId String   @map("investigation_id") @db.Uuid
+  sourceType      String   @map("source_type")
+  sourceId        String   @map("source_id")
+  excerpt         String
+  relevance       Float
+  citation        String
+  fileId          String?  @map("file_id") @db.Uuid
+  symbolId        String?  @map("symbol_id") @db.Uuid
+  commitSha       String?  @map("commit_sha")
+  path            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  investigation Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+
+  @@index([investigationId], map: "investigation_evidence_inv_idx")
+  @@map("investigation_evidence")
+}
+
+model InvestigationMessage {
+  id               String   @id @default(uuid()) @db.Uuid
+  investigationId  String   @map("investigation_id") @db.Uuid
+  role             String
+  content          String
+  promptTokens     Int?     @map("prompt_tokens")
+  completionTokens Int?     @map("completion_tokens")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  investigation Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+
+  @@index([investigationId], map: "investigation_messages_inv_idx")
+  @@map("investigation_messages")
+}
+
 // Planned later:
 // issues, pull_requests, reviews,
-// documents, document_chunks, investigations, investigation_evidence,
-// investigation_messages, integrations, webhook_events
+// documents, document_chunks, integrations, webhook_events

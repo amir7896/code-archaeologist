@@ -3,6 +3,7 @@ export * from './env';
 export * from './evidence';
 export * from './graph';
 export * from './impact';
+export * from './investigation';
 export * from './load-env';
 export * from './queues';
 export * from './resolve-import';

@@ -75,6 +75,9 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/evidence/resolve` | What is known as of an optional `revision`. Requires `fileId` or `symbolId`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/evolution` | Evolution timeline. Requires `fileId` or `symbolId`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/symbols/:symbolId/history` | Scored commit history for a symbol. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/ai/status` | Whether the local model is reachable. |
+| GET/POST | `/workspaces/:workspaceId/repositories/:repositoryId/investigations` | List or ask. Ask is Analyst+. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/investigations/:investigationId` | Answer, messages, and citations. |
 
 ## API DTOs and ValidationPipe
 
@@ -110,20 +113,18 @@ pnpm db:migrate          # interactive Prisma migrate during later schema work
 pnpm db:migrate:deploy   # apply committed migrations
 ```
 
-## Ollama (optional, later phases)
+## Ollama (optional)
 
-Ollama is not required for Phase 6. GitHub OAuth is later. Repository credentials use `CREDENTIALS_ENCRYPTION_KEY` and are never returned by the API.
-
-After pulling Phase 6, apply `pnpm db:migrate:deploy` so Code DNA tables exist, then re-sync existing repositories to score risk and hotspots. The worker keeps a bare mirror under `.data/repositories/mirrors` (or `REPOSITORY_WORK_DIR`).
+Ask works without a local model: it returns cited indexed evidence. When Ollama is up, it may write the explanation. It cannot invent citations or change the repository. GitHub OAuth is later.
 
 ```bash
 docker compose --profile ai up -d ollama
 ```
+
+Then pull a model, for example `llama3.1:8b`. Apply `pnpm db:migrate:deploy` so investigation tables exist.
 
 RAM guidance:
 
 - 7B/8B model: about 8 GB
 - Comfortable local use: 16 GB+
 - 31 GB machines can run API, worker, Postgres, Redis, and a 7B–14B model together
-
-Do not start with the chatbot. Graph and evidence come first.

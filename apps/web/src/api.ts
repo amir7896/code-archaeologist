@@ -320,6 +320,25 @@ export const repositoryApi = {
     api<EvolutionTimeline>(
       `/workspaces/${workspaceId}/repositories/${repositoryId}/code/symbols/${symbolId}/history`,
     ),
+  aiStatus: (workspaceId: string, repositoryId: string) =>
+    api<AiStatus>(`/workspaces/${workspaceId}/repositories/${repositoryId}/ai/status`),
+  investigations: (workspaceId: string, repositoryId: string, query?: { page?: number }) =>
+    api<Paginated<Investigation>>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/investigations${toQuery(query)}`,
+    ),
+  investigation: (workspaceId: string, repositoryId: string, investigationId: string) =>
+    api<Investigation>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/investigations/${investigationId}`,
+    ),
+  createInvestigation: (
+    workspaceId: string,
+    repositoryId: string,
+    body: { question: string; fileId?: string; symbolId?: string },
+  ) =>
+    api<Investigation>(`/workspaces/${workspaceId}/repositories/${repositoryId}/investigations`, {
+      method: 'POST',
+      json: body,
+    }),
 };
 
 export type RepoBranch = {
@@ -663,6 +682,52 @@ export type EvolutionTimeline = {
   };
   timeline: EvolutionEvent[];
   versions: EvidenceVersion[];
+};
+
+export type AiStatus = {
+  provider: string;
+  model: string;
+  available: boolean;
+};
+
+export type InvestigationEvidence = {
+  id: string;
+  sourceType: string;
+  sourceId: string;
+  citation: string;
+  excerpt: string;
+  relevance: number;
+  fileId: string | null;
+  symbolId: string | null;
+  commitSha: string | null;
+  path: string | null;
+};
+
+export type InvestigationMessage = {
+  id: string;
+  role: string;
+  content: string;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  createdAt: string;
+};
+
+export type Investigation = {
+  id: string;
+  repositoryId: string;
+  question: string;
+  status: string;
+  model: string;
+  usedModel: boolean;
+  confidence: number | null;
+  confidenceLabel: string | null;
+  subjectFileId: string | null;
+  subjectSymbolId: string | null;
+  error: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messages?: InvestigationMessage[];
+  evidence?: InvestigationEvidence[];
 };
 
 function toQuery(query?: Record<string, string | number | undefined>): string {

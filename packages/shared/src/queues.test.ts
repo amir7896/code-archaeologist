@@ -11,6 +11,7 @@ test('queue names match the project scope', () => {
     'git-history',
     'graph-build',
     'integration-sync',
+    'investigation',
     'metrics',
     'report-generation',
     'repository-sync',

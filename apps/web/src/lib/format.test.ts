@@ -24,6 +24,7 @@ describe('format', () => {
     expect(formatActivity('AUTH_REGISTER')).toBe('Started the workspace');
     expect(formatActivity('WORKSPACE_ARCHIVED')).toBe('Archived the workspace');
     expect(formatActivity('REPOSITORY_CREATE')).toBe('Added a repository');
+    expect(formatActivity('INVESTIGATION_CREATE')).toBe('Asked a question');
     expect(formatTask('CLONE')).toBe('Copying the repository');
     expect(formatTask('INDEX_HISTORY')).toBe('Reading commit history');
     expect(formatTask('PARSE_AST')).toBe('Reading source files');

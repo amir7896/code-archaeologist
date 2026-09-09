@@ -5,7 +5,7 @@ import { PageFrame } from '../components/PageFrame';
 import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage } from '../lib/errors';
 import { formatTask, formatWhen, shortRevision } from '../lib/format';
-import { repositoryCodePath, repositoryDnaPath, repositoryEvolutionPath, repositoryGraphPath, repositoryHistoryPath, repositoryImpactPath, workspacePath } from '../lib/paths';
+import { repositoryAskPath, repositoryCodePath, repositoryDnaPath, repositoryEvolutionPath, repositoryGraphPath, repositoryHistoryPath, repositoryImpactPath, workspacePath } from '../lib/paths';
 import {
   useDeleteRepositoryMutation,
   useRepositoryQuery,
@@ -138,6 +138,14 @@ export function RepositoryOverviewPage() {
           >
             <p className={muted}>Evolution</p>
             <p className="mt-2 text-lg font-semibold text-zinc-950">How it changed</p>
+          </button>
+          <button
+            className={`${card} p-5 text-left transition hover:border-indigo-200`}
+            type="button"
+            onClick={() => navigate(repositoryAskPath(repo.workspaceId, repo.repositoryId))}
+          >
+            <p className={muted}>Ask</p>
+            <p className="mt-2 text-lg font-semibold text-zinc-950">Cited answers</p>
           </button>
         </div>
 

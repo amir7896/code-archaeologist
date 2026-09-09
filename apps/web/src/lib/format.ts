@@ -34,6 +34,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   REPOSITORY_UPDATE: 'Updated a repository',
   REPOSITORY_DELETE: 'Removed a repository',
   REPOSITORY_SYNC: 'Synced a repository',
+  INVESTIGATION_CREATE: 'Asked a question',
 };
 
 const TASK_LABELS: Record<string, string> = {
