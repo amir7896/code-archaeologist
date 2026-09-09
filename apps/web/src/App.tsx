@@ -30,8 +30,8 @@ import { RepositoryOverviewPage, RepositorySettingsPage } from './pages/Reposito
 import { WorkspacePeoplePage, WorkspaceReposPage, WorkspaceSettingsPage } from './pages/WorkspacePage';
 
 function RequireAuth() {
-  const { user, ready } = useAuth();
-  if (!ready) {
+  const { user, ready, hasSession } = useAuth();
+  if (!ready || (hasSession && !user)) {
     return <main className="p-8 text-sm text-zinc-500">Signing you in…</main>;
   }
   if (!user) {

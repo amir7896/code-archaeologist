@@ -48,6 +48,15 @@ describe('GraphService', () => {
     expect(map.modules.every((module) => module.inCycle)).toBe(true);
   });
 
+  it('can collapse the map to one folder level', async () => {
+    const { service } = createService([
+      { sourceId: 'file-a', targetId: 'file-b', confidence: 0.8 },
+    ]);
+    const map = await service.getMap('ws-1', 'repo-1', { group: '1' });
+    expect(map.modules.map((module) => module.id)).toEqual(['src']);
+    expect(map.stats.edgeCount).toBe(0);
+  });
+
   it('walks file dependencies and dependents', async () => {
     const { service } = createService([{ sourceId: 'file-a', targetId: 'file-b', confidence: 1 }]);
     const dependencies = await service.getDependencies('ws-1', 'repo-1', { fileId: 'file-a', depth: 2 });

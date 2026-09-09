@@ -21,6 +21,9 @@ describe('paths', () => {
     expect(repositoryGraphPath('ws-1', 'repo-1', { module: 'app', file: 'file-1' })).toBe(
       '/work-space/ws-1/repository/repo-1/graph?module=app&file=file-1',
     );
+    expect(repositoryGraphPath('ws-1', 'repo-1', { group: '2', view: 'cycles', depth: '3' })).toBe(
+      '/work-space/ws-1/repository/repo-1/graph?group=2&view=cycles&depth=3',
+    );
     expect(repositoryDnaPath('ws-1', 'repo-1', { file: 'file-1' })).toBe(
       '/work-space/ws-1/repository/repo-1/dna?file=file-1',
     );

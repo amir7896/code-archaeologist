@@ -1,13 +1,15 @@
 import { join } from 'node:path';
 import { Inject, Injectable } from '@nestjs/common';
 import { type Prisma } from '@code-archaeologist/core';
-import { type AppEnv } from '@code-archaeologist/shared';
+import { listFileTreeChildren, toFileTreeSearchNodes, type AppEnv } from '@code-archaeologist/shared';
 import { ApiErrors } from '../common/api-exception';
 import { paginationMeta, paginationSkip, resolvePagination } from '../common/pagination.dto';
 import { APP_ENV } from '../config/env.service';
 import { PrismaService } from '../database/prisma.service';
 import {
   type FileListQueryDto,
+  type FileTreeQueryDto,
+  type FileTreeResponseDto,
   type SourceFileListResponseDto,
   type SourceFileResponseDto,
   type SourcePreviewResponseDto,
@@ -39,6 +41,34 @@ export class SourceService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(APP_ENV) private readonly env: AppEnv,
   ) {}
+
+  async listTree(
+    workspaceId: string,
+    repositoryId: string,
+    query: FileTreeQueryDto,
+  ): Promise<FileTreeResponseDto> {
+    await this.requireRepository(workspaceId, repositoryId);
+    const q = query.q?.trim() ?? '';
+    const prefix = query.prefix?.trim().replace(/\/$/, '') ?? '';
+    const files = await this.prisma.repoFile.findMany({
+      where: {
+        repositoryId,
+        ...(q
+          ? { path: { contains: q, mode: 'insensitive' } }
+          : prefix
+            ? { path: { startsWith: `${prefix}/` } }
+            : {}),
+      },
+      select: { id: true, path: true, language: true, loc: true },
+      orderBy: { path: 'asc' },
+      take: q ? 80 : 8_000,
+    });
+    return {
+      prefix,
+      q,
+      items: q ? toFileTreeSearchNodes(files) : listFileTreeChildren(files, prefix),
+    };
+  }
 
   async listFiles(
     workspaceId: string,

@@ -1,3 +1,5 @@
+import { peekTokens, putTokens } from './session';
+
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export type User = {
@@ -62,20 +64,13 @@ export class ApiError extends Error {
   }
 }
 
-type TokenStore = {
-  get(): Tokens | null;
-  set(tokens: Tokens | null): void;
-};
-
-let tokenStore: TokenStore = {
-  get: () => null,
-  set: () => undefined,
-};
-
 let refreshInFlight: Promise<boolean> | null = null;
 
-export function configureTokenStore(store: TokenStore): void {
-  tokenStore = store;
+export function isTransientApiError(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500;
+  }
+  return true;
 }
 
 export async function api<T>(
@@ -83,7 +78,7 @@ export async function api<T>(
   init: RequestInit & { json?: unknown } = {},
 ): Promise<T> {
   const response = await request(path, init);
-  if (response.status === 401 && tokenStore.get()?.refreshToken) {
+  if (response.status === 401 && peekTokens()?.refreshToken) {
     const refreshed = await refreshTokens();
     if (refreshed) {
       return parseResponse<T>(await request(path, init));
@@ -226,6 +221,8 @@ export const repositoryApi = {
     api<FileHistory>(
       `/workspaces/${workspaceId}/repositories/${repositoryId}/files/history${toQuery(query)}`,
     ),
+  fileTree: (workspaceId: string, repositoryId: string, query?: { prefix?: string; q?: string }) =>
+    api<FileTree>(`/workspaces/${workspaceId}/repositories/${repositoryId}/code/tree${toQuery(query)}`),
   files: (
     workspaceId: string,
     repositoryId: string,
@@ -252,8 +249,8 @@ export const repositoryApi = {
     api<SourceSymbolDetail>(
       `/workspaces/${workspaceId}/repositories/${repositoryId}/code/symbols/${symbolId}`,
     ),
-  graph: (workspaceId: string, repositoryId: string) =>
-    api<GraphMap>(`/workspaces/${workspaceId}/repositories/${repositoryId}/graph`),
+  graph: (workspaceId: string, repositoryId: string, query?: { group?: string }) =>
+    api<GraphMap>(`/workspaces/${workspaceId}/repositories/${repositoryId}/graph${toQuery(query)}`),
   graphDependencies: (
     workspaceId: string,
     repositoryId: string,
@@ -393,6 +390,22 @@ export type FileHistory = {
   path: string;
   items: FileHistoryItem[];
   pagination: Paginated<FileHistoryItem>['pagination'];
+};
+
+export type FileTreeNode = {
+  kind: 'folder' | 'file';
+  name: string;
+  path: string;
+  fileCount?: number;
+  fileId?: string;
+  language?: string | null;
+  loc?: number | null;
+};
+
+export type FileTree = {
+  prefix: string;
+  q: string;
+  items: FileTreeNode[];
 };
 
 export type SourceFile = {
@@ -747,21 +760,28 @@ function toQuery(query?: Record<string, string | number | undefined>): string {
 async function refreshTokens(): Promise<boolean> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
-      const current = tokenStore.get();
+      const current = peekTokens();
       if (!current?.refreshToken) {
         return false;
       }
-      const response = await fetch(`${apiBase}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: current.refreshToken }),
-      });
+      let response: Response;
+      try {
+        response = await fetch(`${apiBase}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: current.refreshToken }),
+        });
+      } catch {
+        return false;
+      }
       if (!response.ok) {
-        tokenStore.set(null);
+        if (response.status === 401 || response.status === 403) {
+          putTokens(null);
+        }
         return false;
       }
       const next = (await response.json()) as Tokens;
-      tokenStore.set(next);
+      putTokens(next);
       return true;
     })().finally(() => {
       refreshInFlight = null;
@@ -771,7 +791,7 @@ async function refreshTokens(): Promise<boolean> {
 }
 
 async function request(path: string, init: RequestInit & { json?: unknown }): Promise<Response> {
-  const tokens = tokenStore.get();
+  const tokens = peekTokens();
   const headers = new Headers(init.headers);
   if (init.json !== undefined) {
     headers.set('Content-Type', 'application/json');

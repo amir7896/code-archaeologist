@@ -12,6 +12,22 @@ export const sourceFileResponseExample = {
   lastRevision: '20a7150',
 };
 
+export const sourceFileTreeResponseExample = {
+  prefix: 'app',
+  q: '',
+  items: [
+    { kind: 'folder', name: 'services', path: 'app/services', fileCount: 6 },
+    {
+      kind: 'file',
+      name: 'main.py',
+      path: 'app/main.py',
+      fileId: EXAMPLE_FILE_ID,
+      language: 'python',
+      loc: 40,
+    },
+  ],
+};
+
 export const sourceFileListResponseExample = {
   items: [sourceFileResponseExample],
   pagination: paginationExample,

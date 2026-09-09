@@ -1,6 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
+
+export class GraphMapQueryDto {
+  @ApiPropertyOptional({ type: String, enum: ['auto', '1', '2', '3'], default: 'auto' })
+  @IsOptional()
+  @IsString()
+  @IsIn(['auto', '1', '2', '3'])
+  group?: string;
+}
 
 export class GraphWalkQueryDto {
   @ApiProperty({ type: String })

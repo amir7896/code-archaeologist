@@ -11,6 +11,12 @@ import {
 export const GetGraphMapDocs = () =>
   applyDecorators(
     ApiOperation({ summary: 'Get the repository architecture map' }),
+    ApiQuery({
+      name: 'group',
+      required: false,
+      type: String,
+      description: 'Folder grouping: auto, 1, 2, or 3',
+    }),
     ApiOkExample(GraphMapResponseDto, graphMapResponseExample, 'Architecture map'),
   );
 

@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { configureTokenStore } from '../api';
+import { configureTokenStore } from '../session';
 import { authReducer, createAuthState, tokensUpdated } from './auth-slice';
 
 export function createStore() {

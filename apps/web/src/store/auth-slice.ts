@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { type AuthSession, type Tokens, type User } from '../api';
-import { readTokens, writeTokens } from '../session';
+import { readStoredSession, writeStoredSession } from '../session';
 
 export type AuthState = {
   user: User | null;
@@ -9,12 +9,16 @@ export type AuthState = {
 };
 
 export function createAuthState(): AuthState {
-  const tokens = readTokens();
+  const stored = readStoredSession();
   return {
-    user: null,
-    tokens,
-    ready: !tokens,
+    user: stored.user,
+    tokens: stored.tokens,
+    ready: Boolean(stored.user) || !stored.tokens,
   };
+}
+
+function persist(state: AuthState): void {
+  writeStoredSession(state.tokens ? { user: state.user, tokens: state.tokens } : null);
 }
 
 const authSlice = createSlice({
@@ -26,25 +30,26 @@ const authSlice = createSlice({
       state.user = user;
       state.tokens = tokens;
       state.ready = true;
-      writeTokens(tokens);
+      persist(state);
     },
     tokensUpdated(state, action: PayloadAction<Tokens | null>) {
       state.tokens = action.payload;
-      writeTokens(action.payload);
       if (!action.payload) {
         state.user = null;
         state.ready = true;
       }
+      persist(state);
     },
     userLoaded(state, action: PayloadAction<User>) {
       state.user = action.payload;
       state.ready = true;
+      persist(state);
     },
     sessionCleared(state) {
       state.user = null;
       state.tokens = null;
       state.ready = true;
-      writeTokens(null);
+      persist(state);
     },
     markedReady(state) {
       state.ready = true;

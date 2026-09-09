@@ -21,6 +21,8 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'commits', sha] as const,
   fileHistory: (workspaceId: string, repositoryId: string, path: string, page?: number) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'files', path, page ?? 1] as const,
+  fileTree: (workspaceId: string, repositoryId: string, prefix?: string, q?: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'tree', prefix ?? '', q ?? ''] as const,
   files: (workspaceId: string, repositoryId: string, q?: string, page?: number) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'files', q ?? '', page ?? 1] as const,
   file: (workspaceId: string, repositoryId: string, fileId: string) =>
@@ -35,8 +37,8 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'insights', 'hotspots'] as const,
   risks: (workspaceId: string, repositoryId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'insights', 'risks'] as const,
-  graph: (workspaceId: string, repositoryId: string) =>
-    ['workspaces', workspaceId, 'repositories', repositoryId, 'graph'] as const,
+  graph: (workspaceId: string, repositoryId: string, group?: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'graph', group ?? 'auto'] as const,
   graphDependencies: (workspaceId: string, repositoryId: string, fileId: string, depth?: number) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'graph', 'dependencies', fileId, depth ?? 2] as const,
   graphDependents: (workspaceId: string, repositoryId: string, fileId: string, depth?: number) =>
@@ -327,7 +329,7 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
           queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'code'],
         }),
         queryClient.invalidateQueries({
-          queryKey: queryKeys.graph(workspaceId, repositoryId),
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'graph'],
         }),
         queryClient.invalidateQueries({
           queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'dna'],
@@ -407,6 +409,19 @@ export function useSourceFilesQuery(
   });
 }
 
+export function useSourceTreeQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { prefix?: string; q?: string } = {},
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.fileTree(workspaceId, repositoryId, query.prefix, query.q),
+    queryFn: () => repositoryApi.fileTree(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
 export function useSourceFileQuery(workspaceId: string, repositoryId: string, fileId: string) {
   return useQuery({
     queryKey: queryKeys.file(workspaceId, repositoryId, fileId),
@@ -479,10 +494,10 @@ export function useDnaProfileQuery(
   });
 }
 
-export function useGraphMapQuery(workspaceId: string, repositoryId: string) {
+export function useGraphMapQuery(workspaceId: string, repositoryId: string, group = 'auto') {
   return useQuery({
-    queryKey: queryKeys.graph(workspaceId, repositoryId),
-    queryFn: () => repositoryApi.graph(workspaceId, repositoryId),
+    queryKey: queryKeys.graph(workspaceId, repositoryId, group),
+    queryFn: () => repositoryApi.graph(workspaceId, repositoryId, { group }),
     enabled: Boolean(workspaceId && repositoryId),
   });
 }

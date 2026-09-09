@@ -4,6 +4,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkspaceGuard } from '../workspaces/guards/workspace.guard';
 import {
   FileListQueryDto,
+  FileTreeQueryDto,
+  FileTreeResponseDto,
   SourceFileListResponseDto,
   SourceFileResponseDto,
   SourcePreviewResponseDto,
@@ -19,6 +21,7 @@ import {
   GetFileDocs,
   GetSymbolDocs,
   ListFilesDocs,
+  ListFileTreeDocs,
   ListSymbolsDocs,
   PreviewFileDocs,
 } from './swagger/source.swagger';
@@ -32,6 +35,16 @@ export class SourceController {
     @Inject(SourceService) private readonly source: SourceService,
     @Inject(EvidenceService) private readonly evidence: EvidenceService,
   ) {}
+
+  @Get('code/tree')
+  @ListFileTreeDocs()
+  listTree(
+    @Param('workspaceId') workspaceId: string,
+    @Param('repositoryId') repositoryId: string,
+    @Query() query: FileTreeQueryDto,
+  ): Promise<FileTreeResponseDto> {
+    return this.source.listTree(workspaceId, repositoryId, query);
+  }
 
   @Get('code/files')
   @ListFilesDocs()

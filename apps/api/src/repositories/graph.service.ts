@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { findCycles, moduleKey, walkNeighbors } from '@code-archaeologist/shared';
+import { findCycles, moduleKey, parseModuleGrouping, walkNeighbors, type ModuleGrouping } from '@code-archaeologist/shared';
 import { ApiErrors } from '../common/api-exception';
 import { PrismaService } from '../database/prisma.service';
 import {
   type GraphCyclesResponseDto,
+  type GraphMapQueryDto,
   type GraphMapResponseDto,
   type GraphNeighborsResponseDto,
   type GraphWalkQueryDto,
@@ -17,8 +18,13 @@ type FileEdgeRow = { sourceId: string; targetId: string | null; confidence: numb
 export class GraphService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async getMap(workspaceId: string, repositoryId: string): Promise<GraphMapResponseDto> {
+  async getMap(
+    workspaceId: string,
+    repositoryId: string,
+    query: GraphMapQueryDto = {},
+  ): Promise<GraphMapResponseDto> {
     const repository = await this.requireRepository(workspaceId, repositoryId);
+    const grouping = parseModuleGrouping(query.group);
     const [files, edges, unresolvedImportCount] = await Promise.all([
       this.prisma.repoFile.findMany({
         where: { repositoryId },
@@ -31,7 +37,7 @@ export class GraphService {
       }),
     ]);
 
-    const grouped = groupModules(files, edges);
+    const grouped = groupModules(files, edges, grouping);
     const cycleNodes = new Set(grouped.cycles.flatMap((cycle) => cycle.nodes));
 
     return {
@@ -173,16 +179,16 @@ function uniqueIds(edges: FileEdgeRow[]): string[] {
   return [...ids];
 }
 
-function groupModules(files: FileRow[], edges: FileEdgeRow[]) {
+function groupModules(files: FileRow[], edges: FileEdgeRow[], grouping: ModuleGrouping = 'auto') {
   const modules = new Map<string, { id: string; path: string; files: FileRow[] }>();
   for (const file of files) {
-    const id = moduleKey(file.path);
+    const id = moduleKey(file.path, grouping);
     const bucket = modules.get(id) ?? { id, path: id, files: [] };
     bucket.files.push(file);
     modules.set(id, bucket);
   }
 
-  const fileModule = new Map(files.map((file) => [file.id, moduleKey(file.path)]));
+  const fileModule = new Map(files.map((file) => [file.id, moduleKey(file.path, grouping)]));
   const links = new Map<string, { sourceId: string; targetId: string; weight: number; confidence: number }>();
   for (const edge of edges) {
     if (!edge.targetId) {
