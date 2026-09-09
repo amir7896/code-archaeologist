@@ -6,7 +6,7 @@ Thank you for contributing to Code Archaeologist.
 
 Follow the project scope. Do not start with the chatbot. The graph and evidence engine are the product; the AI layer is an interface over that foundation.
 
-Current work is **Phase 6 — Code DNA**. Next is historical intelligence / impact (PDF Phase 7). Do not start with the chatbot.
+Current work is **Phase 7 — deterministic impact analysis**. Next is historical evidence (PDF checklist 8). Do not start with the chatbot.
 
 ## Setup
 

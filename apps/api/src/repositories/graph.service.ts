@@ -8,6 +8,7 @@ import {
   type GraphNeighborsResponseDto,
   type GraphWalkQueryDto,
 } from './dto/graph.dto';
+import { loadFileDependencyLinks } from './file-graph';
 
 type FileRow = { id: string; path: string };
 type FileEdgeRow = { sourceId: string; targetId: string | null; confidence: number };
@@ -137,15 +138,7 @@ export class GraphService {
   }
 
   private async loadFileDependsOn(repositoryId: string): Promise<FileEdgeRow[]> {
-    return this.prisma.graphEdge.findMany({
-      where: {
-        repositoryId,
-        type: 'DEPENDS_ON',
-        sourceType: 'FILE',
-        targetType: 'FILE',
-      },
-      select: { sourceId: true, targetId: true, confidence: true },
-    });
+    return loadFileDependencyLinks(this.prisma, repositoryId);
   }
 
   private async requireRepository(

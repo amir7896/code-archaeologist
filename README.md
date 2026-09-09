@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **Phase 6 — Code DNA**: repositories have Git history, symbols, an architecture graph, and explainable risk/hotspot profiles.
+This repository is at **Phase 7 — impact analysis**: repositories have Git history, symbols, an architecture graph, Code DNA risk profiles, and a deterministic blast-radius walk.
 
 ## Requirements
 

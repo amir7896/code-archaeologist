@@ -34,6 +34,7 @@ describe('indexGraph', () => {
         ]),
       },
       symbolRelation: { findMany: jest.fn().mockResolvedValue([]) },
+      repoFile: { findMany: jest.fn().mockResolvedValue([{ id: 'file-1', path: 'a.ts' }]) },
       graphEdge: { deleteMany: jest.fn(), createMany: jest.fn() },
     };
 

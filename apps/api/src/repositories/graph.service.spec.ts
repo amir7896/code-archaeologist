@@ -19,9 +19,12 @@ describe('GraphService', () => {
         ),
       },
       graphEdge: {
-        findMany: jest.fn().mockResolvedValue(edges),
+        findMany: jest.fn(async ({ where }: { where: { type?: string } }) =>
+          where.type === 'IMPORTS' ? [] : edges,
+        ),
         count: jest.fn().mockResolvedValue(2),
       },
+      codeSymbol: { findMany: jest.fn().mockResolvedValue([]) },
     };
     return { service: new GraphService(prisma as never), prisma };
   }

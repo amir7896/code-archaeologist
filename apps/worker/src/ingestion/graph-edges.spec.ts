@@ -66,6 +66,39 @@ describe('collectGraphEdges', () => {
     );
   });
 
+  it('resolves Python dotted imports into file dependencies', () => {
+    const edges = collectGraphEdges({
+      symbols: [
+        { id: 'mod-svc', fileId: 'file-svc', parentSymbolId: null, qualifiedName: 'app/services/cart_service.py' },
+        { id: 'mod-model', fileId: 'file-model', parentSymbolId: null, qualifiedName: 'app/models/cart.py' },
+      ],
+      files: [
+        { id: 'file-svc', path: 'app/services/cart_service.py' },
+        { id: 'file-model', path: 'app/models/cart.py' },
+      ],
+      relations: [
+        {
+          sourceSymbolId: 'mod-svc',
+          targetSymbolId: null,
+          targetQualifiedName: 'app.models.cart',
+          type: 'IMPORTS',
+          confidence: 0.9,
+        },
+      ],
+    });
+
+    expect(edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'DEPENDS_ON',
+          sourceType: 'FILE',
+          sourceId: 'file-svc',
+          targetId: 'file-model',
+        }),
+      ]),
+    );
+  });
+
   it('keeps unresolved imports as symbol edges only', () => {
     const edges = collectGraphEdges({
       symbols: [{ id: 'mod-a', fileId: 'file-a', parentSymbolId: null, qualifiedName: 'a.py' }],

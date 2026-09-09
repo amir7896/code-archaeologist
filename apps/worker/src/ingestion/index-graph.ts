@@ -20,7 +20,7 @@ export async function indexGraph(input: {
   }
 
   await input.onProgress?.(90);
-  const [symbols, relations] = await Promise.all([
+  const [symbols, relations, files] = await Promise.all([
     prisma.codeSymbol.findMany({
       where: { file: { repositoryId } },
       select: { id: true, fileId: true, parentSymbolId: true, qualifiedName: true },
@@ -35,10 +35,14 @@ export async function indexGraph(input: {
         confidence: true,
       },
     }),
+    prisma.repoFile.findMany({
+      where: { repositoryId },
+      select: { id: true, path: true },
+    }),
   ]);
 
   await input.onProgress?.(92);
-  const edges = collectGraphEdges({ symbols, relations });
+  const edges = collectGraphEdges({ symbols, relations, files });
   await prisma.graphEdge.deleteMany({ where: { repositoryId } });
 
   for (let offset = 0; offset < edges.length; offset += WRITE_BATCH) {

@@ -2,7 +2,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { PageFrame } from '../components/PageFrame';
 import { errorMessage } from '../lib/errors';
 import { commitSubject, formatChange, formatRiskLevel, formatWhen, shortRevision } from '../lib/format';
-import { repositoryCodePath, repositoryDnaPath, repositoryHistoryPath } from '../lib/paths';
+import { repositoryCodePath, repositoryDnaPath, repositoryHistoryPath, repositoryImpactPath } from '../lib/paths';
 import {
   useDnaHealthQuery,
   useDnaProfileQuery,
@@ -240,6 +240,15 @@ function ProfileCard({
             File history
           </Link>
         ) : null}
+        <Link
+          className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          to={repositoryImpactPath(workspaceId, repositoryId, {
+            file: profile.subjectType === 'FILE' ? profile.subjectId : undefined,
+            symbol: profile.subjectType === 'SYMBOL' ? profile.subjectId : undefined,
+          })}
+        >
+          Check impact
+        </Link>
       </div>
 
       <h3 className="mt-6 text-sm font-semibold text-zinc-900">Why this risk</h3>

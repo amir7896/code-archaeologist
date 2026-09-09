@@ -75,7 +75,7 @@ export class HistoryService {
       include: {
         files: {
           orderBy: { newPath: 'asc' },
-          include: { file: { select: { language: true } } },
+          include: { file: { select: { id: true, language: true } } },
         },
       },
     });
@@ -85,6 +85,7 @@ export class HistoryService {
     return {
       ...toCommitSummary(commit),
       files: commit.files.map((row) => ({
+        fileId: row.fileId ?? row.file.id,
         path: row.newPath,
         oldPath: row.oldPath,
         changeType: row.changeType,

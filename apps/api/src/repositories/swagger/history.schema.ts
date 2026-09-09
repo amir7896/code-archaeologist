@@ -1,4 +1,4 @@
-import { EXAMPLE_COMMIT_SHA, EXAMPLE_DATE } from '../../common/swagger/example-ids';
+import { EXAMPLE_COMMIT_SHA, EXAMPLE_DATE, EXAMPLE_FILE_ID } from '../../common/swagger/example-ids';
 import { paginationExample } from '../../workspaces/swagger/workspace.schema';
 
 export const branchListResponseExample = {
@@ -35,6 +35,7 @@ export const commitDetailResponseExample = {
   ...commitSummaryExample,
   files: [
     {
+      fileId: EXAMPLE_FILE_ID,
       path: 'alembic/env.py',
       oldPath: null,
       changeType: 'MODIFIED',
