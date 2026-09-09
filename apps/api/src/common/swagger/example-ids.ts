@@ -1,0 +1,9 @@
+export const EXAMPLE_USER_ID = '7f1b2c3d-4e5f-6789-abcd-ef0123456789';
+export const EXAMPLE_WORKSPACE_ID = '3619367b-119f-48fe-b21c-0138b04f69bc';
+export const EXAMPLE_REPOSITORY_ID = '0e5fbfa4-68d1-4e97-8b38-091766bfd7fd';
+export const EXAMPLE_FILE_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+export const EXAMPLE_SYMBOL_ID = '52e041f5-ecac-4455-afcf-787667cce395';
+export const EXAMPLE_RUN_ID = '9c8b7a65-4321-40fe-9abc-def012345678';
+export const EXAMPLE_TASK_ID = '123e4567-e89b-12d3-a456-426614174000';
+export const EXAMPLE_COMMIT_SHA = '20a7150c8f3b9d4e6a1f2c3d4e5f6789abcd0123';
+export const EXAMPLE_DATE = '2026-09-09T16:40:17.886Z';

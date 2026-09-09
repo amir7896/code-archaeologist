@@ -27,8 +27,26 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'file', fileId] as const,
   filePreview: (workspaceId: string, repositoryId: string, fileId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'preview', fileId] as const,
-  symbols: (workspaceId: string, repositoryId: string, q?: string, kind?: string, page?: number) =>
-    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbols', q ?? '', kind ?? '', page ?? 1] as const,
+  symbols: (
+    workspaceId: string,
+    repositoryId: string,
+    q?: string,
+    kind?: string,
+    page?: number,
+    fileId?: string,
+  ) =>
+    [
+      'workspaces',
+      workspaceId,
+      'repositories',
+      repositoryId,
+      'code',
+      'symbols',
+      q ?? '',
+      kind ?? '',
+      page ?? 1,
+      fileId ?? '',
+    ] as const,
   symbol: (workspaceId: string, repositoryId: string, symbolId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbol', symbolId] as const,
 };
@@ -344,7 +362,14 @@ export function useSymbolsQuery(
   enabled = true,
 ) {
   return useQuery({
-    queryKey: queryKeys.symbols(workspaceId, repositoryId, query.q, query.kind, query.page),
+    queryKey: queryKeys.symbols(
+      workspaceId,
+      repositoryId,
+      query.q,
+      query.kind,
+      query.page,
+      query.fileId,
+    ),
     queryFn: () => repositoryApi.symbols(workspaceId, repositoryId, query),
     enabled: Boolean(workspaceId && repositoryId) && enabled,
   });

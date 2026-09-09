@@ -1,19 +1,28 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { useAuth } from './hooks/useAuth';
-import { CommitPage } from './pages/CommitPage';
-import { CommitsPage } from './pages/CommitsPage';
+import { CodeExplorerPage } from './pages/CodeExplorerPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { FileHistoryPage } from './pages/FileHistoryPage';
-import { FilePage } from './pages/FilePage';
-import { FilesPage } from './pages/FilesPage';
-import { SymbolPage } from './pages/SymbolPage';
-import { SymbolsPage } from './pages/SymbolsPage';
+import { HistoryExplorerPage } from './pages/HistoryExplorerPage';
+import {
+  LegacyCodeRedirect,
+  LegacyCommitRedirect,
+  LegacyFileHistoryRedirect,
+  LegacyFileRedirect,
+  LegacyHistoryRedirect,
+  LegacyRepositoryRedirect,
+  LegacyRepositorySettingsRedirect,
+  LegacySymbolRedirect,
+  LegacySymbolsRedirect,
+  LegacyWorkspacePeopleRedirect,
+  LegacyWorkspaceRedirect,
+  LegacyWorkspaceSettingsRedirect,
+} from './pages/LegacyRedirects';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { RepositoryPage } from './pages/RepositoryPage';
-import { WorkspacePage } from './pages/WorkspacePage';
+import { RepositoryOverviewPage, RepositorySettingsPage } from './pages/RepositoryPage';
+import { WorkspacePeoplePage, WorkspaceReposPage, WorkspaceSettingsPage } from './pages/WorkspacePage';
 
 function RequireAuth() {
   const { user, ready } = useAuth();
@@ -34,38 +43,65 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/workspaces/:workspaceId" element={<WorkspacePage />} />
+          <Route path="/work-space/:workspaceId" element={<WorkspaceReposPage />} />
+          <Route path="/work-space/:workspaceId/people" element={<WorkspacePeoplePage />} />
+          <Route path="/work-space/:workspaceId/settings" element={<WorkspaceSettingsPage />} />
+          <Route
+            path="/work-space/:workspaceId/repository/:repositoryId"
+            element={<RepositoryOverviewPage />}
+          />
+          <Route
+            path="/work-space/:workspaceId/repository/:repositoryId/code"
+            element={<CodeExplorerPage />}
+          />
+          <Route
+            path="/work-space/:workspaceId/repository/:repositoryId/history"
+            element={<HistoryExplorerPage />}
+          />
+          <Route
+            path="/work-space/:workspaceId/repository/:repositoryId/settings"
+            element={<RepositorySettingsPage />}
+          />
+
+          <Route path="/w/:workspaceId" element={<LegacyWorkspaceRedirect />} />
+          <Route path="/w/:workspaceId/people" element={<LegacyWorkspacePeopleRedirect />} />
+          <Route path="/w/:workspaceId/settings" element={<LegacyWorkspaceSettingsRedirect />} />
+          <Route path="/w/:workspaceId/:repositoryId" element={<LegacyRepositoryRedirect />} />
+          <Route path="/w/:workspaceId/:repositoryId/code" element={<LegacyCodeRedirect />} />
+          <Route path="/w/:workspaceId/:repositoryId/history" element={<LegacyHistoryRedirect />} />
+          <Route path="/w/:workspaceId/:repositoryId/settings" element={<LegacyRepositorySettingsRedirect />} />
+          <Route path="/workspaces/:workspaceId" element={<LegacyWorkspaceRedirect />} />
           <Route
             path="/workspaces/:workspaceId/repositories/:repositoryId"
-            element={<RepositoryPage />}
-          />
-          <Route
-            path="/workspaces/:workspaceId/repositories/:repositoryId/commits"
-            element={<CommitsPage />}
-          />
-          <Route
-            path="/workspaces/:workspaceId/repositories/:repositoryId/commits/:sha"
-            element={<CommitPage />}
-          />
-          <Route
-            path="/workspaces/:workspaceId/repositories/:repositoryId/files"
-            element={<FileHistoryPage />}
+            element={<LegacyRepositoryRedirect />}
           />
           <Route
             path="/workspaces/:workspaceId/repositories/:repositoryId/code"
-            element={<FilesPage />}
+            element={<LegacyCodeRedirect />}
           />
           <Route
             path="/workspaces/:workspaceId/repositories/:repositoryId/code/files/:fileId"
-            element={<FilePage />}
+            element={<LegacyFileRedirect />}
           />
           <Route
             path="/workspaces/:workspaceId/repositories/:repositoryId/code/symbols"
-            element={<SymbolsPage />}
+            element={<LegacySymbolsRedirect />}
           />
           <Route
             path="/workspaces/:workspaceId/repositories/:repositoryId/code/symbols/:symbolId"
-            element={<SymbolPage />}
+            element={<LegacySymbolRedirect />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/commits"
+            element={<LegacyHistoryRedirect />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/commits/:sha"
+            element={<LegacyCommitRedirect />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/repositories/:repositoryId/files"
+            element={<LegacyFileHistoryRedirect />}
           />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

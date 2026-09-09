@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UserResponseDto {
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, example: '7f1b2c3d-4e5f-6789-abcd-ef0123456789' })
   id!: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, example: 'dev@example.com' })
   email!: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String, example: 'Ada Lovelace' })
   name!: string;
 
   @ApiProperty({ type: String, enum: ['ACTIVE', 'DISABLED'] })

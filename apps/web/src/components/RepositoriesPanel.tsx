@@ -1,7 +1,9 @@
 import { Field, Form, Formik } from 'formik';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { StatusBadge } from './StatusBadge';
 import { errorMessage } from '../lib/errors';
-import { formatStatus, shortRevision } from '../lib/format';
+import { repositoryHost, repositorySummary } from '../lib/format';
+import { repositoryPath } from '../lib/paths';
 import { useCreateRepositoryMutation, useRepositoriesQuery } from '../queries';
 import { card, errorText, fieldClass, muted, primaryButton } from '../ui';
 import { createRepositorySchema } from '../validation';
@@ -15,15 +17,17 @@ export function RepositoriesPanel({
   canAdd: boolean;
   archived: boolean;
 }) {
+  const navigate = useNavigate();
   const repositoriesQuery = useRepositoriesQuery(workspaceId);
   const createRepository = useCreateRepositoryMutation(workspaceId);
   const repositories = repositoriesQuery.data?.items ?? [];
 
   return (
     <section className={card}>
-      <h2 className="text-sm font-semibold text-zinc-900">Repositories</h2>
+      <h2 className="text-sm font-semibold text-zinc-900">Repositories in this workspace</h2>
       <p className={`mt-1 ${muted}`}>
-        Add a public HTTPS Git repository. Use an access token for private ones.
+        Each item is a Git repository. Add a public HTTPS URL, or include an access token for a
+        private one.
       </p>
 
       {canAdd && !archived ? (
@@ -33,7 +37,7 @@ export function RepositoriesPanel({
           onSubmit={async (values, helpers) => {
             helpers.setStatus(undefined);
             try {
-              await createRepository.mutateAsync({
+              const repository = await createRepository.mutateAsync({
                 url: values.url.trim(),
                 name: values.name.trim() || undefined,
                 defaultBranch: values.defaultBranch.trim() || undefined,
@@ -42,6 +46,7 @@ export function RepositoriesPanel({
                   : undefined,
               });
               helpers.resetForm();
+              navigate(repositoryPath(workspaceId, repository.id));
             } catch (cause) {
               helpers.setStatus(errorMessage(cause, 'Unable to add the repository'));
             }
@@ -105,18 +110,19 @@ export function RepositoriesPanel({
       <ul className="mt-4 space-y-2">
         {repositories.map((repository) => (
           <li key={repository.id}>
-            <Link
-              className="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 transition hover:border-indigo-200 hover:bg-indigo-50/50"
-              to={`/workspaces/${workspaceId}/repositories/${repository.id}`}
+            <button
+              className="flex w-full items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50/50"
+              type="button"
+              onClick={() => navigate(repositoryPath(workspaceId, repository.id))}
             >
-              <span>
-                <span className="font-medium text-zinc-900">{repository.name}</span>
-                <span className="ml-3 text-sm text-zinc-500">
-                  {shortRevision(repository.currentRevision)}
+              <span className="min-w-0">
+                <span className="block font-medium text-zinc-900">{repository.name}</span>
+                <span className="mt-1 block truncate text-sm text-zinc-500">
+                  {repositoryHost(repository.url)} · {repositorySummary(repository)}
                 </span>
               </span>
-              <span className="text-sm text-zinc-500">{formatStatus(repository.status)}</span>
-            </Link>
+              <StatusBadge status={repository.status} />
+            </button>
           </li>
         ))}
       </ul>

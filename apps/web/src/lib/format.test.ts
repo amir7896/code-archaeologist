@@ -8,6 +8,8 @@ import {
   formatStatus,
   formatTask,
   formatWhen,
+  repositoryHost,
+  repositorySummary,
 } from './format';
 
 describe('format', () => {
@@ -32,5 +34,18 @@ describe('format', () => {
 
   it('returns an empty string for invalid dates', () => {
     expect(formatWhen('not-a-date')).toBe('');
+  });
+});
+
+describe('repositorySummary', () => {
+  it('shows status, branch, and short revision', () => {
+    expect(repositoryHost('https://github.com/amir7896/fastapi-nexus.git')).toBe('github.com');
+    expect(
+      repositorySummary({
+        status: 'READY',
+        defaultBranch: 'main',
+        currentRevision: '20a7150c8f3b9d4e',
+      }),
+    ).toBe('Ready · main · 20a7150');
   });
 });

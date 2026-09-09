@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { type RequestUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,6 +19,18 @@ import {
   WorkspaceResponseDto,
 } from './dto/workspace.dto';
 import { WorkspaceGuard } from './guards/workspace.guard';
+import {
+  CreateWorkspaceDocs,
+  DeleteWorkspaceDocs,
+  GetWorkspaceDocs,
+  InviteMemberDocs,
+  ListAuditLogsDocs,
+  ListMembersDocs,
+  ListWorkspacesDocs,
+  RemoveMemberDocs,
+  UpdateMemberDocs,
+  UpdateWorkspaceDocs,
+} from './swagger/workspace.swagger';
 import { WorkspacesService } from './workspaces.service';
 
 @ApiTags('workspaces')
@@ -29,23 +41,20 @@ export class WorkspacesController {
   constructor(@Inject(WorkspacesService) private readonly workspaces: WorkspacesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List workspaces for the current user' })
-  @ApiOkResponse({ type: WorkspaceListResponseDto })
+  @ListWorkspacesDocs()
   list(@CurrentUser() user: RequestUser, @Query() query: PaginationQueryDto): Promise<WorkspaceListResponseDto> {
     return this.workspaces.list(user, query);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a workspace and become its owner' })
-  @ApiCreatedResponse({ type: WorkspaceResponseDto })
+  @CreateWorkspaceDocs()
   create(@CurrentUser() user: RequestUser, @Body() body: CreateWorkspaceDto): Promise<WorkspaceResponseDto> {
     return this.workspaces.create(user, body);
   }
 
   @Get(':id')
   @UseGuards(WorkspaceGuard)
-  @ApiOperation({ summary: 'Get a workspace' })
-  @ApiOkResponse({ type: WorkspaceResponseDto })
+  @GetWorkspaceDocs()
   getOne(
     @Param('id') id: string,
     @CurrentMembership() membership: RequestMembership,
@@ -56,8 +65,7 @@ export class WorkspacesController {
   @Patch(':id')
   @UseGuards(WorkspaceGuard)
   @RequireRole('ADMIN')
-  @ApiOperation({ summary: 'Rename a workspace, or archive/restore it as owner' })
-  @ApiOkResponse({ type: WorkspaceResponseDto })
+  @UpdateWorkspaceDocs()
   update(
     @Param('id') id: string,
     @CurrentUser() user: RequestUser,
@@ -71,8 +79,7 @@ export class WorkspacesController {
   @HttpCode(200)
   @UseGuards(WorkspaceGuard)
   @RequireRole('OWNER')
-  @ApiOperation({ summary: 'Soft-delete a workspace' })
-  @ApiOkResponse({ type: MessageResponseDto })
+  @DeleteWorkspaceDocs()
   async remove(@Param('id') id: string, @CurrentUser() user: RequestUser): Promise<MessageResponseDto> {
     await this.workspaces.remove(id, user);
     return { status: 'ok' };
@@ -80,8 +87,7 @@ export class WorkspacesController {
 
   @Get(':id/members')
   @UseGuards(WorkspaceGuard)
-  @ApiOperation({ summary: 'List workspace members' })
-  @ApiOkResponse({ type: MemberListResponseDto })
+  @ListMembersDocs()
   listMembers(@Param('id') id: string, @Query() query: PaginationQueryDto): Promise<MemberListResponseDto> {
     return this.workspaces.listMembers(id, query);
   }
@@ -89,8 +95,7 @@ export class WorkspacesController {
   @Post(':id/members')
   @UseGuards(WorkspaceGuard)
   @RequireRole('ADMIN')
-  @ApiOperation({ summary: 'Invite an existing user to the workspace' })
-  @ApiCreatedResponse({ type: MemberResponseDto })
+  @InviteMemberDocs()
   invite(
     @Param('id') id: string,
     @CurrentUser() user: RequestUser,
@@ -103,8 +108,7 @@ export class WorkspacesController {
   @Patch(':id/members/:userId')
   @UseGuards(WorkspaceGuard)
   @RequireRole('ADMIN')
-  @ApiOperation({ summary: 'Change a member role' })
-  @ApiOkResponse({ type: MemberResponseDto })
+  @UpdateMemberDocs()
   updateMember(
     @Param('id') id: string,
     @Param('userId') userId: string,
@@ -118,8 +122,7 @@ export class WorkspacesController {
   @Delete(':id/members/:userId')
   @HttpCode(200)
   @UseGuards(WorkspaceGuard)
-  @ApiOperation({ summary: 'Remove a member or leave the workspace' })
-  @ApiOkResponse({ type: MessageResponseDto })
+  @RemoveMemberDocs()
   async removeMember(
     @Param('id') id: string,
     @Param('userId') userId: string,
@@ -133,8 +136,7 @@ export class WorkspacesController {
   @Get(':id/audit-logs')
   @UseGuards(WorkspaceGuard)
   @RequireRole('ADMIN')
-  @ApiOperation({ summary: 'List security-sensitive audit events for the workspace' })
-  @ApiOkResponse({ type: AuditLogListResponseDto })
+  @ListAuditLogsDocs()
   listAuditLogs(@Param('id') id: string, @Query() query: PaginationQueryDto): Promise<AuditLogListResponseDto> {
     return this.workspaces.listAuditLogs(id, query);
   }

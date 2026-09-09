@@ -1,5 +1,6 @@
 import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CurrentUserDocs } from './swagger/users.swagger';
 import { AuthService } from '../auth/auth.service';
 import { type RequestUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -14,8 +15,7 @@ export class UsersController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
 
   @Get('me')
-  @ApiOperation({ summary: 'Current authenticated user' })
-  @ApiOkResponse({ type: UserResponseDto })
+  @CurrentUserDocs()
   me(@CurrentUser() user: RequestUser): Promise<UserResponseDto> {
     return this.auth.me(user);
   }
