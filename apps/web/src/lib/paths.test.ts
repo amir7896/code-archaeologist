@@ -1,4 +1,10 @@
-import { repositoryCodePath, repositoryGraphPath, repositoryHistoryPath, workspacePath } from './paths';
+import {
+  repositoryCodePath,
+  repositoryDnaPath,
+  repositoryGraphPath,
+  repositoryHistoryPath,
+  workspacePath,
+} from './paths';
 
 describe('paths', () => {
   it('keeps product routes short and puts details in the query', () => {
@@ -11,6 +17,9 @@ describe('paths', () => {
     );
     expect(repositoryGraphPath('ws-1', 'repo-1', { module: 'app', file: 'file-1' })).toBe(
       '/work-space/ws-1/repository/repo-1/graph?module=app&file=file-1',
+    );
+    expect(repositoryDnaPath('ws-1', 'repo-1', { file: 'file-1' })).toBe(
+      '/work-space/ws-1/repository/repo-1/dna?file=file-1',
     );
   });
 });

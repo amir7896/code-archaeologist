@@ -39,6 +39,17 @@ export function repositoryGraphPath(
   });
 }
 
+export function repositoryDnaPath(
+  workspaceId: string,
+  repositoryId: string,
+  query: { file?: string; symbol?: string } = {},
+): string {
+  return withQuery(`${repositoryPath(workspaceId, repositoryId)}/dna`, {
+    file: query.file,
+    symbol: query.symbol,
+  });
+}
+
 export function repositoryHistoryPath(
   workspaceId: string,
   repositoryId: string,

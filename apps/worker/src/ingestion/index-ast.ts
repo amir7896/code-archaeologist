@@ -90,7 +90,7 @@ export async function indexAst(input: {
       });
     }
     if (index % 8 === 0 || index === parseable.length - 1) {
-      await input.onProgress?.(72 + Math.floor(((index + 1) / Math.max(parseable.length, 1)) * 24));
+      await input.onProgress?.(72 + Math.floor(((index + 1) / Math.max(parseable.length, 1)) * 18));
     }
   }
 

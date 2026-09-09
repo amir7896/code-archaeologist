@@ -50,6 +50,7 @@ type RepositoryRecord = {
   lastIndexedRevision?: string | null;
   lastParsedRevision?: string | null;
   lastGraphRevision?: string | null;
+  lastDnaRevision?: string | null;
   status: string;
   lastError: string | null;
   lastSyncedAt: Date | null;
@@ -250,6 +251,7 @@ export class RepositoriesService {
             { taskType: 'INDEX_HISTORY' },
             { taskType: 'PARSE_AST' },
             { taskType: 'BUILD_GRAPH' },
+            { taskType: 'COMPUTE_DNA' },
           ],
         },
       },
@@ -360,6 +362,7 @@ function toRepositoryResponse(
     lastIndexedRevision: repository.lastIndexedRevision ?? null,
     lastParsedRevision: repository.lastParsedRevision ?? null,
     lastGraphRevision: repository.lastGraphRevision ?? null,
+    lastDnaRevision: repository.lastDnaRevision ?? null,
     commitCount: counts?.commitCount,
     fileCount: counts?.fileCount,
     symbolCount: counts?.symbolCount,

@@ -19,7 +19,7 @@ describe('indexGraph', () => {
 
     expect(prisma.codeSymbol.findMany).not.toHaveBeenCalled();
     expect(prisma.graphEdge.deleteMany).not.toHaveBeenCalled();
-    expect(onProgress).toHaveBeenCalledWith(99);
+    expect(onProgress).toHaveBeenCalledWith(94);
   });
 
   it('replaces derived edges and stamps the graph revision', async () => {

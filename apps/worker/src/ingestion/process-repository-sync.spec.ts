@@ -1,7 +1,7 @@
 import { processRepositorySync } from './process-repository-sync';
 
 describe('processRepositorySync', () => {
-  it('marks the repository ready after clone, history, parse, and graph build', async () => {
+  it('marks the repository ready after clone, history, parse, graph, and DNA', async () => {
     const git = {
       ensureMirror: jest.fn().mockResolvedValue(undefined),
       detectDefaultBranch: jest.fn().mockResolvedValue('main'),
@@ -10,6 +10,7 @@ describe('processRepositorySync', () => {
     const indexHistory = jest.fn().mockResolvedValue(undefined);
     const parseAst = jest.fn().mockResolvedValue(undefined);
     const buildGraph = jest.fn().mockResolvedValue(undefined);
+    const computeDna = jest.fn().mockResolvedValue(undefined);
     const updates: unknown[] = [];
     const prisma = {
       analysisRun: {
@@ -24,6 +25,7 @@ describe('processRepositorySync', () => {
             { id: 't3', taskType: 'INDEX_HISTORY' },
             { id: 't4', taskType: 'PARSE_AST' },
             { id: 't5', taskType: 'BUILD_GRAPH' },
+            { id: 't6', taskType: 'COMPUTE_DNA' },
           ],
           repository: {
             id: 'repo-1',
@@ -53,6 +55,7 @@ describe('processRepositorySync', () => {
         indexHistory,
         parseAst,
         buildGraph,
+        computeDna,
       },
     );
 
@@ -70,6 +73,12 @@ describe('processRepositorySync', () => {
       }),
     );
     expect(buildGraph).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repositoryId: 'repo-1',
+        revision: 'abc123',
+      }),
+    );
+    expect(computeDna).toHaveBeenCalledWith(
       expect.objectContaining({
         repositoryId: 'repo-1',
         revision: 'abc123',

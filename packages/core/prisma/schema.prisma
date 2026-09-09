@@ -82,6 +82,7 @@ enum AnalysisTaskType {
   INDEX_HISTORY
   PARSE_AST
   BUILD_GRAPH
+  COMPUTE_DNA
 }
 
 enum SymbolKind {
@@ -125,6 +126,19 @@ enum GraphEdgeType {
 
 enum GraphEvidence {
   AST
+}
+
+enum DnaSubjectType {
+  FILE
+  SYMBOL
+  MODULE
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
 enum FileChangeType {
@@ -237,6 +251,7 @@ model Repository {
   lastIndexedRevision String?            @map("last_indexed_revision")
   lastParsedRevision  String?            @map("last_parsed_revision")
   lastGraphRevision   String?            @map("last_graph_revision")
+  lastDnaRevision     String?            @map("last_dna_revision")
   settings            Json               @default("{}")
   status              RepositoryStatus   @default(PENDING)
   lastError           String?            @map("last_error")
@@ -251,8 +266,10 @@ model Repository {
   developers   Developer[]
   branches     Branch[]
   commits      Commit[]
-  files        RepoFile[]
-  graphEdges   GraphEdge[]
+  files             RepoFile[]
+  graphEdges        GraphEdge[]
+  metricsSnapshots  MetricsSnapshot[]
+  riskScores        RiskScore[]
 
   @@index([workspaceId, createdAt])
   @@index([status])
@@ -365,6 +382,7 @@ model Commit {
   files          CommitFile[]
   branches       BranchCommit[]
   headOfBranches Branch[]       @relation("BranchHead")
+  symbolVersions SymbolVersion[]
 
   @@unique([repositoryId, sha])
   @@index([repositoryId, committedAt])
@@ -400,8 +418,9 @@ model RepoFile {
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   repository  Repository   @relation(fields: [repositoryId], references: [id])
-  commitFiles CommitFile[]
-  symbols     CodeSymbol[]
+  commitFiles    CommitFile[]
+  symbols        CodeSymbol[]
+  symbolVersions SymbolVersion[]
 
   @@unique([repositoryId, path])
   @@index([repositoryId])
@@ -449,6 +468,7 @@ model CodeSymbol {
   children CodeSymbol[]      @relation("SymbolTree")
   outgoing SymbolRelation[]  @relation("RelationSource")
   incoming SymbolRelation[]  @relation("RelationTarget")
+  versions SymbolVersion[]
 
   @@unique([fileId, qualifiedName])
   @@index([fileId])
@@ -499,8 +519,69 @@ model GraphEdge {
   @@map("graph_edges")
 }
 
+model SymbolVersion {
+  id            String         @id @default(uuid()) @db.Uuid
+  fileId        String         @map("file_id") @db.Uuid
+  qualifiedName String         @map("qualified_name")
+  symbolId      String?        @map("symbol_id") @db.Uuid
+  commitId      String?        @map("commit_id") @db.Uuid
+  revision      String
+  contentHash   String         @map("content_hash")
+  startLine     Int            @map("start_line")
+  endLine       Int            @map("end_line")
+  loc           Int            @default(0)
+  complexity    Int            @default(0)
+  nesting       Int            @default(0)
+  changeType    FileChangeType @map("change_type")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  file   RepoFile    @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  symbol CodeSymbol? @relation(fields: [symbolId], references: [id], onDelete: SetNull)
+  commit Commit?     @relation(fields: [commitId], references: [id], onDelete: SetNull)
+
+  @@unique([fileId, qualifiedName, revision], map: "symbol_versions_unique")
+  @@index([fileId], map: "symbol_versions_file_idx")
+  @@index([symbolId], map: "symbol_versions_symbol_idx")
+  @@index([commitId], map: "symbol_versions_commit_idx")
+  @@map("symbol_versions")
+}
+
+model MetricsSnapshot {
+  id           String   @id @default(uuid()) @db.Uuid
+  repositoryId String   @map("repository_id") @db.Uuid
+  revision     String
+  scope        String
+  subjectId    String   @map("subject_id")
+  metrics      Json     @map("metrics_json")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, revision, scope, subjectId], map: "metrics_snapshots_unique")
+  @@index([repositoryId, scope], map: "metrics_snapshots_repo_scope_idx")
+  @@map("metrics_snapshots")
+}
+
+model RiskScore {
+  id                  String         @id @default(uuid()) @db.Uuid
+  repositoryId        String         @map("repository_id") @db.Uuid
+  subjectType         DnaSubjectType @map("subject_type")
+  subjectId           String         @map("subject_id")
+  revision            String
+  score               Float
+  level               RiskLevel
+  factors             Json           @map("factors_json")
+  evidenceConfidence  Float          @map("evidence_confidence")
+  calculatedAt        DateTime       @default(now()) @map("calculated_at")
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, subjectType, subjectId], map: "risk_scores_unique")
+  @@index([repositoryId, level], map: "risk_scores_repo_level_idx")
+  @@map("risk_scores")
+}
+
 // Planned later:
-// symbol_versions, issues, pull_requests,
-// reviews, metrics_snapshots, risk_scores,
+// issues, pull_requests, reviews,
 // documents, document_chunks, investigations, investigation_evidence,
 // investigation_messages, integrations, webhook_events

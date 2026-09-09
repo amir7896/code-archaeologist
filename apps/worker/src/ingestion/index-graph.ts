@@ -15,11 +15,11 @@ export async function indexGraph(input: {
     select: { lastGraphRevision: true },
   });
   if (current?.lastGraphRevision === revision) {
-    await input.onProgress?.(99);
+    await input.onProgress?.(94);
     return;
   }
 
-  await input.onProgress?.(96);
+  await input.onProgress?.(90);
   const [symbols, relations] = await Promise.all([
     prisma.codeSymbol.findMany({
       where: { file: { repositoryId } },
@@ -37,7 +37,7 @@ export async function indexGraph(input: {
     }),
   ]);
 
-  await input.onProgress?.(97);
+  await input.onProgress?.(92);
   const edges = collectGraphEdges({ symbols, relations });
   await prisma.graphEdge.deleteMany({ where: { repositoryId } });
 
@@ -64,5 +64,5 @@ export async function indexGraph(input: {
     where: { id: repositoryId },
     data: { lastGraphRevision: revision },
   });
-  await input.onProgress?.(99);
+  await input.onProgress?.(94);
 }

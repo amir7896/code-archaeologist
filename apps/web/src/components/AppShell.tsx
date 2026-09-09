@@ -5,6 +5,7 @@ import { formatRole, formatStatus, repositoryHost, repositorySummary } from '../
 import {
   repositoryPath,
   repositoryCodePath,
+  repositoryDnaPath,
   repositoryGraphPath,
   repositoryHistoryPath,
   repositorySettingsPath,
@@ -184,6 +185,7 @@ function SidebarNav() {
           </SideLink>
           <SideLink to={repositoryCodePath(workspaceId, repositoryId)}>Code</SideLink>
           <SideLink to={repositoryGraphPath(workspaceId, repositoryId)}>Architecture</SideLink>
+          <SideLink to={repositoryDnaPath(workspaceId, repositoryId)}>Code DNA</SideLink>
           <SideLink to={repositoryHistoryPath(workspaceId, repositoryId)}>History</SideLink>
           {canManage ? (
             <SideLink to={repositorySettingsPath(workspaceId, repositoryId)}>Settings</SideLink>

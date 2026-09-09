@@ -42,6 +42,7 @@ const TASK_LABELS: Record<string, string> = {
   INDEX_HISTORY: 'Reading commit history',
   PARSE_AST: 'Reading source files',
   BUILD_GRAPH: 'Building the architecture map',
+  COMPUTE_DNA: 'Scoring history and risk',
 };
 
 const SYMBOL_LABELS: Record<string, string> = {
@@ -103,6 +104,22 @@ export function formatSymbolKind(kind: string): string {
 
 export function formatRelation(type: string): string {
   return RELATION_LABELS[type] ?? type.replaceAll('_', ' ').toLowerCase();
+}
+
+export function formatRiskLevel(level: string): string {
+  if (level === 'CRITICAL') {
+    return 'Critical';
+  }
+  if (level === 'HIGH') {
+    return 'High';
+  }
+  if (level === 'MEDIUM') {
+    return 'Medium';
+  }
+  if (level === 'LOW') {
+    return 'Low';
+  }
+  return level.replaceAll('_', ' ').toLowerCase();
 }
 
 export function formatChange(changeType: string): string {

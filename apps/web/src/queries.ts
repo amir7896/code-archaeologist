@@ -27,6 +27,14 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'file', fileId] as const,
   filePreview: (workspaceId: string, repositoryId: string, fileId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'preview', fileId] as const,
+  dna: (workspaceId: string, repositoryId: string, fileId?: string, symbolId?: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'dna', fileId ?? '', symbolId ?? ''] as const,
+  dnaHealth: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'insights', 'health'] as const,
+  hotspots: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'insights', 'hotspots'] as const,
+  risks: (workspaceId: string, repositoryId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'insights', 'risks'] as const,
   graph: (workspaceId: string, repositoryId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'graph'] as const,
   graphDependencies: (workspaceId: string, repositoryId: string, fileId: string, depth?: number) =>
@@ -288,6 +296,12 @@ export function useSyncRepositoryMutation(workspaceId: string, repositoryId: str
         queryClient.invalidateQueries({
           queryKey: queryKeys.graph(workspaceId, repositoryId),
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'dna'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspaces', workspaceId, 'repositories', repositoryId, 'insights'],
+        }),
       ]);
     },
   });
@@ -381,6 +395,42 @@ export function useSymbolsQuery(
     ),
     queryFn: () => repositoryApi.symbols(workspaceId, repositoryId, query),
     enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
+export function useDnaHealthQuery(workspaceId: string, repositoryId: string) {
+  return useQuery({
+    queryKey: queryKeys.dnaHealth(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.dnaHealth(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId),
+  });
+}
+
+export function useHotspotsQuery(workspaceId: string, repositoryId: string) {
+  return useQuery({
+    queryKey: queryKeys.hotspots(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.hotspots(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId),
+  });
+}
+
+export function useRisksQuery(workspaceId: string, repositoryId: string) {
+  return useQuery({
+    queryKey: queryKeys.risks(workspaceId, repositoryId),
+    queryFn: () => repositoryApi.risks(workspaceId, repositoryId),
+    enabled: Boolean(workspaceId && repositoryId),
+  });
+}
+
+export function useDnaProfileQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { fileId?: string; symbolId?: string } = {},
+) {
+  return useQuery({
+    queryKey: queryKeys.dna(workspaceId, repositoryId, query.fileId, query.symbolId),
+    queryFn: () => repositoryApi.dna(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId && (query.fileId || query.symbolId)),
   });
 }
 
