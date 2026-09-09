@@ -29,6 +29,24 @@ describe('SourceService', () => {
     expect(result.items[0]).toMatchObject({ name: 'login', kind: 'FUNCTION', path: 'src/auth.ts' });
   });
 
+  it('lists one folder of the source tree', async () => {
+    const prisma = {
+      repository: { findFirst: jest.fn().mockResolvedValue({ id: 'repo-1' }) },
+      repoFile: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'f1', path: 'app/services/cart.py', language: 'python', loc: 20 },
+          { id: 'f2', path: 'app/main.py', language: 'python', loc: 10 },
+        ]),
+      },
+    };
+    const service = new SourceService(prisma as never, { REPOSITORY_WORK_DIR: '/tmp' } as never);
+    const result = await service.listTree('ws-1', 'repo-1', { prefix: 'app' });
+    expect(result.items.map((item) => `${item.kind}:${item.name}`)).toEqual([
+      'folder:services',
+      'file:main.py',
+    ]);
+  });
+
   it('404s when a symbol is missing', async () => {
     const service = new SourceService(
       {

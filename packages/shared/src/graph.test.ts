@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findCycles, moduleKey, walkNeighbors } from './graph';
+import { findCycles, moduleKey, parseModuleGrouping, walkNeighbors } from './graph';
 
 test('moduleKey uses the first folder, or two levels under src/app', () => {
   assert.equal(moduleKey('alembic/env.py'), 'alembic');
   assert.equal(moduleKey('src/auth/login.ts'), 'src/auth');
   assert.equal(moduleKey('app/models/user.py'), 'app/models');
   assert.equal(moduleKey('readme.md'), 'readme.md');
+});
+
+test('moduleKey can group at a fixed folder depth', () => {
+  assert.equal(moduleKey('src/auth/login.ts', 1), 'src');
+  assert.equal(moduleKey('src/auth/login.ts', 2), 'src/auth');
+  assert.equal(moduleKey('src/auth/login.ts', 3), 'src/auth/login.ts');
+  assert.equal(parseModuleGrouping('2'), 2);
+  assert.equal(parseModuleGrouping('auto'), 'auto');
 });
 
 test('findCycles returns the A→B→C→A loop and ignores a line', () => {

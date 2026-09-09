@@ -31,11 +31,15 @@ export function repositoryCodePath(
 export function repositoryGraphPath(
   workspaceId: string,
   repositoryId: string,
-  query: { module?: string; file?: string } = {},
+  query: { module?: string; file?: string; group?: string; view?: string; q?: string; depth?: string } = {},
 ): string {
   return withQuery(`${repositoryPath(workspaceId, repositoryId)}/graph`, {
     module: query.module,
     file: query.file,
+    group: query.group && query.group !== 'auto' ? query.group : undefined,
+    view: query.view && query.view !== 'all' ? query.view : undefined,
+    q: query.q,
+    depth: query.depth && query.depth !== '2' ? query.depth : undefined,
   });
 }
 

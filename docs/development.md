@@ -57,12 +57,13 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/commits` | Optional `branch` query. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/commits/:sha` | Commit details and changed files. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/files/history` | Requires `path`. |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/tree` | One folder of the source tree. Optional `prefix`, `q`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/files` | Indexed source files. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/files/:fileId` | File metadata. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/files/:fileId/preview` | Source preview. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/symbols` | Optional `q`, `kind`, `fileId`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/symbols/:symbolId` | Symbol details and relations. |
-| GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph` | Architecture map (modules, depends-on, cycles). |
+| GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph` | Architecture map. Optional `group` (`auto`, `1`, `2`, `3`). |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/dependencies` | Requires `fileId`. Optional `depth` (1–6). |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/dependents` | Requires `fileId`. Optional `depth` (1–6). |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/graph/cycles` | File and folder dependency cycles. |

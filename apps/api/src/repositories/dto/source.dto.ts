@@ -2,6 +2,54 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { PaginationMetaDto, PaginationQueryDto } from '../../common/pagination.dto';
 
+export class FileTreeQueryDto {
+  @ApiPropertyOptional({ type: String, maxLength: 400 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(400)
+  prefix?: string;
+
+  @ApiPropertyOptional({ type: String, maxLength: 200 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  q?: string;
+}
+
+export class FileTreeNodeDto {
+  @ApiProperty({ type: String })
+  kind!: 'folder' | 'file';
+
+  @ApiProperty({ type: String })
+  name!: string;
+
+  @ApiProperty({ type: String })
+  path!: string;
+
+  @ApiPropertyOptional({ type: Number })
+  fileCount?: number;
+
+  @ApiPropertyOptional({ type: String })
+  fileId?: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  language?: string | null;
+
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  loc?: number | null;
+}
+
+export class FileTreeResponseDto {
+  @ApiProperty({ type: String })
+  prefix!: string;
+
+  @ApiProperty({ type: String })
+  q!: string;
+
+  @ApiProperty({ type: () => [FileTreeNodeDto] })
+  items!: FileTreeNodeDto[];
+}
+
 export class FileListQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ type: String, maxLength: 200 })
   @IsOptional()

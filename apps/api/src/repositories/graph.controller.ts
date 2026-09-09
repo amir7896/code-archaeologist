@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkspaceGuard } from '../workspaces/guards/workspace.guard';
 import {
   GraphCyclesResponseDto,
+  GraphMapQueryDto,
   GraphMapResponseDto,
   GraphNeighborsResponseDto,
   GraphWalkQueryDto,
@@ -28,8 +29,9 @@ export class GraphController {
   getMap(
     @Param('workspaceId') workspaceId: string,
     @Param('repositoryId') repositoryId: string,
+    @Query() query: GraphMapQueryDto,
   ): Promise<GraphMapResponseDto> {
-    return this.graph.getMap(workspaceId, repositoryId);
+    return this.graph.getMap(workspaceId, repositoryId, query);
   }
 
   @Get('dependencies')

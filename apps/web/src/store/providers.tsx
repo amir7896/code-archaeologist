@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { useEffect, type ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { ConfirmProvider } from '../components/ConfirmDialog';
-import { authApi } from '../api';
+import { authApi, isTransientApiError } from '../api';
 import { queryKeys } from '../queries';
 import { markedReady, sessionCleared, userLoaded } from './auth-slice';
 import { useAppDispatch, useAppSelector } from './hooks';
@@ -26,7 +26,8 @@ function SessionBootstrap({ children }: { children: ReactNode }) {
     queryKey: queryKeys.me,
     queryFn: authApi.me,
     enabled: Boolean(tokens) && !user,
-    retry: false,
+    retry: (count, error) => isTransientApiError(error) && count < 8,
+    retryDelay: 1_000,
   });
 
   useEffect(() => {
@@ -41,10 +42,13 @@ function SessionBootstrap({ children }: { children: ReactNode }) {
     if (me.isSuccess) {
       dispatch(userLoaded(me.data));
     }
-    if (me.isError) {
+    if (me.isError && !isTransientApiError(me.error)) {
       dispatch(sessionCleared());
     }
-  }, [dispatch, me.data, me.isError, me.isSuccess, tokens, user]);
+    if (me.isError && isTransientApiError(me.error)) {
+      dispatch(markedReady());
+    }
+  }, [dispatch, me.data, me.error, me.isError, me.isSuccess, tokens, user]);
 
   return children;
 }

@@ -6,7 +6,7 @@ Thank you for contributing to Code Archaeologist.
 
 Follow the project scope. Do not start with the chatbot. The graph and evidence engine are the product; the AI layer is an interface over that foundation.
 
-Current work is **Ollama/RAG investigation** (PDF checklist 9). Next is React explorer polish, then GitHub. The Ask screen explains indexed evidence; it does not invent the evidence set.
+Current work is **React explorer/graph** (PDF checklist 10). Next is GitHub. Code is a folder tree; Architecture groups and filters large maps. Ask still explains indexed evidence only.
 
 ## Setup
 

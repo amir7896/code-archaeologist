@@ -7,14 +7,27 @@ export type DirectedLink = {
 /** Folders that usually hold the real package names one level down. */
 const NESTED_ROOTS = new Set(['src', 'app', 'lib', 'pkg', 'packages', 'internal', 'cmd', 'apps']);
 
+export type ModuleGrouping = 'auto' | 1 | 2 | 3;
+
+export function parseModuleGrouping(value?: string): ModuleGrouping {
+  if (value === '1' || value === '2' || value === '3') {
+    return Number(value) as 1 | 2 | 3;
+  }
+  return 'auto';
+}
+
 /**
  * Collapse a file path to a stable architecture-map node.
  * `alembic/env.py` → `alembic`, `src/auth/login.ts` → `src/auth`.
+ * Pass 1–3 to force that many path segments for large-repo aggregation.
  */
-export function moduleKey(path: string): string {
+export function moduleKey(path: string, grouping: ModuleGrouping = 'auto'): string {
   const parts = path.replaceAll('\\', '/').split('/').filter(Boolean);
   if (parts.length === 0) {
     return path || '(root)';
+  }
+  if (grouping !== 'auto') {
+    return parts.slice(0, Math.min(grouping, parts.length)).join('/');
   }
   if (parts.length === 1) {
     return parts[0];

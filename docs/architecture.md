@@ -12,7 +12,7 @@ Git repository → ingestion → Git history + AST → normalized symbols → de
 |---|---|
 | `apps/api` | NestJS REST API under `/api/v1`. Auth, orchestration, and policies. |
 | `apps/worker` | Long-running BullMQ jobs. Retry, progress, and bounded concurrency. |
-| `apps/web` | React dashboard, explorer, graph, and investigation UI. |
+| `apps/web` | React dashboard, folder-tree explorer, filterable architecture map, and investigation UI. |
 | PostgreSQL | System of record, graph edges, search, analytics. |
 | Redis | Queue backend. |
 | Ollama | Optional local inference for Ask explanations. Answers still require indexed citations. |

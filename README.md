@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **Ollama/RAG investigation**: repositories have Git history, symbols, an architecture graph, Code DNA, impact, historical evidence, and cited Ask answers. A local model is optional.
+This repository is at **React explorer/graph**: Code is a folder tree with source and symbols, and Architecture is an interactive map with grouping, filters, and depth. A local model is optional for Ask.
 
 ## Requirements
 

@@ -2,6 +2,7 @@ import { applyDecorators } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
 import { ApiOkExample } from '../../common/swagger/swagger-docs';
 import {
+  FileTreeResponseDto,
   SourceFileListResponseDto,
   SourceFileResponseDto,
   SourcePreviewResponseDto,
@@ -10,11 +11,18 @@ import {
 } from '../dto/source.dto';
 import {
   sourceFileListResponseExample,
+  sourceFileTreeResponseExample,
   sourceFileResponseExample,
   sourcePreviewResponseExample,
   symbolDetailResponseExample,
   symbolListResponseExample,
 } from './source.schema';
+
+export const ListFileTreeDocs = () =>
+  applyDecorators(
+    ApiOperation({ summary: 'List one folder of the indexed source tree' }),
+    ApiOkExample(FileTreeResponseDto, sourceFileTreeResponseExample, 'File tree'),
+  );
 
 export const ListFilesDocs = () =>
   applyDecorators(

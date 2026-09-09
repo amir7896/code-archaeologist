@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { PageFrame } from '../components/PageFrame';
 import { errorMessage } from '../lib/errors';
@@ -12,17 +12,37 @@ import {
   useSyncRepositoryMutation,
   useWorkspaceQuery,
 } from '../queries';
-import { card, muted, secondaryButton } from '../ui';
+import { card, fieldClass, muted, secondaryButton } from '../ui';
 import type { GraphMap, GraphMapEdge, GraphModule, GraphNeighbors } from '../api';
 
 const MAX_MAP_NODES = 36;
+
+const GROUP_OPTIONS = [
+  { value: 'auto', label: 'Auto folders' },
+  { value: '1', label: '1 folder deep' },
+  { value: '2', label: '2 folders deep' },
+  { value: '3', label: '3 folders deep' },
+];
+
+const VIEW_OPTIONS = [
+  { value: 'all', label: 'All folders' },
+  { value: 'connected', label: 'Connected only' },
+  { value: 'cycles', label: 'Cycles only' },
+];
 
 export function ArchitectureMapPage() {
   const { workspaceId = '', repositoryId = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const selectedId = params.get('module') ?? '';
   const selectedFileId = params.get('file') ?? '';
-  const mapQuery = useGraphMapQuery(workspaceId, repositoryId);
+  const group = params.get('group') === '1' || params.get('group') === '2' || params.get('group') === '3'
+    ? params.get('group') ?? 'auto'
+    : 'auto';
+  const view = params.get('view') === 'cycles' || params.get('view') === 'connected' ? params.get('view') ?? 'all' : 'all';
+  const filter = params.get('q') ?? '';
+  const depth = clampDepth(params.get('depth'));
+  const [draft, setDraft] = useState(filter);
+  const mapQuery = useGraphMapQuery(workspaceId, repositoryId, group);
   const repositoryQuery = useRepositoryQuery(workspaceId, repositoryId);
   const workspaceQuery = useWorkspaceQuery(workspaceId);
   const sync = useSyncRepositoryMutation(workspaceId, repositoryId);
@@ -31,12 +51,16 @@ export function ArchitectureMapPage() {
   const canSync = workspaceQuery.data?.role !== 'VIEWER';
   const selected = map?.modules.find((module) => module.id === selectedId) ?? null;
 
-  function open(next: { module?: string; file?: string }) {
+  function open(next: { module?: string; file?: string; group?: string; view?: string; q?: string; depth?: string }) {
     setParams(
       new URLSearchParams(
         repositoryGraphPath(workspaceId, repositoryId, {
           module: next.module,
           file: next.file,
+          group: next.group ?? group,
+          view: next.view ?? view,
+          q: next.q !== undefined ? next.q : filter || undefined,
+          depth: next.depth ?? String(depth),
         }).split('?')[1] ?? '',
       ),
     );
@@ -60,6 +84,11 @@ export function ArchitectureMapPage() {
 
   const empty = map.stats.fileCount === 0;
   const needsSync = !repository?.lastGraphRevision && map.stats.edgeCount === 0;
+  const visibleModules = filterGraphModules(map.modules, { q: filter, view });
+  const visibleIds = new Set(visibleModules.map((module) => module.id));
+  const visibleEdges = map.edges.filter(
+    (edge) => visibleIds.has(edge.sourceId) && visibleIds.has(edge.targetId),
+  );
 
   return (
     <PageFrame>
@@ -124,18 +153,103 @@ export function ArchitectureMapPage() {
               </section>
             ) : null}
 
-            <MostConnected modules={map.modules} onSelect={(id) => open({ module: id })} />
+            <MostConnected modules={visibleModules} onSelect={(id) => open({ module: id })} />
+
+            <section className={card}>
+              <h2 className="text-sm font-semibold text-zinc-900">Map controls</h2>
+              <form
+                className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  open({ q: draft.trim() || undefined, module: selectedId || undefined, file: selectedFileId || undefined });
+                }}
+              >
+                <label className="block text-sm">
+                  <span className={muted}>Group folders</span>
+                  <select
+                    className={`${fieldClass()} mt-1`}
+                    value={group}
+                    aria-label="Group folders"
+                    onChange={(event) => open({ group: event.target.value, module: '', file: '' })}
+                  >
+                    {GROUP_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm">
+                  <span className={muted}>Show</span>
+                  <select
+                    className={`${fieldClass()} mt-1`}
+                    value={view}
+                    aria-label="Show folders"
+                    onChange={(event) => open({ view: event.target.value, module: selectedId || undefined })}
+                  >
+                    {VIEW_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm">
+                  <span className={muted}>Neighbor depth</span>
+                  <select
+                    className={`${fieldClass()} mt-1`}
+                    value={String(depth)}
+                    aria-label="Neighbor depth"
+                    onChange={(event) =>
+                      open({
+                        depth: event.target.value,
+                        module: selectedId || undefined,
+                        file: selectedFileId || undefined,
+                      })
+                    }
+                  >
+                    {[1, 2, 3, 4].map((value) => (
+                      <option key={value} value={String(value)}>
+                        {value} hop{value === 1 ? '' : 's'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm">
+                  <span className={muted}>Filter folders</span>
+                  <input
+                    className={`${fieldClass()} mt-1`}
+                    value={draft}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setDraft(value);
+                      open({
+                        q: value.trim() || undefined,
+                        module: selectedId || undefined,
+                        file: selectedFileId || undefined,
+                      });
+                    }}
+                    placeholder="auth, payments…"
+                    aria-label="Filter folders"
+                  />
+                </label>
+              </form>
+              <p className={`mt-2 ${muted}`}>
+                Showing {visibleModules.length} of {map.modules.length} folders. Large repositories stay readable by
+                grouping and hiding isolated nodes.
+              </p>
+            </section>
 
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
               <section className={`${card} overflow-hidden p-3 sm:p-5`}>
                 <ArchitectureCanvas
-                  modules={map.modules}
-                  edges={map.edges}
+                  modules={visibleModules}
+                  edges={visibleEdges}
                   selectedId={selectedId}
                   onSelect={(id) => open({ module: id })}
                 />
                 <ul className="mt-4 flex flex-wrap gap-2">
-                  {map.modules.map((module) => (
+                  {visibleModules.slice(0, 24).map((module) => (
                     <li key={module.id}>
                       <button
                         className={`rounded-full border px-2.5 py-1 text-xs ${
@@ -153,6 +267,11 @@ export function ArchitectureMapPage() {
                     </li>
                   ))}
                 </ul>
+                {visibleModules.length > 24 ? (
+                  <p className={`mt-2 ${muted}`}>
+                    {visibleModules.length - 24} more folders match. Use the filter to narrow the list.
+                  </p>
+                ) : null}
               </section>
               <ModuleDetail
                 workspaceId={workspaceId}
@@ -160,6 +279,7 @@ export function ArchitectureMapPage() {
                 module={selected}
                 selectedFileId={selectedFileId}
                 map={map}
+                depth={depth}
                 onSelectModule={(id) => open({ module: id })}
                 onSelectFile={(fileId) => open({ module: selectedId || selected?.id, file: fileId })}
               />
@@ -227,6 +347,7 @@ function ModuleDetail({
   module,
   selectedFileId,
   map,
+  depth,
   onSelectModule,
   onSelectFile,
 }: {
@@ -235,6 +356,7 @@ function ModuleDetail({
   module: GraphModule | null;
   selectedFileId: string;
   map: GraphMap;
+  depth: number;
   onSelectModule: (id: string) => void;
   onSelectFile: (fileId: string) => void;
 }) {
@@ -292,6 +414,8 @@ function ModuleDetail({
           workspaceId={workspaceId}
           repositoryId={repositoryId}
           fileId={selectedFileId}
+          depth={depth}
+          onSelectFile={onSelectFile}
         />
       ) : null}
     </section>
@@ -302,13 +426,17 @@ function FileNeighbors({
   workspaceId,
   repositoryId,
   fileId,
+  depth,
+  onSelectFile,
 }: {
   workspaceId: string;
   repositoryId: string;
   fileId: string;
+  depth: number;
+  onSelectFile: (fileId: string) => void;
 }) {
-  const dependencies = useGraphDependenciesQuery(workspaceId, repositoryId, fileId, 2);
-  const dependents = useGraphDependentsQuery(workspaceId, repositoryId, fileId, 2);
+  const dependencies = useGraphDependenciesQuery(workspaceId, repositoryId, fileId, depth);
+  const dependents = useGraphDependentsQuery(workspaceId, repositoryId, fileId, depth);
 
   return (
     <div className="mt-5 border-t border-zinc-100 pt-5">
@@ -335,8 +463,8 @@ function FileNeighbors({
           </Link>
         </div>
       </div>
-      <NeighborList title="Depends on" query={dependencies} />
-      <NeighborList title="Used by" query={dependents} />
+      <NeighborList title="Depends on" query={dependencies} onSelectFile={onSelectFile} />
+      <NeighborList title="Used by" query={dependents} onSelectFile={onSelectFile} />
     </div>
   );
 }
@@ -344,9 +472,11 @@ function FileNeighbors({
 function NeighborList({
   title,
   query,
+  onSelectFile,
 }: {
   title: string;
   query: { data?: GraphNeighbors; isLoading: boolean; isError: boolean };
+  onSelectFile: (fileId: string) => void;
 }) {
   return (
     <div className="mt-3">
@@ -361,7 +491,13 @@ function NeighborList({
         <ul className="mt-2 space-y-1 text-sm text-zinc-700">
           {query.data.items.map((item) => (
             <li key={item.fileId}>
-              {item.path}
+              <button
+                className="text-left text-indigo-600 hover:text-indigo-500"
+                type="button"
+                onClick={() => onSelectFile(item.fileId)}
+              >
+                {item.path}
+              </button>
               <span className="ml-1 text-zinc-400">· {item.depth}</span>
             </li>
           ))}
@@ -521,4 +657,31 @@ function layoutCircle(modules: GraphModule[]): Map<string, { x: number; y: numbe
 
 function truncateLabel(value: string): string {
   return value.length > 22 ? `${value.slice(0, 20)}…` : value;
+}
+
+function clampDepth(value: string | null): number {
+  const parsed = Number(value || '2');
+  if (!Number.isFinite(parsed)) {
+    return 2;
+  }
+  return Math.min(4, Math.max(1, Math.round(parsed)));
+}
+
+function filterGraphModules(
+  modules: GraphModule[],
+  input: { q: string; view: string },
+): GraphModule[] {
+  const needle = input.q.trim().toLowerCase();
+  return modules.filter((module) => {
+    if (needle && !module.path.toLowerCase().includes(needle)) {
+      return false;
+    }
+    if (input.view === 'cycles' && !module.inCycle) {
+      return false;
+    }
+    if (input.view === 'connected' && module.fanIn + module.fanOut === 0) {
+      return false;
+    }
+    return true;
+  });
 }

@@ -1,6 +1,7 @@
 export * from './constants';
 export * from './env';
 export * from './evidence';
+export * from './file-tree';
 export * from './graph';
 export * from './impact';
 export * from './investigation';
