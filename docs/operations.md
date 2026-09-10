@@ -1,6 +1,6 @@
 # Operations
 
-Self-hosted runbook for backups, recovery, and observability. The dashboard Operations item stays disabled; this document is for operators.
+Self-hosted runbook for backups, recovery, and observability. The dashboard Operations item stays disabled; this document is for operators. Index: [README.md](README.md).
 
 ## Health
 

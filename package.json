@@ -1,6 +1,6 @@
 {
   "name": "code-archaeologist",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Open-source AI system that reconstructs not only what a codebase does, but why it evolved into its current architecture.",
   "license": "MIT",

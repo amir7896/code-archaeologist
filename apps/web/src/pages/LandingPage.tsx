@@ -76,7 +76,7 @@ export function LandingPage() {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-panel px-3 py-1 text-[12px] text-zinc-400">
               <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
-              Open source · self-hostable · Ollama-first
+              v1.0 · open source · self-hostable · Ollama-first
             </p>
             <h1 className="mt-6 text-[2.75rem] font-semibold leading-[1.08] tracking-tight text-white sm:text-[3.25rem] lg:text-[3.5rem]">
               <span className="block sm:whitespace-nowrap">

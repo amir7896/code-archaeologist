@@ -38,4 +38,4 @@ This note maps the v1 threat model to controls that are already in the product. 
 - Keep Git mirrors on a volume you can delete (`REPOSITORY_WORK_DIR`).
 - Run `scripts/security-check.sh` (or `pnpm audit --audit-level=critical`) before release.
 
-See [operations](operations.md) for backup, restore, and worker recovery.
+See [security model](security.md), [privacy](privacy.md), and [operations](operations.md).

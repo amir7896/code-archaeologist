@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **hardening**: rate limits, workspace quotas, clone and graph caps, request ids, backups, and operator docs on top of the self-hosted API, CLI, and SDK. A local model is optional for Ask.
+**v1.0.0** — self-hosted API, worker, dashboard, CLI, and SDK. A local model is optional for Ask. Every ingest is a full analysis.
 
 ## Requirements
 
@@ -51,7 +51,7 @@ packages/sdk      Typed API client, pagination, webhook verify
 packages/cli      `code-archaeologist` commands and CI exit codes
 infra/docker      Containerfiles
 docs/             Architecture, operations, security audit, local development, and CLI
-examples/         Example GitHub Action (demo repos later)
+examples/         GitHub Action and `demo-ts` sample tree
 ```
 
 ## Docker
@@ -83,15 +83,19 @@ docker compose --profile ai up -d ollama
 
 ## Documentation
 
+Index: [docs/README.md](docs/README.md)
+
 - [Development setup](docs/development.md)
-- [CLI and SDK](docs/cli.md)
-- [Architecture](docs/architecture.md)
 - [Installation / Docker](docs/installation.md)
 - [Configuration](docs/configuration.md)
-- [Operations](docs/operations.md)
-- [Security audit](docs/security-audit.md)
-- [Security](SECURITY.md)
-- [Contributing](CONTRIBUTING.md)
+- [REST / OpenAPI](docs/api.md)
+- [CLI and SDK](docs/cli.md)
+- [Architecture](docs/architecture.md)
+- [Parser](docs/parser.md) · [Git](docs/git-provider.md) · [AI](docs/ai-provider.md) · [Evidence](docs/evidence.md)
+- [FAQ / limitations](docs/faq.md) · [Troubleshooting](docs/troubleshooting.md) · [Testing](docs/testing.md)
+- [Operations](docs/operations.md) · [Security model](docs/security.md) · [Roadmap](docs/roadmap.md)
+- [Release notes](docs/release-notes.md) · [Announcement draft](docs/announcement.md) · [Roadmap](docs/roadmap.md)
+- [Privacy](docs/privacy.md) · [SECURITY.md](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 

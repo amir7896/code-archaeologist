@@ -74,4 +74,4 @@ for await (const workspace of client.workspaces.iterate()) {
 
 The client speaks `/api/v1` only. Additive JSON fields are ignored. Breaking route or auth changes require a new major SDK. Webhook helpers re-export `verifyGithubWebhookSignature` from `@code-archaeologist/shared`.
 
-See `examples/github-action/analyze.yml` for CI JSON + exit codes.
+See `examples/github-action/analyze.yml` for CI JSON + exit codes. REST routes: [api.md](api.md). Limits and failures: [faq.md](faq.md) and [troubleshooting.md](troubleshooting.md).

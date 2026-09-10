@@ -80,6 +80,9 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/ai/status` | Whether the local model is reachable. |
 | GET/POST | `/workspaces/:workspaceId/repositories/:repositoryId/investigations` | List or ask. Ask is Analyst+. Workspace daily quota. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/investigations/:investigationId` | Answer, messages, and citations. |
+| GET | `/workspaces/:workspaceId/integrations/github` | GitHub connection status. |
+| POST | `/workspaces/:workspaceId/integrations/github` | Connect with a personal access token. |
+| POST | `/webhooks/github/:workspaceId` | Verified GitHub webhook. |
 
 ## API DTOs and ValidationPipe
 
@@ -129,7 +132,7 @@ pnpm db:migrate:deploy   # apply committed migrations
 ./scripts/security-check.sh
 ```
 
-See [operations](operations.md) and [security audit](security-audit.md).
+See the [documentation index](README.md), [REST API](api.md), [operations](operations.md), and [troubleshooting](troubleshooting.md).
 
 ## Ollama (optional)
 

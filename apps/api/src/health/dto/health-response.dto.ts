@@ -29,7 +29,7 @@ export class HealthResponseDto {
   @ApiProperty({ type: String, example: 'api' })
   service!: string;
 
-  @ApiProperty({ type: String, example: '0.1.0' })
+  @ApiProperty({ type: String, example: '1.0.0' })
   version!: string;
 
   @ApiPropertyOptional({ type: () => HealthChecksDto })
