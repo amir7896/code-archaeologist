@@ -15,6 +15,9 @@ describe('paths', () => {
     expect(repositoryCodePath('ws-1', 'repo-1', { symbol: 'sym-1' })).toBe(
       '/work-space/ws-1/repository/repo-1/code?symbol=sym-1',
     );
+    expect(repositoryCodePath('ws-1', 'repo-1', { file: 'file-1', tab: 'source', line: '24' })).toBe(
+      '/work-space/ws-1/repository/repo-1/code?tab=source&file=file-1&line=24',
+    );
     expect(repositoryHistoryPath('ws-1', 'repo-1', { commit: 'abc', path: 'app.py', file: 'app.py' })).toBe(
       '/work-space/ws-1/repository/repo-1/history?commit=abc&path=app.py&file=app.py',
     );

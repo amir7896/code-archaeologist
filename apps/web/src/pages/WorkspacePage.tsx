@@ -1,11 +1,13 @@
 import { Field, Form, Formik } from 'formik';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useConfirm } from '../components/ConfirmDialog';
 import { PageFrame } from '../components/PageFrame';
 import { RepositoriesPanel } from '../components/RepositoriesPanel';
 import { useAuth } from '../hooks/useAuth';
 import { errorMessage } from '../lib/errors';
-import { formatActivity, formatRole, formatWhen } from '../lib/format';
+import { formatActivity, formatProvider, formatRole, formatStatus, formatWhen } from '../lib/format';
+import { homePath, repositoryPath, workspacePath, workspacePeoplePath } from '../lib/paths';
+import { useAiStatusQuery, useRepositoriesQuery } from '../queries';
 import {
   useAuditLogsQuery,
   useDeleteWorkspaceMutation,
@@ -17,19 +19,211 @@ import {
   useWorkspaceQuery,
 } from '../queries';
 import {
-  card,
   dangerButton,
   errorText,
   fieldClass,
   muted,
   primaryButton,
-  secondaryButton,
 } from '../ui';
+import type { Repository } from '../api';
 import { inviteMemberSchema, workspaceNameSchema } from '../validation';
 
 const ASSIGNABLE = ['ADMIN', 'ANALYST', 'VIEWER'] as const;
 
+const HOME_CARD = 'rounded-[1.75rem] bg-panel p-6';
+const SETTINGS_PANEL = 'rounded-[1.75rem] bg-panel p-5';
+const ACTIVITY_DOTS = ['#34d399', '#a78bfa', '#fb923c', '#38bdf8', '#e4e4e7'];
+const SETTINGS_TABS = [
+  { id: 'provider', label: 'AI Provider' },
+  { id: 'rules', label: 'Analysis Rules' },
+  { id: 'integrations', label: 'Integrations' },
+  { id: 'retention', label: 'Retention' },
+  { id: 'members', label: 'Members' },
+] as const;
+type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
+
 export function WorkspaceReposPage() {
+  const workspace = useWorkspaceContext();
+  const [params] = useSearchParams();
+  const query = (params.get('q') ?? '').trim().toLowerCase();
+  const repositoriesQuery = useRepositoriesQuery(workspace.id);
+  const repositories = repositoriesQuery.data?.items ?? [];
+
+  if (workspace.loading) {
+    return <WorkspaceLoading />;
+  }
+  if (!workspace.data) {
+    return <WorkspaceMissing error={workspace.error} />;
+  }
+
+  const members = workspace.members.filter((member) =>
+    query
+      ? `${member.name} ${member.email} ${member.role}`.toLowerCase().includes(query)
+      : true,
+  );
+  const visibleRepos = repositories.filter((repository) =>
+    query
+      ? `${repository.name} ${repository.provider} ${repository.defaultBranch ?? ''}`.toLowerCase().includes(query)
+      : true,
+  );
+  const roleCount = new Set(workspace.members.map((member) => member.role)).size;
+  const title = workspace.data.name.toLowerCase().endsWith('workspace')
+    ? workspace.data.name
+    : `${workspace.data.name} Workspace`;
+
+  return (
+    <PageFrame>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <Header
+          title={title}
+          subtitle="Members, repositories and recent activity for this workspace."
+          archived={workspace.archived}
+          error={workspace.actionError}
+        />
+        {workspace.canEdit ? (
+          <Link className={primaryButton} to={workspacePeoplePath(workspace.id)}>
+            + Invite Member
+          </Link>
+        ) : null}
+      </div>
+      <div className="mt-6 grid gap-5 xl:grid-cols-2">
+        <section className={HOME_CARD}>
+          <h2 className="text-[15px] font-semibold text-white">Members</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            {workspace.members.length} {workspace.members.length === 1 ? 'person' : 'people'}
+            {roleCount ? ` · ${roleCount} ${roleCount === 1 ? 'role' : 'roles'}` : ''}
+          </p>
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[28rem] text-left text-sm">
+              <thead>
+                <tr className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+                  <th className="pb-3 font-medium">Name</th>
+                  <th className="w-28 pb-3 font-medium">Role</th>
+                  <th className="w-28 pb-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((member) => (
+                  <tr key={member.userId} className="border-t border-white/5">
+                    <td className="py-3 pr-4">
+                      <span className="flex items-center gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-semibold text-zinc-300">
+                          {initials(member.name)}
+                        </span>
+                        <span className="min-w-0 truncate text-zinc-200">
+                          {member.name} · {member.email}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap py-3 pr-3">
+                      <Pill>{formatRole(member.role)}</Pill>
+                    </td>
+                    <td className="whitespace-nowrap py-3">
+                      <StatusPill status={member.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!workspace.membersQuery.isPending && members.length === 0 ? (
+              <p className={`mt-4 ${muted}`}>No members match.</p>
+            ) : null}
+          </div>
+        </section>
+
+        <section className={HOME_CARD}>
+          <h2 className="text-[15px] font-semibold text-white">Workspace Settings Snapshot</h2>
+          <p className="mt-1 text-xs text-zinc-500">Quick reference</p>
+          <dl className="mt-5 space-y-4 text-sm">
+            <SnapshotRow label="Retention policy" value="Not configured" />
+            <SnapshotRow label="Default AI provider" value="Ollama (local)" />
+            <SnapshotRow label="Integrations" value="Not connected" />
+            <SnapshotRow
+              label="Audit log"
+              value={workspace.canManage ? 'Enabled' : 'Restricted'}
+              tone={workspace.canManage ? 'ok' : 'muted'}
+            />
+          </dl>
+        </section>
+
+        <section className={HOME_CARD}>
+          <h2 className="text-[15px] font-semibold text-white">Repositories</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            {repositories.length} connected
+          </p>
+          {repositoriesQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading repositories…</p> : null}
+          {repositoriesQuery.isError ? (
+            <p className={`mt-4 ${errorText}`}>
+              {errorMessage(repositoriesQuery.error, 'Unable to load repositories')}
+            </p>
+          ) : null}
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-left text-sm">
+              <thead>
+                <tr className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+                  <th className="pb-3 font-medium">Name</th>
+                  <th className="pb-3 font-medium">Provider</th>
+                  <th className="pb-3 font-medium">Default branch</th>
+                  <th className="pb-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRepos.map((repository) => (
+                  <tr key={repository.id} className="border-t border-white/5">
+                    <td className="py-3">
+                      <Link
+                        className="text-zinc-200 hover:text-white"
+                        to={repositoryPath(workspace.id, repository.id)}
+                      >
+                        {repository.name}
+                      </Link>
+                    </td>
+                    <td className="py-3 text-zinc-400">{formatProvider(repository.provider)}</td>
+                    <td className="py-3 text-zinc-400">{repository.defaultBranch ?? '—'}</td>
+                    <td className="py-3">
+                      <RepoStatus status={repository.status} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!repositoriesQuery.isPending && visibleRepos.length === 0 ? (
+              <p className={`mt-4 ${muted}`}>No repositories yet. Connect one from Repositories.</p>
+            ) : null}
+          </div>
+        </section>
+
+        <section className={HOME_CARD}>
+          <h2 className="text-[15px] font-semibold text-white">Recent Activity</h2>
+          <p className="mt-1 text-xs text-zinc-500">Workspace-wide audit feed</p>
+          {workspace.canManage ? (
+            <>
+              {workspace.auditQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading activity…</p> : null}
+              <ul className="mt-5 space-y-3 text-sm">
+                {workspace.activity.slice(0, 8).map((event, index) => (
+                  <li key={event.id} className="flex items-start gap-3 text-zinc-300">
+                    <span
+                      className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: ACTIVITY_DOTS[index % ACTIVITY_DOTS.length] }}
+                    />
+                    <span>{formatActivity(event.action)}</span>
+                  </li>
+                ))}
+                {!workspace.auditQuery.isPending && workspace.activity.length === 0 ? (
+                  <li className="text-zinc-500">No activity yet.</li>
+                ) : null}
+              </ul>
+            </>
+          ) : (
+            <p className={`mt-5 ${muted}`}>Activity is available to workspace owners and admins.</p>
+          )}
+        </section>
+      </div>
+    </PageFrame>
+  );
+}
+
+export function WorkspaceRepositoriesPage() {
   const workspace = useWorkspaceContext();
   if (workspace.loading) {
     return <WorkspaceLoading />;
@@ -39,27 +233,32 @@ export function WorkspaceReposPage() {
   }
   return (
     <PageFrame>
-      <Header
-        title="Workspace overview"
-        subtitle="Add a Git repository here, then open it from the sidebar to inspect code and history."
+      <Link
+        className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white"
+        to={workspacePath(workspace.id)}
+      >
+        <BackArrow />
+        Back
+      </Link>
+      {workspace.archived ? (
+        <p className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          This workspace is archived. Restore it to make changes.
+        </p>
+      ) : null}
+      {workspace.actionError ? (
+        <p className={`mb-4 ${errorText}`}>{errorMessage(workspace.actionError, 'Something went wrong')}</p>
+      ) : null}
+      <RepositoriesPanel
+        workspaceId={workspace.id}
+        canAdd={workspace.canManage}
         archived={workspace.archived}
-        error={workspace.actionError}
       />
-      <div className="mt-6">
-        <RepositoriesPanel
-          workspaceId={workspace.id}
-          canAdd={workspace.canManage}
-          archived={workspace.archived}
-        />
-      </div>
     </PageFrame>
   );
 }
 
 export function WorkspacePeoplePage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const confirm = useConfirm();
   const workspace = useWorkspaceContext();
   if (workspace.loading) {
     return <WorkspaceLoading />;
@@ -70,131 +269,36 @@ export function WorkspacePeoplePage() {
 
   return (
     <PageFrame>
+      <Link
+        className="mb-4 inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white"
+        to={workspacePath(workspace.id)}
+      >
+        <BackArrow />
+        Back
+      </Link>
       <Header
         title="People"
         subtitle="Invite teammates who already have an account."
         archived={workspace.archived}
         error={workspace.actionError}
       />
-      <section className={`${card} mt-6`}>
-        {workspace.canEdit ? (
-          <Formik
-            initialValues={{ email: '', role: 'VIEWER' }}
-            validationSchema={inviteMemberSchema}
-            onSubmit={async (values, helpers) => {
-              try {
-                await workspace.inviteMember.mutateAsync({
-                  email: values.email.trim(),
-                  role: values.role as (typeof ASSIGNABLE)[number],
-                });
-                helpers.resetForm();
-              } catch {
-                // Shown in the page-level error.
-              }
-            }}
-          >
-            {({ errors, touched, isSubmitting }) => (
-              <Form className="grid gap-3 md:grid-cols-[1fr_auto_auto]" noValidate>
-                <div>
-                  <Field
-                    className={fieldClass(Boolean(touched.email && errors.email))}
-                    type="email"
-                    name="email"
-                    aria-label="Email"
-                    placeholder="name@company.com"
-                  />
-                  {touched.email && errors.email ? <p className={errorText}>{errors.email}</p> : null}
-                </div>
-                <Field className={fieldClass()} as="select" name="role" aria-label="Role">
-                  {ASSIGNABLE.map((role) => (
-                    <option key={role} value={role}>
-                      {formatRole(role)}
-                    </option>
-                  ))}
-                </Field>
-                <button className={primaryButton} type="submit" disabled={isSubmitting}>
-                  Add
-                </button>
-              </Form>
-            )}
-          </Formik>
-        ) : null}
-        {workspace.membersQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading people…</p> : null}
-        <ul className="mt-6 space-y-2 text-sm">
-          {workspace.members.map((member) => (
-            <li
-              key={member.userId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3"
-            >
-              <span>
-                <span className="font-medium text-zinc-900">{member.name}</span>
-                <span className="ml-2 text-zinc-500">{member.email}</span>
-              </span>
-              <span className="flex items-center gap-3">
-                {workspace.canEdit && member.role !== 'OWNER' ? (
-                  <select
-                    className={fieldClass()}
-                    aria-label={`Role for ${member.name}`}
-                    value={member.role}
-                    onChange={(event) =>
-                      void workspace.updateMember.mutate({
-                        userId: member.userId,
-                        role: event.target.value as (typeof ASSIGNABLE)[number],
-                      })
-                    }
-                  >
-                    {ASSIGNABLE.map((role) => (
-                      <option key={role} value={role}>
-                        {formatRole(role)}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="text-zinc-500">{formatRole(member.role)}</span>
-                )}
-                {!workspace.archived &&
-                member.role !== 'OWNER' &&
-                (workspace.canManage || member.userId === user?.id) ? (
-                  <button
-                    className="font-medium text-red-600 hover:text-red-500"
-                    type="button"
-                    onClick={() => {
-                      const leaving = member.userId === user?.id;
-                      void confirm({
-                        title: leaving ? 'Leave workspace' : 'Remove member',
-                        message: leaving
-                          ? 'Leave this workspace? You will lose access until someone invites you again.'
-                          : `Remove ${member.name} from this workspace?`,
-                        confirmLabel: leaving ? 'Leave' : 'Remove',
-                        danger: true,
-                      }).then((ok) => {
-                        if (!ok) {
-                          return;
-                        }
-                        void workspace.removeMember.mutateAsync(member.userId).then(() => {
-                          if (leaving) {
-                            navigate('/', { replace: true });
-                          }
-                        });
-                      });
-                    }}
-                  >
-                    {member.userId === user?.id ? 'Leave' : 'Remove'}
-                  </button>
-                ) : null}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="mt-6">
+        <MembersPanel workspace={workspace} userId={user?.id} />
+      </div>
     </PageFrame>
   );
 }
 
 export function WorkspaceSettingsPage() {
-  const navigate = useNavigate();
-  const confirm = useConfirm();
+  const { user } = useAuth();
+  const [params, setParams] = useSearchParams();
   const workspace = useWorkspaceContext();
+  const repositoriesQuery = useRepositoriesQuery(workspace.id);
+  const repositories = repositoriesQuery.data?.items ?? [];
+  const firstRepoId = repositories[0]?.id ?? '';
+  const aiQuery = useAiStatusQuery(workspace.id, firstRepoId);
+  const tab = parseSettingsTab(params.get('tab'));
+
   if (workspace.loading) {
     return <WorkspaceLoading />;
   }
@@ -213,116 +317,455 @@ export function WorkspaceSettingsPage() {
     <PageFrame>
       <Header
         title="Settings"
-        subtitle="Rename, archive, or review recent activity."
+        subtitle="AI provider, analysis rules, integrations, retention and members."
         archived={workspace.archived}
         error={workspace.actionError}
       />
-      <div className="mt-6 space-y-6">
-        {workspace.canEdit || workspace.isOwner ? (
-          <section className={card}>
-            <h2 className="text-sm font-semibold text-zinc-900">Workspace</h2>
-            {workspace.canEdit ? (
-              <Formik
-                enableReinitialize
-                initialValues={{ name: workspace.data.name }}
-                validationSchema={workspaceNameSchema}
-                onSubmit={async (values) => {
-                  try {
-                    await workspace.updateWorkspace.mutateAsync({ name: values.name.trim() });
-                  } catch {
-                    // Shown in the page-level error.
-                  }
-                }}
-              >
-                {({ errors, touched, isSubmitting }) => (
-                  <Form className="mt-4 flex flex-col gap-3 sm:flex-row" noValidate>
-                    <div className="flex-1">
-                      <Field
-                        className={fieldClass(Boolean(touched.name && errors.name))}
-                        name="name"
-                        aria-label="Workspace name"
-                      />
-                      {touched.name && errors.name ? <p className={errorText}>{errors.name}</p> : null}
-                    </div>
-                    <button className={primaryButton} type="submit" disabled={isSubmitting}>
-                      Save name
-                    </button>
-                  </Form>
-                )}
-              </Formik>
-            ) : null}
-            {workspace.isOwner ? (
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  className={secondaryButton}
-                  type="button"
-                  disabled={workspace.updateWorkspace.isPending}
-                  onClick={() => {
-                    if (workspace.archived) {
-                      void workspace.updateWorkspace.mutate({ status: 'ACTIVE' });
-                      return;
-                    }
-                    void confirm({
-                      title: 'Archive workspace',
-                      message:
-                        'Archive this workspace? People will not be able to make changes until it is restored.',
-                      confirmLabel: 'Archive',
-                      danger: true,
-                    }).then((ok) => {
-                      if (ok) {
-                        void workspace.updateWorkspace.mutate({ status: 'ARCHIVED' });
-                      }
-                    });
-                  }}
-                >
-                  {workspace.archived ? 'Restore workspace' : 'Archive workspace'}
-                </button>
-                <button
-                  className={dangerButton}
-                  type="button"
-                  disabled={workspace.deleteWorkspace.isPending}
-                  onClick={() => {
-                    void confirm({
-                      title: 'Delete workspace',
-                      message: 'Delete this workspace? This cannot be undone.',
-                      confirmLabel: 'Delete',
-                      danger: true,
-                    }).then((ok) => {
-                      if (ok) {
-                        void workspace.deleteWorkspace
-                          .mutateAsync()
-                          .then(() => navigate('/', { replace: true }));
-                      }
-                    });
-                  }}
-                >
-                  Delete workspace
-                </button>
-              </div>
-            ) : null}
-          </section>
-        ) : null}
-
-        <section className={card}>
-          <h2 className="text-sm font-semibold text-zinc-900">Activity</h2>
-          {workspace.auditQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading activity…</p> : null}
-          <ul className="mt-4 space-y-2 text-sm text-zinc-700">
-            {workspace.activity.map((event) => {
-              const when = formatWhen(event.createdAt);
-              return (
-                <li key={event.id}>
-                  <span className="font-medium">{formatActivity(event.action)}</span>
-                  {when ? <span className="ml-2 text-zinc-500">{when}</span> : null}
-                </li>
-              );
-            })}
-            {!workspace.auditQuery.isPending && workspace.activity.length === 0 ? (
-              <li className="text-zinc-500">No activity yet.</li>
-            ) : null}
-          </ul>
-        </section>
+      <div className="mt-5 flex flex-wrap gap-2">
+        {SETTINGS_TABS.map((item) => (
+          <button
+            key={item.id}
+            className={
+              tab === item.id
+                ? 'rounded-full bg-brand/20 px-3 py-1.5 text-sm font-medium text-white'
+                : 'rounded-full px-3 py-1.5 text-sm text-zinc-400 hover:bg-white/5 hover:text-white'
+            }
+            type="button"
+            onClick={() => setParams(item.id === 'provider' ? {} : { tab: item.id })}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-6">
+        {tab === 'members' ? (
+          <MembersPanel workspace={workspace} userId={user?.id} />
+        ) : (
+          <SettingsOverview
+            workspace={workspace}
+            repositories={repositories}
+            ollamaAvailable={aiQuery.data?.available}
+            ollamaModel={aiQuery.data?.model}
+          />
+        )}
       </div>
     </PageFrame>
+  );
+}
+
+function SettingsOverview({
+  workspace,
+  repositories,
+  ollamaAvailable,
+  ollamaModel,
+}: {
+  workspace: ReturnType<typeof useWorkspaceContext>;
+  repositories: Repository[];
+  ollamaAvailable: boolean | undefined;
+  ollamaModel: string | undefined;
+}) {
+  const navigate = useNavigate();
+  const confirm = useConfirm();
+  const gitignoreOn =
+    repositories.length === 0 || repositories.every((item) => item.settings?.respectGitignore !== false);
+  const github = repositories.some((item) => item.provider === 'GITHUB');
+  const gitlab = repositories.some((item) => item.provider === 'GITLAB');
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className={SETTINGS_PANEL}>
+          <h2 className="text-sm font-semibold text-white">AI Provider</h2>
+          <div className="mt-4 space-y-2">
+            <div
+              className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 ${
+                ollamaAvailable ? 'bg-brand/20' : 'bg-white/5'
+              }`}
+            >
+              <div>
+                <p className="text-sm font-medium text-white">Ollama (local)</p>
+                {ollamaModel ? <p className={`mt-0.5 text-xs ${muted}`}>{ollamaModel}</p> : null}
+              </div>
+              <SettingStatus on={Boolean(ollamaAvailable)} onLabel="Active" offLabel="Unavailable" />
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 bg-white/5">
+              <p className="text-sm font-medium text-zinc-300">Hosted provider (opt-in)</p>
+              <span className="text-sm text-zinc-500">Disabled</span>
+            </div>
+          </div>
+          <p className={`mt-3 text-xs ${muted}`}>
+            Provider disclosure required before source is ever sent to a hosted model.
+          </p>
+        </section>
+
+        <section className={SETTINGS_PANEL}>
+          <h2 className="text-sm font-semibold text-white">Analysis Rules</h2>
+          <ul className="mt-4 divide-y divide-white/5 text-sm">
+            <SettingRow label="Ignore vendor/generated files" value="On" on />
+            <SettingRow label="Respect .gitignore" value={gitignoreOn ? 'On' : 'Off'} on={gitignoreOn} />
+            <SettingRow label="Incremental sync" value="Off" />
+            <SettingRow label="Max analysis depth" value="6 levels" />
+          </ul>
+          <p className={`mt-3 text-xs ${muted}`}>
+            Vendor paths are always skipped. Gitignore is chosen when you connect a repository. Every analysis
+            run is Full. Impact walks up to 6 levels.
+          </p>
+        </section>
+
+        <section className={SETTINGS_PANEL}>
+          <h2 className="text-sm font-semibold text-white">Integrations</h2>
+          <ul className="mt-4 divide-y divide-white/5 text-sm">
+            <SettingRow label="GitHub" value={github ? 'Connected' : 'Not connected'} on={github} />
+            <SettingRow label="GitLab" value={gitlab ? 'Connected' : 'Not connected'} on={gitlab} />
+            <SettingRow label="Webhooks" value="Not available" />
+          </ul>
+          <p className={`mt-3 text-xs ${muted}`}>
+            Connected means this workspace has a repository from that host. There is no GitHub OAuth or webhook
+            listener yet.
+          </p>
+        </section>
+
+        <section className={SETTINGS_PANEL}>
+          <h2 className="text-sm font-semibold text-white">Retention & Danger Zone</h2>
+          {workspace.canEdit && workspace.data ? (
+            <Formik
+              enableReinitialize
+              initialValues={{ name: workspace.data.name }}
+              validationSchema={workspaceNameSchema}
+              onSubmit={async (values) => {
+                try {
+                  await workspace.updateWorkspace.mutateAsync({ name: values.name.trim() });
+                } catch {
+                  // Shown in the page-level error.
+                }
+              }}
+            >
+              {({ errors, touched, isSubmitting }) => (
+                <Form className="mt-4 flex flex-col gap-3 sm:flex-row" noValidate>
+                  <div className="flex-1">
+                    <Field
+                      className={fieldClass(Boolean(touched.name && errors.name))}
+                      name="name"
+                      aria-label="Workspace name"
+                    />
+                    {touched.name && errors.name ? <p className={errorText}>{errors.name}</p> : null}
+                  </div>
+                  <button className={primaryButton} type="submit" disabled={isSubmitting}>
+                    Save name
+                  </button>
+                </Form>
+              )}
+            </Formik>
+          ) : null}
+          <ul className="mt-4 divide-y divide-white/5 text-sm">
+            <SettingRow label="Data retention" value="Until you delete" />
+            <SettingRow label="Audit log retention" value="Kept with this workspace" />
+          </ul>
+          {workspace.isOwner ? (
+            <div className="mt-5 space-y-3">
+              <button
+                className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl border border-red-400/40 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+                disabled={workspace.updateWorkspace.isPending}
+                onClick={() => {
+                  if (workspace.archived) {
+                    void workspace.updateWorkspace.mutate({ status: 'ACTIVE' });
+                    return;
+                  }
+                  void confirm({
+                    title: 'Archive workspace',
+                    message:
+                      'Archive this workspace? People will not be able to make changes until it is restored.',
+                    confirmLabel: 'Archive',
+                    danger: true,
+                  }).then((ok) => {
+                    if (ok) {
+                      void workspace.updateWorkspace.mutate({ status: 'ARCHIVED' });
+                    }
+                  });
+                }}
+              >
+                {workspace.archived ? 'Restore workspace' : 'Archive Workspace'}
+              </button>
+              <button
+                className={`${dangerButton} w-full`}
+                type="button"
+                disabled={workspace.deleteWorkspace.isPending}
+                onClick={() => {
+                  void confirm({
+                    title: 'Delete workspace',
+                    message: 'Delete this workspace? This cannot be undone.',
+                    confirmLabel: 'Delete',
+                    danger: true,
+                  }).then((ok) => {
+                    if (ok) {
+                      void workspace.deleteWorkspace.mutateAsync().then(() => navigate(homePath, { replace: true }));
+                    }
+                  });
+                }}
+              >
+                Delete workspace
+              </button>
+            </div>
+          ) : null}
+        </section>
+      </div>
+
+      <section className={SETTINGS_PANEL}>
+        <h2 className="text-sm font-semibold text-white">Activity</h2>
+        {workspace.auditQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading activity…</p> : null}
+        <ul className="mt-4 space-y-2 text-sm text-zinc-200">
+          {workspace.activity.map((event) => {
+            const when = formatWhen(event.createdAt);
+            return (
+              <li key={event.id}>
+                <span className="font-medium">{formatActivity(event.action)}</span>
+                {when ? <span className="ml-2 text-zinc-500">{when}</span> : null}
+              </li>
+            );
+          })}
+          {!workspace.auditQuery.isPending && workspace.activity.length === 0 ? (
+            <li className="text-zinc-500">No activity yet.</li>
+          ) : null}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+function MembersPanel({
+  workspace,
+  userId,
+}: {
+  workspace: ReturnType<typeof useWorkspaceContext>;
+  userId?: string;
+}) {
+  const navigate = useNavigate();
+  const confirm = useConfirm();
+  return (
+    <section className={SETTINGS_PANEL}>
+      {workspace.canEdit ? (
+        <Formik
+          initialValues={{ email: '', role: 'VIEWER' }}
+          validationSchema={inviteMemberSchema}
+          onSubmit={async (values, helpers) => {
+            try {
+              await workspace.inviteMember.mutateAsync({
+                email: values.email.trim(),
+                role: values.role as (typeof ASSIGNABLE)[number],
+              });
+              helpers.resetForm();
+            } catch {
+              // Shown in the page-level error.
+            }
+          }}
+        >
+          {({ errors, touched, isSubmitting }) => (
+            <Form className="grid gap-3 md:grid-cols-[1fr_auto_auto]" noValidate>
+              <div>
+                <Field
+                  className={fieldClass(Boolean(touched.email && errors.email))}
+                  type="email"
+                  name="email"
+                  aria-label="Email"
+                  placeholder="name@company.com"
+                />
+                {touched.email && errors.email ? <p className={errorText}>{errors.email}</p> : null}
+              </div>
+              <Field className={fieldClass()} as="select" name="role" aria-label="Role">
+                {ASSIGNABLE.map((role) => (
+                  <option key={role} value={role}>
+                    {formatRole(role)}
+                  </option>
+                ))}
+              </Field>
+              <button className={primaryButton} type="submit" disabled={isSubmitting}>
+                Add
+              </button>
+            </Form>
+          )}
+        </Formik>
+      ) : null}
+      {workspace.membersQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading people…</p> : null}
+      <ul className="mt-6 space-y-2 text-sm">
+        {workspace.members.map((member) => (
+          <li
+            key={member.userId}
+            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 px-4 py-3"
+          >
+            <span>
+              <span className="font-medium text-white">{member.name}</span>
+              <span className="ml-2 text-zinc-500">{member.email}</span>
+            </span>
+            <span className="flex items-center gap-3">
+              {workspace.canEdit && member.role !== 'OWNER' ? (
+                <select
+                  className={fieldClass()}
+                  aria-label={`Role for ${member.name}`}
+                  value={member.role}
+                  onChange={(event) =>
+                    void workspace.updateMember.mutate({
+                      userId: member.userId,
+                      role: event.target.value as (typeof ASSIGNABLE)[number],
+                    })
+                  }
+                >
+                  {ASSIGNABLE.map((role) => (
+                    <option key={role} value={role}>
+                      {formatRole(role)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-zinc-500">{formatRole(member.role)}</span>
+              )}
+              {!workspace.archived &&
+              member.role !== 'OWNER' &&
+              (workspace.canManage || member.userId === userId) ? (
+                <button
+                  className="font-medium text-red-300 hover:text-red-200"
+                  type="button"
+                  onClick={() => {
+                    const leaving = member.userId === userId;
+                    void confirm({
+                      title: leaving ? 'Leave workspace' : 'Remove member',
+                      message: leaving
+                        ? 'Leave this workspace? You will lose access until someone invites you again.'
+                        : `Remove ${member.name} from this workspace?`,
+                      confirmLabel: leaving ? 'Leave' : 'Remove',
+                      danger: true,
+                    }).then((ok) => {
+                      if (!ok) {
+                        return;
+                      }
+                      void workspace.removeMember.mutateAsync(member.userId).then(() => {
+                        if (leaving) {
+                          navigate(homePath, { replace: true });
+                        }
+                      });
+                    });
+                  }}
+                >
+                  {member.userId === userId ? 'Leave' : 'Remove'}
+                </button>
+              ) : null}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function SettingRow({ label, value, on = false }: { label: string; value: string; on?: boolean }) {
+  return (
+    <li className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+      <span className="text-zinc-200">{label}</span>
+      <SettingStatus on={on} onLabel={value} offLabel={value} />
+    </li>
+  );
+}
+
+function SettingStatus({
+  on,
+  onLabel,
+  offLabel,
+}: {
+  on: boolean;
+  onLabel: string;
+  offLabel: string;
+}) {
+  return (
+    <span className={`text-sm font-medium ${on ? 'text-emerald-300' : 'text-zinc-500'}`}>
+      {on ? onLabel : offLabel}
+    </span>
+  );
+}
+
+function parseSettingsTab(value: string | null): SettingsTab {
+  if (SETTINGS_TABS.some((item) => item.id === value)) {
+    return value as SettingsTab;
+  }
+  return 'provider';
+}
+
+function BackArrow() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12.5 4.5 7 10l5.5 5.5M7 10h9" />
+    </svg>
+  );
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function Pill({ children }: { children: string }) {
+  return (
+    <span className="inline-flex rounded-full bg-white/5 px-2.5 py-0.5 text-xs text-zinc-300">{children}</span>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const active = status === 'ACTIVE' || status === 'READY';
+  const invited = status === 'INVITED' || status === 'PENDING';
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs ${
+        active
+          ? 'bg-emerald-500/10 text-emerald-300'
+          : invited
+            ? 'bg-amber-500/10 text-amber-200'
+            : 'bg-white/5 text-zinc-400'
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          active ? 'bg-emerald-400' : invited ? 'bg-amber-300' : 'bg-zinc-500'
+        }`}
+      />
+      {formatStatus(status)}
+    </span>
+  );
+}
+
+function RepoStatus({ status }: { status: string }) {
+  const ready = status === 'READY';
+  const busy = status === 'SYNCING' || status === 'PENDING' || status === 'RUNNING';
+  const label = ready ? 'Completed' : busy ? 'Analyzing' : formatStatus(status);
+  return (
+    <span className="inline-flex items-center gap-2 text-xs text-zinc-300">
+      <span
+        className={`h-2 w-2 rounded-full ${
+          ready ? 'bg-emerald-400' : busy ? 'bg-amber-400' : status === 'FAILED' ? 'bg-red-400' : 'bg-zinc-500'
+        }`}
+      />
+      {label}
+    </span>
+  );
+}
+
+function SnapshotRow({
+  label,
+  value,
+  tone = 'default',
+}: {
+  label: string;
+  value: string;
+  tone?: 'default' | 'ok' | 'muted';
+}) {
+  const valueClass =
+    tone === 'ok' ? 'text-emerald-300' : tone === 'muted' ? 'text-zinc-500' : 'text-zinc-200';
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <dt className="text-zinc-500">{label}</dt>
+      <dd className={valueClass}>{value}</dd>
+    </div>
   );
 }
 
@@ -339,10 +782,10 @@ function Header({
 }) {
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">{title}</h1>
-      <p className={`mt-2 ${muted}`}>{subtitle}</p>
+      {title ? <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1> : null}
+      {subtitle ? <p className={`mt-2 ${muted}`}>{subtitle}</p> : null}
       {archived ? (
-        <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <p className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
           This workspace is archived. Restore it to make changes.
         </p>
       ) : null}
@@ -362,7 +805,7 @@ function WorkspaceLoading() {
 function WorkspaceMissing({ error }: { error: unknown }) {
   return (
     <PageFrame>
-      <p className="text-red-600">{errorMessage(error, 'This workspace could not be found.')}</p>
+      <p className="text-red-300">{errorMessage(error, 'This workspace could not be found.')}</p>
     </PageFrame>
   );
 }

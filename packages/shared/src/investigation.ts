@@ -1,6 +1,8 @@
 /** Investigation answers never claim certainty. */
 export const INVESTIGATION_MAX_CONFIDENCE = 0.92;
 export const INVESTIGATION_FACT_LIMIT = 12;
+export const INVESTIGATION_LIMITATIONS =
+  'Limitations: symbol locations come from the current tree; commit-to-symbol links are scored, never certain; issue and pull-request text is stored when you include it at connect time, but answers do not search it yet.';
 
 export type InvestigationIntent =
   | 'why_exists'
@@ -213,8 +215,7 @@ export function buildDeterministicAnswer(input: {
           : input.intent === 'who_introduced'
             ? 'Indexed authorship evidence says:'
             : 'Indexed evidence says:';
-  const limitations =
-    'Limitations: symbol locations come from the current tree; commit-to-symbol links are scored, never certain; no issue or pull-request text is available yet.';
+  const limitations = INVESTIGATION_LIMITATIONS;
   const modelNote = input.usedModel
     ? ''
     : ' A local model was not used; this is the retrieved evidence only.';

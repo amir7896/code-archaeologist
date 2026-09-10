@@ -1,8 +1,9 @@
 import { join } from 'node:path';
 import { decryptSecret, type PrismaClient } from '@code-archaeologist/core';
 import { sanitizeGitError, type GitProvider } from '@code-archaeologist/git';
-import { type AppEnv, type RepositorySyncJobData } from '@code-archaeologist/shared';
+import { parseRepositorySettings, type AppEnv, type RepositorySyncJobData } from '@code-archaeologist/shared';
 import { GitCliProvider } from './git-cli.provider';
+import { fetchRepositoryThreads } from './fetch-issues';
 import { indexAst } from './index-ast';
 import { indexGitHistory } from './index-git-history';
 import { indexDna } from './index-dna';
@@ -25,6 +26,7 @@ export async function processRepositorySync(
     buildGraph?: typeof indexGraph;
     computeDna?: typeof indexDna;
     linkEvidence?: typeof indexEvidence;
+    fetchThreads?: typeof fetchRepositoryThreads;
     logger?: LoggerLike;
   },
 ): Promise<void> {
@@ -34,6 +36,7 @@ export async function processRepositorySync(
   const buildGraph = deps.buildGraph ?? indexGraph;
   const computeDna = deps.computeDna ?? indexDna;
   const linkEvidence = deps.linkEvidence ?? indexEvidence;
+  const fetchThreads = deps.fetchThreads ?? fetchRepositoryThreads;
   const { prisma, env } = deps;
   const run = await prisma.analysisRun.findUnique({
     where: { id: data.analysisRunId },
@@ -92,6 +95,18 @@ export async function processRepositorySync(
     });
     await markTask(prisma, indexTask?.id, 'SUCCEEDED');
 
+    const settings = parseRepositorySettings(run.repository.settings);
+    if (settings.includePullRequests) {
+      await fetchThreads({
+        prisma,
+        repositoryId: run.repositoryId,
+        url: run.repository.url,
+        provider: run.repository.provider,
+        credential,
+        logger: deps.logger,
+      });
+    }
+
     const parseTask = run.tasks.find((task) => task.taskType === 'PARSE_AST');
     await markTask(prisma, parseTask?.id, 'RUNNING');
     await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 72 } });
@@ -101,6 +116,7 @@ export async function processRepositorySync(
       gitDir: mirrorDir,
       repositoryId: run.repositoryId,
       revision: currentRevision,
+      respectGitignore: settings.respectGitignore,
       onProgress: async (progress) => {
         await prisma.analysisRun.update({ where: { id: run.id }, data: { progress } });
       },

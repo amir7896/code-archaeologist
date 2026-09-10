@@ -1,5 +1,11 @@
+export const homePath = '/home';
+
 export function workspacePath(workspaceId: string): string {
   return `/work-space/${workspaceId}`;
+}
+
+export function workspaceRepositoriesPath(workspaceId: string): string {
+  return `/work-space/${workspaceId}/repositories`;
 }
 
 export function workspacePeoplePath(workspaceId: string): string {
@@ -17,14 +23,24 @@ export function repositoryPath(workspaceId: string, repositoryId: string): strin
 export function repositoryCodePath(
   workspaceId: string,
   repositoryId: string,
-  query: { file?: string; symbol?: string; view?: 'files' | 'symbols'; q?: string; kind?: string } = {},
+  query: {
+    file?: string;
+    symbol?: string;
+    tab?: 'source' | 'symbols' | 'history';
+    view?: 'files' | 'symbols';
+    q?: string;
+    kind?: string;
+    line?: string;
+  } = {},
 ): string {
   return withQuery(`${repositoryPath(workspaceId, repositoryId)}/code`, {
     view: query.view === 'symbols' ? 'symbols' : undefined,
+    tab: query.tab && query.tab !== 'symbols' ? query.tab : undefined,
     file: query.file,
     symbol: query.symbol,
     q: query.q,
     kind: query.kind,
+    line: query.line,
   });
 }
 

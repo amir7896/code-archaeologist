@@ -19,7 +19,7 @@ export function DashboardPage() {
     <PageFrame>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Workspaces</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Workspaces</h1>
           <p className={`mt-2 ${muted}`}>
             {empty
               ? 'Create a workspace to start analyzing repositories.'
@@ -28,7 +28,7 @@ export function DashboardPage() {
         </div>
 
         <section className={card}>
-          <h2 className="text-sm font-semibold text-zinc-900">Create a workspace</h2>
+          <h2 className="text-sm font-semibold text-white">Create a workspace</h2>
           <p className={`mt-1 ${muted}`}>Give it a name you and your team will recognize.</p>
           <CreateWorkspaceForm
             onCreated={(id) => {
@@ -46,12 +46,12 @@ export function DashboardPage() {
             {workspaces.map((workspace) => (
               <button
                 key={workspace.id}
-                className={`${card} flex items-start justify-between gap-3 p-5 text-left transition hover:border-indigo-200 hover:shadow`}
+                className={`${card} flex items-start justify-between gap-3 p-5 text-left transition hover:border-brand/40 `}
                 type="button"
                 onClick={() => navigate(workspacePath(workspace.id))}
               >
                 <span>
-                  <span className="block font-medium text-zinc-900">{workspace.name}</span>
+                  <span className="block font-medium text-white">{workspace.name}</span>
                   <span className={`mt-1 block ${muted}`}>{formatRole(workspace.role)}</span>
                 </span>
                 <StatusBadge status={workspace.status} />

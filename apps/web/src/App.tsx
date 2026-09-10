@@ -23,16 +23,33 @@ import {
   LegacyWorkspaceRedirect,
   LegacyWorkspaceSettingsRedirect,
 } from './pages/LegacyRedirects';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { RepositoryOverviewPage, RepositorySettingsPage } from './pages/RepositoryPage';
-import { WorkspacePeoplePage, WorkspaceReposPage, WorkspaceSettingsPage } from './pages/WorkspacePage';
+import {
+  WorkspacePeoplePage,
+  WorkspaceRepositoriesPage,
+  WorkspaceReposPage,
+  WorkspaceSettingsPage,
+} from './pages/WorkspacePage';
+
+function PublicHome() {
+  const { user, ready, hasSession } = useAuth();
+  if (!ready || (hasSession && !user)) {
+    return <main className="bg-ink p-8 text-sm text-zinc-400">Signing you in…</main>;
+  }
+  if (user) {
+    return <Navigate to="/home" replace />;
+  }
+  return <LandingPage />;
+}
 
 function RequireAuth() {
   const { user, ready, hasSession } = useAuth();
   if (!ready || (hasSession && !user)) {
-    return <main className="p-8 text-sm text-zinc-500">Signing you in…</main>;
+    return <main className="bg-ink p-8 text-sm text-zinc-400">Signing you in…</main>;
   }
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -43,12 +60,14 @@ function RequireAuth() {
 export function App() {
   return (
     <Routes>
+      <Route path="/" element={<PublicHome />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/home" element={<DashboardPage />} />
           <Route path="/work-space/:workspaceId" element={<WorkspaceReposPage />} />
+          <Route path="/work-space/:workspaceId/repositories" element={<WorkspaceRepositoriesPage />} />
           <Route path="/work-space/:workspaceId/people" element={<WorkspacePeoplePage />} />
           <Route path="/work-space/:workspaceId/settings" element={<WorkspaceSettingsPage />} />
           <Route

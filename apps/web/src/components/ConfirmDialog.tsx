@@ -85,7 +85,7 @@ function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
-        className="absolute inset-0 bg-zinc-950/40"
+        className="absolute inset-0 bg-black/70"
         type="button"
         aria-label="Close dialog"
         onClick={onCancel}
@@ -95,12 +95,12 @@ function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={messageId}
-        className="relative w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl"
+        className="relative w-full max-w-md rounded-3xl border border-white/10 bg-panel p-6 shadow-2xl"
       >
-        <h2 id={titleId} className="text-lg font-semibold tracking-tight text-zinc-950">
+        <h2 id={titleId} className="text-lg font-semibold tracking-tight text-white">
           {request.title}
         </h2>
-        <p id={messageId} className="mt-2 text-sm leading-6 text-zinc-600">
+        <p id={messageId} className="mt-2 text-sm leading-6 text-zinc-400">
           {request.message}
         </p>
         <div className="mt-6 flex justify-end gap-3">

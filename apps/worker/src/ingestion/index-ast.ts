@@ -3,6 +3,7 @@ import { type GitProvider, type GitTreeEntry } from '@code-archaeologist/git';
 import {
   detectParserLanguage,
   isParseableLanguage,
+  matcherFromGitignoreFiles,
   shouldSkipPath,
   tryParserFor,
   MAX_PARSE_BYTES,
@@ -40,13 +41,20 @@ export async function indexAst(input: {
   gitDir: string;
   repositoryId: string;
   revision: string;
+  respectGitignore?: boolean;
   onProgress?: (progress: number) => Promise<void>;
 }): Promise<void> {
   const { prisma, git, gitDir, repositoryId, revision } = input;
-  const tree = (await git.listTree(gitDir, revision)).filter(
-    (entry) => !shouldSkipPath(entry.path) && entry.size > 0 && entry.size <= MAX_PARSE_BYTES,
+  const tree = await git.listTree(gitDir, revision);
+  const ignored = await gitignoreMatcher(git, gitDir, revision, tree, input.respectGitignore !== false);
+  const parseable = tree.filter(
+    (entry) =>
+      !shouldSkipPath(entry.path) &&
+      !ignored(entry.path) &&
+      entry.size > 0 &&
+      entry.size <= MAX_PARSE_BYTES &&
+      isParseableLanguage(detectParserLanguage(entry.path)),
   );
-  const parseable = tree.filter((entry) => isParseableLanguage(detectParserLanguage(entry.path)));
   const existing = await prisma.repoFile.findMany({
     where: { repositoryId },
     select: { id: true, path: true, hash: true, lastParsedRevision: true },
@@ -237,4 +245,33 @@ function toKind(
 
 function clampConfidence(value: number): number {
   return Math.min(1, Math.max(0, value));
+}
+
+async function gitignoreMatcher(
+  git: AstGit,
+  gitDir: string,
+  revision: string,
+  tree: GitTreeEntry[],
+  enabled: boolean,
+): Promise<(path: string) => boolean> {
+  if (!enabled) {
+    return () => false;
+  }
+  const files = tree.filter(
+    (entry) =>
+      (entry.path === '.gitignore' || entry.path.endsWith('/.gitignore')) &&
+      !shouldSkipPath(entry.path) &&
+      entry.size > 0 &&
+      entry.size <= MAX_PARSE_BYTES,
+  );
+  if (files.length === 0) {
+    return () => false;
+  }
+  const contents = await Promise.all(
+    files.map(async (entry) => ({
+      path: entry.path,
+      content: await git.readBlob(gitDir, revision, entry.path),
+    })),
+  );
+  return matcherFromGitignoreFiles(contents);
 }

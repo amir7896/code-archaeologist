@@ -112,7 +112,20 @@ export type AnalysisRun = {
   progress: number;
   error: string | null;
   createdAt: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
   tasks: AnalysisTask[];
+};
+
+export type LanguageShare = {
+  language: string;
+  count: number;
+  percent: number;
+};
+
+export type RepositorySettings = {
+  includePullRequests: boolean;
+  respectGitignore: boolean;
 };
 
 export type Repository = {
@@ -128,12 +141,22 @@ export type Repository = {
   branchCount?: number;
   fileCount?: number;
   symbolCount?: number;
+  issueCount?: number;
+  pullRequestCount?: number;
+  openIssueCount?: number;
+  openPullRequestCount?: number;
+  contributorCount?: number;
+  healthScore?: number | null;
+  lastCommitAt?: string | null;
+  languages?: LanguageShare[];
+  analysisRuns?: AnalysisRun[];
   lastParsedRevision?: string | null;
   lastGraphRevision?: string | null;
   lastDnaRevision?: string | null;
   lastEvidenceRevision?: string | null;
   status: string;
   hasCredential: boolean;
+  settings?: RepositorySettings;
   lastError: string | null;
   lastSyncedAt: string | null;
   createdAt: string;
@@ -167,6 +190,9 @@ export const repositoryApi = {
       url: string;
       name?: string;
       defaultBranch?: string;
+      source?: 'GITHUB' | 'GITLAB' | 'BITBUCKET' | 'LOCAL';
+      includePullRequests?: boolean;
+      respectGitignore?: boolean;
       credential?: { type: 'HTTPS_TOKEN'; secret: string };
     },
   ) => api<Repository>(`/workspaces/${workspaceId}/repositories`, { method: 'POST', json: body }),
@@ -240,7 +266,7 @@ export const repositoryApi = {
   symbols: (
     workspaceId: string,
     repositoryId: string,
-    query?: { q?: string; kind?: string; fileId?: string; page?: number },
+    query?: { q?: string; kind?: string; fileId?: string; page?: number; limit?: number },
   ) =>
     api<Paginated<SourceSymbol>>(
       `/workspaces/${workspaceId}/repositories/${repositoryId}/code/symbols${toQuery(query)}`,

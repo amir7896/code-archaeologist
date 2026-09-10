@@ -113,6 +113,72 @@ export function formatWhen(value: string): string {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
 }
 
+export function formatRelativeTime(value: string | null | undefined): string {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const delta = Date.now() - date.getTime();
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (delta < minute) {
+    return 'just now';
+  }
+  if (delta < hour) {
+    const minutes = Math.floor(delta / minute);
+    return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  }
+  if (delta < day) {
+    const hours = Math.floor(delta / hour);
+    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  }
+  const days = Math.floor(delta / day);
+  if (days < 30) {
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  }
+  return formatWhen(value);
+}
+
+export function formatDuration(startedAt?: string | null, finishedAt?: string | null): string {
+  if (!startedAt || !finishedAt) {
+    return '';
+  }
+  const start = new Date(startedAt).getTime();
+  const end = new Date(finishedAt).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) {
+    return '';
+  }
+  const totalSeconds = Math.round((end - start) / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
+
+export function formatLanguage(language: string): string {
+  const labels: Record<string, string> = {
+    typescript: 'TypeScript',
+    javascript: 'JavaScript',
+    python: 'Python',
+    sql: 'SQL',
+    go: 'Go',
+    rust: 'Rust',
+    java: 'Java',
+    other: 'Other',
+  };
+  return labels[language] ?? language.replaceAll('_', ' ');
+}
+
 export function formatSymbolKind(kind: string): string {
   return SYMBOL_LABELS[kind] ?? kind.replaceAll('_', ' ').toLowerCase();
 }
@@ -162,6 +228,29 @@ export function shortRevision(value: string | null | undefined): string {
     return '—';
   }
   return value.length > 12 ? value.slice(0, 7) : value;
+}
+
+export function formatProvider(provider: string): string {
+  const labels: Record<string, string> = {
+    GITHUB: 'GitHub',
+    GITLAB: 'GitLab',
+    BITBUCKET: 'Bitbucket',
+    LOCAL: 'Local',
+  };
+  return labels[provider] ?? provider;
+}
+
+export function repositorySlug(url: string, fallback = ''): string {
+  try {
+    const parsed = new URL(url.replace(/\.git$/i, ''));
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts.slice(0, -1).join('/')}/${parts[parts.length - 1]}`;
+    }
+  } catch {
+    // Keep the fallback name when the URL is not parseable.
+  }
+  return fallback;
 }
 
 export function repositoryHost(url: string): string {

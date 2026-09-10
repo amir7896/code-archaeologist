@@ -43,6 +43,8 @@ export const createRepositorySchema = Yup.object({
   name: Yup.string().trim().max(80, 'Name must be at most 80 characters'),
   defaultBranch: Yup.string().trim().max(120, 'Branch must be at most 120 characters'),
   token: Yup.string().trim().max(4096, 'Token is too long'),
+  includePullRequests: Yup.boolean(),
+  respectGitignore: Yup.boolean(),
 });
 
 export const repositorySettingsSchema = Yup.object({

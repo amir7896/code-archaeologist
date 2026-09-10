@@ -1,7 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { encryptSecret, newSecretRef } from '@code-archaeologist/core';
 import { GitUrlError, parseHttpsGitUrl } from '@code-archaeologist/git';
-import { type AppEnv, type WorkspaceRoleName } from '@code-archaeologist/shared';
+import {
+  OPEN_THREAD_STATES,
+  parseRepositorySettings,
+  repositoryHealthScore,
+  repositorySettingsFromInput,
+  summarizeLanguages,
+  type AppEnv,
+  type WorkspaceRoleName,
+} from '@code-archaeologist/shared';
 import { AuditService } from '../audit/audit.service';
 import { type RequestUser } from '../auth/auth.types';
 import { ApiErrors } from '../common/api-exception';
@@ -30,6 +38,8 @@ type RunWithTasks = {
   progress: number;
   error: string | null;
   createdAt: Date;
+  startedAt?: Date | null;
+  finishedAt?: Date | null;
   tasks: Array<{
     id: string;
     taskType: string;
@@ -52,6 +62,7 @@ type RepositoryRecord = {
   lastGraphRevision?: string | null;
   lastDnaRevision?: string | null;
   lastEvidenceRevision?: string | null;
+  settings?: unknown;
   status: string;
   lastError: string | null;
   lastSyncedAt: Date | null;
@@ -104,7 +115,13 @@ export class RepositoriesService {
   ): Promise<RepositoryResponseDto> {
     await this.requireActiveWorkspace(workspaceId);
     const parsed = parseRepositoryUrl(input.url);
+    assertSourceMatchesProvider(input.source, parsed.provider);
     await this.assertUniqueUrl(workspaceId, parsed.compareKey);
+
+    const settings = repositorySettingsFromInput({
+      includePullRequests: input.includePullRequests,
+      respectGitignore: input.respectGitignore,
+    });
 
     const repository = await this.prisma.repository.create({
       data: {
@@ -113,6 +130,7 @@ export class RepositoriesService {
         url: parsed.url,
         provider: parsed.provider,
         defaultBranch: input.defaultBranch?.trim() || null,
+        settings,
         status: 'PENDING',
       },
     });
@@ -134,13 +152,84 @@ export class RepositoriesService {
 
   async get(workspaceId: string, repositoryId: string): Promise<RepositoryResponseDto> {
     const repository = await this.requireRepository(workspaceId, repositoryId);
-    const [commitCount, branchCount, fileCount, symbolCount] = await this.prisma.$transaction([
+    const openState = { in: [...OPEN_THREAD_STATES] };
+    const [
+      commitCount,
+      branchCount,
+      fileCount,
+      symbolCount,
+      issueCount,
+      pullRequestCount,
+      openIssueCount,
+      openPullRequestCount,
+      contributorCount,
+      highRiskCount,
+      complexity,
+      languageRows,
+      lastCommit,
+      analysisRuns,
+    ] = await Promise.all([
       this.prisma.commit.count({ where: { repositoryId } }),
       this.prisma.branch.count({ where: { repositoryId } }),
       this.prisma.repoFile.count({ where: { repositoryId } }),
       this.prisma.codeSymbol.count({ where: { file: { repositoryId } } }),
+      this.prisma.repositoryThread.count({ where: { repositoryId, kind: 'ISSUE' } }),
+      this.prisma.repositoryThread.count({ where: { repositoryId, kind: 'PULL_REQUEST' } }),
+      this.prisma.repositoryThread.count({
+        where: { repositoryId, kind: 'ISSUE', state: openState },
+      }),
+      this.prisma.repositoryThread.count({
+        where: { repositoryId, kind: 'PULL_REQUEST', state: openState },
+      }),
+      this.prisma.developer.count({ where: { repositoryId } }),
+      this.prisma.riskScore.count({
+        where: { repositoryId, subjectType: 'FILE', level: { in: ['HIGH', 'CRITICAL'] } },
+      }),
+      this.prisma.repoFile.aggregate({
+        where: { repositoryId, complexity: { not: null } },
+        _avg: { complexity: true },
+      }),
+      this.prisma.repoFile.groupBy({
+        by: ['language'],
+        where: { repositoryId },
+        _count: { _all: true },
+      }),
+      this.prisma.commit.findFirst({
+        where: { repositoryId },
+        orderBy: { committedAt: 'desc' },
+        select: { committedAt: true },
+      }),
+      this.prisma.analysisRun.findMany({
+        where: { repositoryId },
+        orderBy: { createdAt: 'desc' },
+        take: 8,
+        include: { tasks: { orderBy: { createdAt: 'asc' } } },
+      }),
     ]);
-    return toRepositoryResponse(repository, { commitCount, branchCount, fileCount, symbolCount });
+    const averageComplexity = Number(complexity._avg.complexity ?? 0);
+    return toRepositoryResponse(repository, {
+      commitCount,
+      branchCount,
+      fileCount,
+      symbolCount,
+      issueCount,
+      pullRequestCount,
+      openIssueCount,
+      openPullRequestCount,
+      contributorCount,
+      healthScore: repository.lastDnaRevision
+        ? repositoryHealthScore({
+            fileCount,
+            highRiskCount,
+            averageComplexity,
+          })
+        : null,
+      lastCommitAt: lastCommit?.committedAt ?? null,
+      languages: summarizeLanguages(
+        languageRows.map((row) => ({ language: row.language, count: row._count._all })),
+      ),
+      analysisRuns: analysisRuns.map((run) => toRunResponse(run)),
+    });
   }
 
   async update(
@@ -349,10 +438,42 @@ function parseRepositoryUrl(url: string) {
   }
 }
 
+function assertSourceMatchesProvider(
+  source: 'GITHUB' | 'GITLAB' | 'BITBUCKET' | 'LOCAL' | undefined,
+  provider: string,
+): void {
+  if (!source || source === 'LOCAL') {
+    return;
+  }
+  if (source === provider) {
+    return;
+  }
+  const label = source === 'GITHUB' ? 'GitHub' : source === 'GITLAB' ? 'GitLab' : 'Bitbucket';
+  throw ApiErrors.badRequest(
+    'PROVIDER_MISMATCH',
+    `This URL is not a ${label} repository. Choose the matching source or paste a ${label} HTTPS URL.`,
+  );
+}
+
 function toRepositoryResponse(
   repository: RepositoryRecord,
-  counts?: { commitCount: number; branchCount: number; fileCount: number; symbolCount: number },
+  counts?: {
+    commitCount: number;
+    branchCount: number;
+    fileCount: number;
+    symbolCount: number;
+    issueCount?: number;
+    pullRequestCount?: number;
+    openIssueCount?: number;
+    openPullRequestCount?: number;
+    contributorCount?: number;
+    healthScore?: number | null;
+    lastCommitAt?: Date | null;
+    languages?: Array<{ language: string; count: number; percent: number }>;
+    analysisRuns?: AnalysisRunResponseDto[];
+  },
 ): RepositoryResponseDto {
+  const settings = parseRepositorySettings(repository.settings);
   return {
     id: repository.id,
     workspaceId: repository.workspaceId,
@@ -370,8 +491,18 @@ function toRepositoryResponse(
     fileCount: counts?.fileCount,
     symbolCount: counts?.symbolCount,
     branchCount: counts?.branchCount,
+    issueCount: counts?.issueCount,
+    pullRequestCount: counts?.pullRequestCount,
+    openIssueCount: counts?.openIssueCount,
+    openPullRequestCount: counts?.openPullRequestCount,
+    contributorCount: counts?.contributorCount,
+    healthScore: counts?.healthScore,
+    lastCommitAt: counts?.lastCommitAt,
+    languages: counts?.languages,
+    analysisRuns: counts?.analysisRuns,
     status: repository.status,
     hasCredential: Boolean(repository.credential),
+    settings,
     lastError: repository.lastError,
     lastSyncedAt: repository.lastSyncedAt,
     createdAt: repository.createdAt,
@@ -389,7 +520,9 @@ function toRunResponse(run: RunWithTasks): AnalysisRunResponseDto {
     progress: run.progress,
     error: run.error,
     createdAt: run.createdAt,
-    tasks: run.tasks.map((task) => ({
+    startedAt: run.startedAt ?? null,
+    finishedAt: run.finishedAt ?? null,
+    tasks: (run.tasks ?? []).map((task) => ({
       id: task.id,
       taskType: task.taskType,
       status: task.status,
