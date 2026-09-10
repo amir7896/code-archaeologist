@@ -5,5 +5,7 @@ export function PageFrame({ children }: { children: ReactNode }) {
 }
 
 export function ExplorerFrame({ children }: { children: ReactNode }) {
-  return <div className="flex h-[calc(100vh-3.5rem)] min-h-[28rem] overflow-hidden bg-zinc-50">{children}</div>;
+  return (
+    <div className="flex h-[calc(100vh-4rem)] min-h-[28rem] flex-col overflow-hidden bg-ink p-4">{children}</div>
+  );
 }

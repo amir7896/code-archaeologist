@@ -75,4 +75,44 @@ describe('indexAst', () => {
 
     expect(git.readBlob).not.toHaveBeenCalled();
   });
+
+  it('skips gitignored files when respectGitignore is on', async () => {
+    const git = {
+      listTree: jest.fn().mockResolvedValue([
+        { path: '.gitignore', hash: 'ignore-1', size: 20 },
+        { path: 'src/keep.ts', hash: 'blob-1', size: 80 },
+        { path: 'src/skip.ts', hash: 'blob-2', size: 80 },
+      ]),
+      readBlob: jest.fn(async (_dir: string, _rev: string, path: string) =>
+        path === '.gitignore' ? 'src/skip.ts\n' : 'export function keep() { return true; }',
+      ),
+    };
+    const prisma = {
+      repoFile: {
+        findMany: jest.fn().mockResolvedValue([]),
+        upsert: jest.fn().mockResolvedValue({ id: 'file-1' }),
+        update: jest.fn().mockResolvedValue({ id: 'file-1' }),
+      },
+      symbolRelation: { deleteMany: jest.fn(), createMany: jest.fn() },
+      codeSymbol: {
+        updateMany: jest.fn(),
+        deleteMany: jest.fn(),
+        create: jest.fn(async () => ({ id: 'sym-1' })),
+        update: jest.fn(),
+      },
+      repository: { update: jest.fn() },
+    };
+
+    await indexAst({
+      prisma: prisma as never,
+      git,
+      gitDir: '/tmp/mirror',
+      repositoryId: 'repo-1',
+      revision: 'abc123',
+      respectGitignore: true,
+    });
+
+    expect(git.readBlob).toHaveBeenCalledWith('/tmp/mirror', 'abc123', 'src/keep.ts');
+    expect(git.readBlob).not.toHaveBeenCalledWith('/tmp/mirror', 'abc123', 'src/skip.ts');
+  });
 });

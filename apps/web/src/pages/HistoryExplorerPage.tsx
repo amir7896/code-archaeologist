@@ -67,10 +67,15 @@ export function HistoryExplorerPage() {
 
   return (
     <ExplorerFrame>
+      <div className="mb-3 shrink-0">
+        <h1 className="text-2xl font-semibold tracking-tight text-white">Commit Explorer</h1>
+        <p className={`mt-1 ${muted}`}>Inspect commits, diffs and linked files.</p>
+      </div>
+      <div className="flex min-h-0 flex-1">
       <section
-        className={`flex w-full flex-col border-r border-zinc-200 bg-white md:w-[22rem] md:shrink-0 ${selected ? 'hidden md:flex' : 'flex'}`}
+        className={`flex w-full flex-col rounded-3xl border border-white/10 bg-panel md:w-[22rem] md:shrink-0 ${selected ? 'hidden md:flex' : 'flex'}`}
       >
-        <form className="space-y-2 border-b border-zinc-100 p-3" onSubmit={submit}>
+        <form className="space-y-2 border-b border-white/5 p-3" onSubmit={submit}>
           <BranchSelect
             workspaceId={workspaceId}
             repositoryId={repositoryId}
@@ -111,10 +116,10 @@ export function HistoryExplorerPage() {
         )}
       </section>
 
-      <section className={`min-w-0 flex-1 overflow-y-auto ${selected ? 'block' : 'hidden md:block'}`}>
+      <section className={`min-w-0 flex-1 overflow-y-auto rounded-3xl border border-white/10 bg-panel md:ml-4 ${selected ? 'block' : 'hidden md:block'}`}>
         {selected ? (
           <button
-            className="m-4 text-sm font-medium text-indigo-600 hover:text-indigo-500 md:hidden"
+            className="m-4 text-sm font-medium text-brand hover:text-brand-2 md:hidden"
             type="button"
             onClick={() => setQuery({ commit: '' })}
           >
@@ -136,6 +141,7 @@ export function HistoryExplorerPage() {
           </div>
         )}
       </section>
+      </div>
     </ExplorerFrame>
   );
 }
@@ -188,7 +194,7 @@ function CommitList({
     <div className="flex-1 overflow-y-auto p-2">
       {commitsQuery.isPending ? <p className={`px-2 py-3 ${muted}`}>Loading commits…</p> : null}
       {commitsQuery.isError ? (
-        <p className="px-2 py-3 text-sm text-red-600">{errorMessage(commitsQuery.error, 'Unable to load commits')}</p>
+        <p className="px-2 py-3 text-sm text-red-300">{errorMessage(commitsQuery.error, 'Unable to load commits')}</p>
       ) : null}
       {!commitsQuery.isPending && commits.length === 0 ? (
         <p className={`px-2 py-3 ${muted}`}>No commits indexed yet. Sync the repository first.</p>
@@ -197,11 +203,11 @@ function CommitList({
         {commits.map((item) => (
           <li key={item.sha}>
             <button
-              className={`w-full rounded-lg px-3 py-2 text-left ${item.sha === selectedSha ? 'bg-indigo-50' : 'hover:bg-zinc-50'}`}
+              className={`w-full rounded-lg px-3 py-2 text-left ${item.sha === selectedSha ? 'bg-brand/15' : 'hover:bg-white/5'}`}
               type="button"
               onClick={() => onSelect(item.sha)}
             >
-              <p className="text-sm font-medium text-zinc-900">{commitSubject(item.message)}</p>
+              <p className="text-sm font-medium text-white">{commitSubject(item.message)}</p>
               <p className={`mt-0.5 ${muted}`}>
                 {item.authorName} · {formatWhen(item.committedAt)} · {shortRevision(item.sha)}
               </p>
@@ -243,7 +249,7 @@ function FileHistoryList({
       <p className="px-3 py-2 text-xs font-medium text-zinc-500">{path}</p>
       {historyQuery.isPending ? <p className={`px-2 py-3 ${muted}`}>Loading history…</p> : null}
       {historyQuery.isError ? (
-        <p className="px-2 py-3 text-sm text-red-600">
+        <p className="px-2 py-3 text-sm text-red-300">
           {errorMessage(historyQuery.error, 'Unable to load file history')}
         </p>
       ) : null}
@@ -254,11 +260,11 @@ function FileHistoryList({
         {items.map((item) => (
           <li key={`${item.sha}-${item.path}-${item.changeType}`}>
             <button
-              className={`w-full rounded-lg px-3 py-2 text-left ${item.sha === selectedSha ? 'bg-indigo-50' : 'hover:bg-zinc-50'}`}
+              className={`w-full rounded-lg px-3 py-2 text-left ${item.sha === selectedSha ? 'bg-brand/15' : 'hover:bg-white/5'}`}
               type="button"
               onClick={() => onSelect(item.sha)}
             >
-              <p className="text-sm font-medium text-zinc-900">{commitSubject(item.message)}</p>
+              <p className="text-sm font-medium text-white">{commitSubject(item.message)}</p>
               <p className={`mt-0.5 ${muted}`}>
                 {formatChange(item.changeType)} · {shortRevision(item.sha)}
               </p>
@@ -300,12 +306,12 @@ function CommitDetail({
     <div className="space-y-6 p-6">
       {commitQuery.isPending ? <p className={muted}>Loading commit…</p> : null}
       {commitQuery.isError ? (
-        <p className="text-red-600">{errorMessage(commitQuery.error, 'Commit not found')}</p>
+        <p className="text-red-300">{errorMessage(commitQuery.error, 'Commit not found')}</p>
       ) : null}
       {commit ? (
         <>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-zinc-950">{subject}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-white">{subject}</h1>
             <p className={`mt-2 ${muted}`}>
               {commit.authorName} · {formatWhen(commit.committedAt)} · {commit.sha.slice(0, 12)}
               {commit.isMerge ? ' · Merge' : ''}
@@ -313,18 +319,18 @@ function CommitDetail({
             <p className={`mt-1 ${muted}`}>{formatDiffstat(commit.additions, commit.deletions)}</p>
           </div>
           {body ? (
-            <pre className="whitespace-pre-wrap rounded-xl bg-white p-4 text-sm text-zinc-700 ring-1 ring-zinc-200">
+            <pre className="whitespace-pre-wrap rounded-xl bg-panel p-4 text-sm text-zinc-200 ring-1 ring-white/10">
               {body}
             </pre>
           ) : null}
           {commit.parentShas.length ? (
             <div>
-              <h2 className="text-sm font-semibold text-zinc-900">Parents</h2>
+              <h2 className="text-sm font-semibold text-white">Parents</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {commit.parentShas.map((parent) => (
                   <li key={parent}>
                     <button
-                      className="font-medium text-indigo-600 hover:text-indigo-500"
+                      className="font-medium text-brand hover:text-brand-2"
                       type="button"
                       onClick={() => onOpenCommit(parent)}
                     >
@@ -342,7 +348,7 @@ function CommitDetail({
             files={commit.files}
           />
           <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Changed files</h2>
+            <h2 className="text-sm font-semibold text-white">Changed files</h2>
             {commit.files.length === 0 ? (
               <p className={`mt-3 ${muted}`}>No file changes recorded for this commit.</p>
             ) : (
@@ -351,12 +357,12 @@ function CommitDetail({
                   <li
                     key={`${file.changeType}-${file.path}`}
                     className={`flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 ${
-                      selectedPath === file.path ? 'rounded-lg bg-indigo-50 px-3' : ''
+                      selectedPath === file.path ? 'rounded-lg bg-brand/15 px-3' : ''
                     }`}
                   >
                     <div>
                       <button
-                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                        className="font-medium text-brand hover:text-brand-2"
                         type="button"
                         onClick={() => onOpenPath(file.path)}
                       >
@@ -402,9 +408,9 @@ function ChangedFilePreview({
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+    <section className="rounded-2xl border border-white/10 bg-panel p-5">
       <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Selected change</p>
-      <h2 className="mt-1 text-lg font-semibold text-zinc-950">{selected.path}</h2>
+      <h2 className="mt-1 text-lg font-semibold text-white">{selected.path}</h2>
       <p className={`mt-1 ${muted}`}>
         {formatChange(selected.changeType)} · {formatDiffstat(selected.additions, selected.deletions)}
         {selected.language ? ` · ${selected.language}` : ''}
@@ -413,25 +419,25 @@ function ChangedFilePreview({
         {fileId ? (
           <>
             <Link
-              className="text-indigo-600 hover:text-indigo-500"
+              className="text-brand hover:text-brand-2"
               to={repositoryCodePath(workspaceId, repositoryId, { file: fileId })}
             >
               Open in Code
             </Link>
             <Link
-              className="text-indigo-600 hover:text-indigo-500"
+              className="text-brand hover:text-brand-2"
               to={repositoryDnaPath(workspaceId, repositoryId, { file: fileId })}
             >
               Code DNA
             </Link>
             <Link
-              className="text-indigo-600 hover:text-indigo-500"
+              className="text-brand hover:text-brand-2"
               to={repositoryImpactPath(workspaceId, repositoryId, { file: fileId })}
             >
               Check impact
             </Link>
             <Link
-              className="text-indigo-600 hover:text-indigo-500"
+              className="text-brand hover:text-brand-2"
               to={repositoryEvolutionPath(workspaceId, repositoryId, { file: fileId })}
             >
               Evolution
@@ -448,7 +454,7 @@ function ChangedFilePreview({
       ) : previewQuery.data ? (
         <>
           <p className={`mt-4 ${muted}`}>Current tree — not the exact patch from this commit.</p>
-          <pre className="mt-2 overflow-x-auto rounded-xl bg-zinc-50 p-4 text-xs leading-5 text-zinc-800 ring-1 ring-zinc-200">
+          <pre className="mt-2 overflow-x-auto rounded-xl bg-white/5 p-4 text-xs leading-5 text-zinc-100 ring-1 ring-white/10">
             {previewQuery.data.content}
           </pre>
           {previewQuery.data.truncated ? <p className={`mt-2 ${muted}`}>Preview is truncated.</p> : null}

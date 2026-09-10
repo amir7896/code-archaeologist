@@ -1,11 +1,18 @@
 import { Field, Form, Formik } from 'formik';
 import { useNavigate, useParams } from 'react-router-dom';
+import { BackButton } from '../components/BackButton';
 import { useConfirm } from '../components/ConfirmDialog';
 import { PageFrame } from '../components/PageFrame';
-import { StatusBadge } from '../components/StatusBadge';
 import { errorMessage } from '../lib/errors';
-import { formatTask, formatWhen, shortRevision } from '../lib/format';
-import { repositoryAskPath, repositoryCodePath, repositoryDnaPath, repositoryEvolutionPath, repositoryGraphPath, repositoryHistoryPath, repositoryImpactPath, workspacePath } from '../lib/paths';
+import {
+  formatDuration,
+  formatLanguage,
+  formatProvider,
+  formatRelativeTime,
+  repositorySlug,
+  shortRevision,
+} from '../lib/format';
+import { workspacePath, workspaceRepositoriesPath } from '../lib/paths';
 import {
   useDeleteRepositoryMutation,
   useRepositoryQuery,
@@ -20,13 +27,15 @@ import {
   fieldClass,
   muted,
   primaryButton,
-  secondaryButton,
 } from '../ui';
 import { repositorySettingsSchema } from '../validation';
+import type { AnalysisRun, LanguageShare, Repository } from '../api';
+
+const PANEL = 'rounded-[1.75rem] bg-panel p-5';
+const LANGUAGE_BAR = ['bg-brand', 'bg-brand-2', 'bg-white/40', 'bg-white/15'];
 
 export function RepositoryOverviewPage() {
   const repo = useRepositoryContext();
-  const navigate = useNavigate();
   if (repo.loading) {
     return (
       <PageFrame>
@@ -37,144 +46,259 @@ export function RepositoryOverviewPage() {
   if (!repo.data) {
     return (
       <PageFrame>
-        <p className="text-red-600">{errorMessage(repo.error, 'This repository could not be found.')}</p>
+        <p className="text-red-300">{errorMessage(repo.error, 'This repository could not be found.')}</p>
       </PageFrame>
     );
   }
 
   const repository = repo.data;
+  const slug = repositorySlug(repository.url, repository.name);
   const run = repository.latestRun;
   const busy = repository.status === 'PENDING' || repository.status === 'SYNCING';
-  const progress = Math.max(0, Math.min(100, run?.progress ?? (repository.status === 'READY' ? 100 : 0)));
+  const duration = formatDuration(run?.startedAt, run?.finishedAt);
+  const syncing = busy || repo.syncRepository.isPending;
+
+  function runAnalysis() {
+    void repo.syncRepository.mutate(undefined);
+  }
 
   return (
     <PageFrame>
+      <BackButton fallback={workspaceRepositoriesPath(repo.workspaceId)} />
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">{repository.name}</h1>
-            <a
-              className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500"
-              href={repository.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {repository.url}
-            </a>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">{slug}</h1>
             <p className={`mt-2 ${muted}`}>
-              {repository.defaultBranch ?? 'No default branch'} · {shortRevision(repository.currentRevision)}
+              Repository overview — health, languages, revision and analysis status.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <StatusBadge status={repository.status} />
-            {repo.canSync ? (
+          {repo.canSync ? (
+            <div className="flex items-center gap-3">
               <button
-                className={secondaryButton}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/10 bg-panel px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
-                disabled={busy || repo.syncRepository.isPending}
-                onClick={() => void repo.syncRepository.mutate(undefined)}
+                disabled={syncing}
+                onClick={runAnalysis}
               >
-                {busy || repo.syncRepository.isPending ? 'Syncing…' : 'Sync now'}
+                <SyncIcon />
+                {syncing ? 'Syncing…' : 'Re-sync'}
               </button>
-            ) : null}
-          </div>
+              <button
+                className={`${primaryButton} gap-2`}
+                type="button"
+                disabled={syncing}
+                onClick={runAnalysis}
+              >
+                <PlayIcon />
+                {syncing ? 'Running…' : 'Run Analysis'}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {repository.lastError ? <p className={errorText}>{repository.lastError}</p> : null}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryCodePath(repo.workspaceId, repo.repositoryId))}
-          >
-            <p className={muted}>Files</p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-950">{repository.fileCount ?? 0}</p>
-          </button>
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryCodePath(repo.workspaceId, repo.repositoryId, { view: 'symbols' }))}
-          >
-            <p className={muted}>Symbols</p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-950">{repository.symbolCount ?? 0}</p>
-          </button>
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryHistoryPath(repo.workspaceId, repo.repositoryId))}
-          >
-            <p className={muted}>Commits</p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-950">{repository.commitCount ?? 0}</p>
-          </button>
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryGraphPath(repo.workspaceId, repo.repositoryId))}
-          >
-            <p className={muted}>Architecture</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-950">Dependency map</p>
-          </button>
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryDnaPath(repo.workspaceId, repo.repositoryId))}
-          >
-            <p className={muted}>Code DNA</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-950">Risk and history</p>
-          </button>
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryImpactPath(repo.workspaceId, repo.repositoryId))}
-          >
-            <p className={muted}>Impact</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-950">What would change</p>
-          </button>
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryEvolutionPath(repo.workspaceId, repo.repositoryId))}
-          >
-            <p className={muted}>Evolution</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-950">How it changed</p>
-          </button>
-          <button
-            className={`${card} p-5 text-left transition hover:border-indigo-200`}
-            type="button"
-            onClick={() => navigate(repositoryAskPath(repo.workspaceId, repo.repositoryId))}
-          >
-            <p className={muted}>Ask</p>
-            <p className="mt-2 text-lg font-semibold text-zinc-950">Cited answers</p>
-          </button>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className={PANEL}>
+            <p className="text-sm text-zinc-400">Health Score</p>
+            <p className="mt-3 text-4xl font-semibold text-emerald-300">
+              {repository.healthScore == null ? '—' : repository.healthScore}
+            </p>
+            <p className="mt-3 text-xs text-zinc-500">
+              Composite of complexity, coupling, and hotspot density.
+            </p>
+          </section>
+          <section className={PANEL}>
+            <p className="text-sm text-zinc-400">Default Branch</p>
+            <p className="mt-3 text-2xl font-semibold text-white">
+              {repository.defaultBranch ?? '—'}
+            </p>
+            <p className="mt-3 text-xs text-zinc-500">
+              HEAD {shortRevision(repository.currentRevision)}
+              {repository.lastCommitAt ? ` · ${formatRelativeTime(repository.lastCommitAt)}` : ''}
+            </p>
+          </section>
+          <section className={PANEL}>
+            <p className="text-sm text-zinc-400">Provider</p>
+            <p className="mt-3 text-2xl font-semibold text-white">{formatProvider(repository.provider)}</p>
+            <p className="mt-3 text-xs text-zinc-500">
+              {repository.hasCredential ? 'Private repository' : 'Public repository'}
+            </p>
+          </section>
+          <section className={PANEL}>
+            <p className="text-sm text-zinc-400">Analysis Status</p>
+            <div className="mt-3">
+              <AnalysisStatusPill repository={repository} />
+            </div>
+            <p className="mt-3 text-xs text-zinc-500">
+              {syncing
+                ? 'Analysis is running'
+                : duration
+                  ? `Last run finished in ${duration}`
+                  : run?.createdAt
+                    ? 'Last run recorded'
+                    : 'No analysis run yet'}
+            </p>
+          </section>
         </div>
 
-        <section className={card}>
-          <h2 className="text-sm font-semibold text-zinc-900">Ingestion</h2>
-          <div className="mt-4">
-            <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
-              <div className="h-full rounded-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
-            </div>
-            <p className={`mt-2 ${muted}`}>
-              {run ? `${run.progress}%` : repository.status}
-              {run?.createdAt ? ` · ${formatWhen(run.createdAt)}` : ''}
-            </p>
-          </div>
-          {run?.tasks.length ? (
-            <ul className="mt-4 space-y-2 text-sm text-zinc-700">
-              {run.tasks.map((task) => (
-                <li key={task.id} className="flex justify-between gap-3">
-                  <span>{formatTask(task.taskType)}</span>
-                  <StatusBadge status={task.status} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={`mt-4 ${muted}`}>Sync to copy the repository and index its history and source.</p>
-          )}
-        </section>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <LanguageBreakdown languages={repository.languages ?? []} />
+          <RepositoryStats repository={repository} />
+          <RecentRuns runs={repository.analysisRuns ?? (run ? [run] : [])} />
+        </div>
       </div>
     </PageFrame>
+  );
+}
+
+function LanguageBreakdown({ languages }: { languages: LanguageShare[] }) {
+  return (
+    <section className={PANEL}>
+      <h2 className="text-[15px] font-semibold text-white">Language Breakdown</h2>
+      {languages.length === 0 ? (
+        <p className={`mt-6 ${muted}`}>Languages appear after source files are parsed.</p>
+      ) : (
+        <>
+          <ul className="mt-5 space-y-3">
+            {languages.map((item) => (
+              <li key={item.language} className="flex items-center justify-between text-sm">
+                <span className="text-zinc-300">{formatLanguage(item.language)}</span>
+                <span className="font-medium text-white">{item.percent}%</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-5 flex h-2 overflow-hidden rounded-full bg-white/10">
+            {languages.map((item, index) => (
+              <span
+                key={item.language}
+                className={LANGUAGE_BAR[index] ?? 'bg-white/10'}
+                style={{ width: `${item.percent}%` }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function RepositoryStats({ repository }: { repository: Repository }) {
+  const rows = [
+    { label: 'Files analyzed', value: formatCount(repository.fileCount) },
+    { label: 'Symbols indexed', value: formatCount(repository.symbolCount) },
+    { label: 'Commits', value: formatCount(repository.commitCount) },
+    { label: 'Contributors', value: formatCount(repository.contributorCount) },
+    {
+      label: 'Open PRs / Issues',
+      value: `${formatCount(repository.openPullRequestCount)} / ${formatCount(repository.issueCount)}`,
+    },
+  ];
+  return (
+    <section className={PANEL}>
+      <h2 className="text-[15px] font-semibold text-white">Repository Stats</h2>
+      <dl className="mt-5 space-y-3">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-4 text-sm">
+            <dt className="text-zinc-400">{row.label}</dt>
+            <dd className="font-medium tabular-nums text-white">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function RecentRuns({ runs }: { runs: AnalysisRun[] }) {
+  return (
+    <section className={PANEL}>
+      <h2 className="text-[15px] font-semibold text-white">Recent Analysis Runs</h2>
+      {runs.length === 0 ? (
+        <p className={`mt-6 ${muted}`}>Run analysis to index this repository.</p>
+      ) : (
+        <>
+          <div className="mt-5 grid grid-cols-[1fr_auto_auto] gap-x-4 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+            <span>Revision</span>
+            <span>Type</span>
+            <span className="text-right">Status</span>
+          </div>
+          <ul className="mt-3 space-y-3">
+            {runs.map((run) => (
+              <li key={run.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-4 text-sm">
+                <span className="font-mono text-zinc-200">{shortRevision(run.revision)}</span>
+                <span className="text-zinc-400">{run.type === 'INGESTION' ? 'Full' : run.type}</span>
+                <span className="text-right">
+                  <RunStatusBadge status={run.status} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+function AnalysisStatusPill({ repository }: { repository: Repository }) {
+  const status = repository.latestRun?.status ?? repository.status;
+  const label =
+    status === 'SUCCEEDED' || repository.status === 'READY'
+      ? 'Completed'
+      : status === 'FAILED' || repository.status === 'FAILED'
+        ? 'Failed'
+        : status === 'RUNNING' || status === 'SYNCING' || status === 'QUEUED' || status === 'PENDING'
+          ? 'In progress'
+          : 'Waiting';
+  const tone =
+    label === 'Completed'
+      ? 'bg-emerald-500/15 text-emerald-300'
+      : label === 'Failed'
+        ? 'bg-red-500/15 text-red-300'
+        : 'bg-brand/15 text-brand-2';
+  return (
+    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${tone}`}>
+      <span
+        className={`h-2 w-2 rounded-full ${
+          label === 'Completed' ? 'bg-emerald-400' : label === 'Failed' ? 'bg-red-400' : 'bg-brand'
+        }`}
+      />
+      {label}
+    </span>
+  );
+}
+
+function RunStatusBadge({ status }: { status: string }) {
+  if (status === 'SUCCEEDED') {
+    return <span className="inline-flex rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-300">Done</span>;
+  }
+  if (status === 'FAILED') {
+    return <span className="inline-flex rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-300">Failed</span>;
+  }
+  if (status === 'RUNNING' || status === 'QUEUED') {
+    return <span className="inline-flex rounded-full bg-brand/15 px-2 py-0.5 text-xs font-medium text-brand-2">In progress</span>;
+  }
+  return <span className="inline-flex rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-zinc-400">Waiting</span>;
+}
+
+function formatCount(value?: number): string {
+  return new Intl.NumberFormat().format(value ?? 0);
+}
+
+function SyncIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10a5.5 5.5 0 0 1 9.3-4m1.7 4a5.5 5.5 0 0 1-9.3 4" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 3.5v3h-3M6 16.5v-3h3" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor">
+      <path d="M7.2 4.8v10.4L16 10 7.2 4.8Z" />
+    </svg>
   );
 }
 
@@ -192,7 +316,7 @@ export function RepositorySettingsPage() {
   if (!repo.data) {
     return (
       <PageFrame>
-        <p className="text-red-600">{errorMessage(repo.error, 'This repository could not be found.')}</p>
+        <p className="text-red-300">{errorMessage(repo.error, 'This repository could not be found.')}</p>
       </PageFrame>
     );
   }
@@ -207,7 +331,8 @@ export function RepositorySettingsPage() {
   const repository = repo.data;
   return (
     <PageFrame>
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Settings</h1>
+      <BackButton fallback={workspaceRepositoriesPath(repo.workspaceId)} />
+      <h1 className="text-2xl font-semibold tracking-tight text-white">Settings</h1>
       <p className={`mt-2 ${muted}`}>Rename the repository or update its access token.</p>
       <section className={`${card} mt-6`}>
         <Formik
@@ -237,7 +362,7 @@ export function RepositorySettingsPage() {
           {({ errors, touched, isSubmitting, status }) => (
             <Form className="space-y-3" noValidate>
               <label className="block text-sm">
-                <span className="font-medium text-zinc-700">Name</span>
+                <span className="font-medium text-zinc-300">Name</span>
                 <Field
                   className={`${fieldClass(Boolean(touched.name && errors.name))} mt-1.5`}
                   name="name"
@@ -245,11 +370,11 @@ export function RepositorySettingsPage() {
                 {touched.name && errors.name ? <p className={errorText}>{errors.name}</p> : null}
               </label>
               <label className="block text-sm">
-                <span className="font-medium text-zinc-700">Branch</span>
+                <span className="font-medium text-zinc-300">Branch</span>
                 <Field className={`${fieldClass()} mt-1.5`} name="defaultBranch" placeholder="main" />
               </label>
               <label className="block text-sm">
-                <span className="font-medium text-zinc-700">Access token</span>
+                <span className="font-medium text-zinc-300">Access token</span>
                 <Field
                   className={`${fieldClass()} mt-1.5`}
                   type="password"

@@ -57,6 +57,25 @@ export class CreateRepositoryDto {
   @ValidateNested()
   @Type(() => RepositoryCredentialInputDto)
   credential?: RepositoryCredentialInputDto;
+
+  @ApiPropertyOptional({
+    type: String,
+    enum: ['GITHUB', 'GITLAB', 'BITBUCKET', 'LOCAL'],
+    example: 'GITHUB',
+  })
+  @IsOptional()
+  @IsIn(['GITHUB', 'GITLAB', 'BITBUCKET', 'LOCAL'])
+  source?: 'GITHUB' | 'GITLAB' | 'BITBUCKET' | 'LOCAL';
+
+  @ApiPropertyOptional({ type: Boolean, example: true })
+  @IsOptional()
+  @IsBoolean()
+  includePullRequests?: boolean;
+
+  @ApiPropertyOptional({ type: Boolean, example: true })
+  @IsOptional()
+  @IsBoolean()
+  respectGitignore?: boolean;
 }
 
 export class UpdateRepositoryDto {
@@ -139,8 +158,33 @@ export class AnalysisRunResponseDto {
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: Date;
 
+  @ApiProperty({ type: String, format: 'date-time', required: false, nullable: true })
+  startedAt!: Date | null;
+
+  @ApiProperty({ type: String, format: 'date-time', required: false, nullable: true })
+  finishedAt!: Date | null;
+
   @ApiProperty({ type: () => [AnalysisTaskResponseDto] })
   tasks!: AnalysisTaskResponseDto[];
+}
+
+export class RepositoryLanguageShareDto {
+  @ApiProperty({ type: String, example: 'typescript' })
+  language!: string;
+
+  @ApiProperty({ type: Number })
+  count!: number;
+
+  @ApiProperty({ type: Number })
+  percent!: number;
+}
+
+export class RepositorySettingsResponseDto {
+  @ApiProperty({ type: Boolean })
+  includePullRequests!: boolean;
+
+  @ApiProperty({ type: Boolean })
+  respectGitignore!: boolean;
 }
 
 export class RepositoryResponseDto {
@@ -197,6 +241,36 @@ export class RepositoryResponseDto {
 
   @ApiProperty({ type: Boolean })
   hasCredential!: boolean;
+
+  @ApiProperty({ type: () => RepositorySettingsResponseDto })
+  settings!: RepositorySettingsResponseDto;
+
+  @ApiProperty({ type: Number, required: false })
+  issueCount?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  pullRequestCount?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  openIssueCount?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  openPullRequestCount?: number;
+
+  @ApiProperty({ type: Number, required: false })
+  contributorCount?: number;
+
+  @ApiProperty({ type: Number, required: false, nullable: true })
+  healthScore?: number | null;
+
+  @ApiProperty({ type: String, format: 'date-time', required: false, nullable: true })
+  lastCommitAt?: Date | null;
+
+  @ApiProperty({ type: () => [RepositoryLanguageShareDto], required: false })
+  languages?: RepositoryLanguageShareDto[];
+
+  @ApiProperty({ type: () => [AnalysisRunResponseDto], required: false })
+  analysisRuns?: AnalysisRunResponseDto[];
 
   @ApiProperty({ type: String, required: false, nullable: true })
   lastError!: string | null;

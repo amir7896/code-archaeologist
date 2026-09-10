@@ -1,23 +1,27 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-ink: #0b0b13;
+  --color-ink-2: #0e101f;
+  --color-sidebar: #0e101f;
+  --color-panel: #141625;
+  --color-panel-2: #1a1c2e;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-brand: #8b8cff;
+  --color-brand-2: #a5a6ff;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(1200px 500px at 10% -10%, rgb(99 102 241 / 0.08), transparent 50%),
-    radial-gradient(900px 400px at 100% 0%, rgb(14 165 233 / 0.06), transparent 45%), #f4f4f5;
-  color: #18181b;
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  background: #0b0b13;
+  color: #f4f4f5;
+  font-family: var(--font-sans);
 }
 
 button,
@@ -29,4 +33,8 @@ button,
 button:disabled,
 [type='submit']:disabled {
   cursor: not-allowed;
+}
+
+#root {
+  min-height: 100vh;
 }

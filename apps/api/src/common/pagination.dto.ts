@@ -47,8 +47,10 @@ export function paginationSkip(page: number, limit: number): number {
 }
 
 export function resolvePagination(query: PaginationQueryDto): { page: number; limit: number } {
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 20;
   return {
-    page: query.page || 1,
-    limit: query.limit || 20,
+    page: Math.max(1, Math.floor(page)),
+    limit: Math.min(100, Math.max(1, Math.floor(limit))),
   };
 }

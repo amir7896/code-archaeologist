@@ -5,6 +5,7 @@ describe('parseHttpsGitUrl', () => {
     const parsed = parseHttpsGitUrl('https://github.com/acme/platform.git');
     expect(parsed.provider).toBe('GITHUB');
     expect(parsed.name).toBe('platform');
+    expect(parsed.owner).toBe('acme');
     expect(parsed.url).toBe('https://github.com/acme/platform.git');
   });
 

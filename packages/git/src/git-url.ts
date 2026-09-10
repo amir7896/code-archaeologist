@@ -14,6 +14,8 @@ export type ParsedGitUrl = {
   url: string;
   provider: RepositoryProviderName;
   name: string;
+  owner: string;
+  hostname: string;
   compareKey: string;
 };
 
@@ -64,6 +66,8 @@ export function parseHttpsGitUrl(value: string): ParsedGitUrl {
     url: `https://${hostname}${path}`,
     provider: HOST_PROVIDERS[hostname] ?? 'GENERIC',
     name: last.slice(0, 80),
+    owner: segments.slice(0, -1).join('/'),
+    hostname,
     compareKey: `${hostname}${comparePath}`,
   };
 }

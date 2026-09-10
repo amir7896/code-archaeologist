@@ -12,6 +12,9 @@ export const createRepositoryRequestExample = {
   url: 'https://github.com/amir7896/fastapi-nexus.git',
   name: 'Nexus Backend',
   defaultBranch: 'main',
+  source: 'GITHUB',
+  includePullRequests: true,
+  respectGitignore: true,
   credential: {
     type: 'HTTPS_TOKEN',
     secret: 'ghp_example_access_token',
@@ -39,6 +42,8 @@ export const analysisRunExample = {
   progress: 100,
   error: null,
   createdAt: EXAMPLE_DATE,
+  startedAt: EXAMPLE_DATE,
+  finishedAt: EXAMPLE_DATE,
   tasks: [
     {
       id: EXAMPLE_TASK_ID,
@@ -69,6 +74,24 @@ export const repositoryResponseExample = {
   lastEvidenceRevision: '20a7150',
   status: 'READY',
   hasCredential: true,
+  settings: {
+    includePullRequests: true,
+    respectGitignore: true,
+  },
+  issueCount: 12,
+  pullRequestCount: 4,
+  openIssueCount: 8,
+  openPullRequestCount: 2,
+  contributorCount: 6,
+  healthScore: 82,
+  lastCommitAt: EXAMPLE_DATE,
+  languages: [
+    { language: 'typescript', count: 78, percent: 78 },
+    { language: 'javascript', count: 14, percent: 14 },
+    { language: 'sql', count: 5, percent: 5 },
+    { language: 'other', count: 3, percent: 3 },
+  ],
+  analysisRuns: [analysisRunExample],
   lastError: null,
   lastSyncedAt: EXAMPLE_DATE,
   createdAt: EXAMPLE_DATE,

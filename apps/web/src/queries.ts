@@ -83,6 +83,7 @@ export const queryKeys = {
     kind?: string,
     page?: number,
     fileId?: string,
+    limit?: number,
   ) =>
     [
       'workspaces',
@@ -95,9 +96,22 @@ export const queryKeys = {
       kind ?? '',
       page ?? 1,
       fileId ?? '',
+      limit ?? 20,
     ] as const,
   symbol: (workspaceId: string, repositoryId: string, symbolId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbol', symbolId] as const,
+  symbolHistory: (workspaceId: string, repositoryId: string, symbolId: string) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbol', symbolId, 'history'] as const,
+  evidence: (workspaceId: string, repositoryId: string, fileId?: string, symbolId?: string) =>
+    [
+      'workspaces',
+      workspaceId,
+      'repositories',
+      repositoryId,
+      'evidence',
+      fileId ?? '',
+      symbolId ?? '',
+    ] as const,
 };
 
 export function useWorkspacesQuery() {
@@ -276,6 +290,9 @@ export function useCreateRepositoryMutation(workspaceId: string) {
       url: string;
       name?: string;
       defaultBranch?: string;
+      source?: 'GITHUB' | 'GITLAB' | 'BITBUCKET' | 'LOCAL';
+      includePullRequests?: boolean;
+      respectGitignore?: boolean;
       credential?: { type: 'HTTPS_TOKEN'; secret: string };
     }) => repositoryApi.create(workspaceId, body),
     onSuccess: async () => {
@@ -441,7 +458,7 @@ export function useSourcePreviewQuery(workspaceId: string, repositoryId: string,
 export function useSymbolsQuery(
   workspaceId: string,
   repositoryId: string,
-  query: { q?: string; kind?: string; fileId?: string; page?: number } = {},
+  query: { q?: string; kind?: string; fileId?: string; page?: number; limit?: number } = {},
   enabled = true,
 ) {
   return useQuery({
@@ -452,9 +469,30 @@ export function useSymbolsQuery(
       query.kind,
       query.page,
       query.fileId,
+      query.limit,
     ),
     queryFn: () => repositoryApi.symbols(workspaceId, repositoryId, query),
     enabled: Boolean(workspaceId && repositoryId) && enabled,
+  });
+}
+
+export function useSymbolHistoryQuery(workspaceId: string, repositoryId: string, symbolId: string) {
+  return useQuery({
+    queryKey: queryKeys.symbolHistory(workspaceId, repositoryId, symbolId),
+    queryFn: () => repositoryApi.symbolHistory(workspaceId, repositoryId, symbolId),
+    enabled: Boolean(workspaceId && repositoryId && symbolId),
+  });
+}
+
+export function useEvidenceQuery(
+  workspaceId: string,
+  repositoryId: string,
+  query: { fileId?: string; symbolId?: string } = {},
+) {
+  return useQuery({
+    queryKey: queryKeys.evidence(workspaceId, repositoryId, query.fileId, query.symbolId),
+    queryFn: () => repositoryApi.evidence(workspaceId, repositoryId, query),
+    enabled: Boolean(workspaceId && repositoryId && (query.fileId || query.symbolId)),
   });
 }
 

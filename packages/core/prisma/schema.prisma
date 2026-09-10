@@ -86,6 +86,11 @@ enum AnalysisTaskType {
   LINK_EVIDENCE
 }
 
+enum RepositoryThreadKind {
+  ISSUE
+  PULL_REQUEST
+}
+
 enum SymbolKind {
   MODULE
   CLASS
@@ -287,6 +292,7 @@ model Repository {
   riskScores        RiskScore[]
   evidence          Evidence[]
   investigations    Investigation[]
+  threads           RepositoryThread[]
 
   @@index([workspaceId, createdAt])
   @@index([status])
@@ -307,6 +313,30 @@ model RepositoryCredential {
   repository Repository @relation(fields: [repositoryId], references: [id])
 
   @@map("repository_credentials")
+}
+
+model RepositoryThread {
+  id                 String               @id @default(uuid()) @db.Uuid
+  repositoryId       String               @map("repository_id") @db.Uuid
+  kind               RepositoryThreadKind
+  provider           String
+  externalId         String               @map("external_id")
+  number             Int?
+  title              String
+  body               String               @default("")
+  state              String
+  authorLogin        String?              @map("author_login")
+  url                String?
+  mergedAt           DateTime?            @map("merged_at")
+  providerCreatedAt  DateTime?            @map("provider_created_at")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, kind, externalId])
+  @@index([repositoryId, kind])
+  @@map("repository_threads")
 }
 
 model AnalysisRun {

@@ -1,11 +1,12 @@
 import { Form, Formik } from 'formik';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { AuthShell } from '../components/AuthShell';
 import { TextField } from '../components/TextField';
 import { useAuth } from '../hooks/useAuth';
 import { errorMessage } from '../lib/errors';
+import { homePath } from '../lib/paths';
 import { useLoginMutation } from '../queries';
-import { errorText, primaryButton } from '../ui';
+import { errorText, primaryButton, secondaryButton } from '../ui';
 import { loginSchema, type LoginValues } from '../validation';
 
 const initialValues: LoginValues = {
@@ -19,11 +20,11 @@ export function LoginPage() {
   const login = useLoginMutation();
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={homePath} replace />;
   }
 
   return (
-    <AuthShell title="Sign in" subtitle="Enter your email and password.">
+    <AuthShell title="Welcome back" subtitle="Sign in to continue to your workspace.">
       <Formik
         initialValues={initialValues}
         validationSchema={loginSchema}
@@ -34,7 +35,7 @@ export function LoginPage() {
               email: values.email.trim(),
               password: values.password,
             });
-            navigate('/', { replace: true });
+            navigate(homePath, { replace: true });
           } catch (cause) {
             helpers.setStatus(errorMessage(cause, 'Unable to sign in'));
           }
@@ -53,15 +54,20 @@ export function LoginPage() {
             <button className={`${primaryButton} w-full`} type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Signing in…' : 'Sign in'}
             </button>
+            <div className="flex items-center gap-3 pt-1 text-xs uppercase tracking-[0.18em] text-zinc-600">
+              <span className="h-px flex-1 bg-white/10" />
+              or
+              <span className="h-px flex-1 bg-white/10" />
+            </div>
+            <button className={`${secondaryButton} w-full`} type="button" disabled>
+              Continue with GitHub
+            </button>
+            <p className="text-center text-xs leading-5 text-zinc-500">
+              Available when GitHub is connected. Protected by session and refresh-token rotation.
+            </p>
           </Form>
         )}
       </Formik>
-      <p className="mt-6 text-center text-sm text-zinc-500">
-        Don't have an account?{' '}
-        <Link className="font-medium text-indigo-600 hover:text-indigo-500" to="/register">
-          Create an account
-        </Link>
-      </p>
     </AuthShell>
   );
 }

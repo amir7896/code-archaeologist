@@ -77,7 +77,7 @@ export function ArchitectureMapPage() {
   if (mapQuery.isError || !map) {
     return (
       <PageFrame>
-        <p className="text-red-600">{errorMessage(mapQuery.error, 'The architecture map could not be loaded.')}</p>
+        <p className="text-red-300">{errorMessage(mapQuery.error, 'The architecture map could not be loaded.')}</p>
       </PageFrame>
     );
   }
@@ -95,7 +95,7 @@ export function ArchitectureMapPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Architecture</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Architecture</h1>
             <p className={`mt-2 ${muted}`}>
               How folders depend on each other
               {map.revision ? ` · ${shortRevision(map.revision)}` : ''}
@@ -115,14 +115,14 @@ export function ArchitectureMapPage() {
 
         {empty ? (
           <section className={card}>
-            <p className="text-sm text-zinc-700">
+            <p className="text-sm text-zinc-200">
               Sync this repository to read its source and build the architecture map.
             </p>
           </section>
         ) : (
           <>
             {needsSync ? (
-              <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+              <section className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5 text-sm text-amber-900">
                 Sync now to extract dependencies from the latest source.
               </section>
             ) : null}
@@ -134,9 +134,9 @@ export function ArchitectureMapPage() {
             </div>
 
             {map.cycles.length > 0 ? (
-              <section className="rounded-2xl border border-rose-200 bg-rose-50 p-5">
+              <section className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-5">
                 <h2 className="text-sm font-semibold text-rose-900">Circular dependencies</h2>
-                <ul className="mt-3 space-y-2 text-sm text-rose-800">
+                <ul className="mt-3 space-y-2 text-sm text-rose-200">
                   {map.cycles.map((cycle) => (
                     <li key={cycle.id}>
                       {cycle.nodes.map((node, index) => (
@@ -156,7 +156,7 @@ export function ArchitectureMapPage() {
             <MostConnected modules={visibleModules} onSelect={(id) => open({ module: id })} />
 
             <section className={card}>
-              <h2 className="text-sm font-semibold text-zinc-900">Map controls</h2>
+              <h2 className="text-sm font-semibold text-white">Map controls</h2>
               <form
                 className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
                 onSubmit={(event) => {
@@ -254,10 +254,10 @@ export function ArchitectureMapPage() {
                       <button
                         className={`rounded-full border px-2.5 py-1 text-xs ${
                           module.id === selectedId
-                            ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                            ? 'border-brand bg-brand/15 text-brand-2'
                             : module.inCycle
-                              ? 'border-rose-200 bg-rose-50 text-rose-800'
-                              : 'border-zinc-200 bg-white text-zinc-600'
+                              ? 'border-rose-400/30 bg-rose-500/10 text-rose-200'
+                              : 'border-white/10 bg-panel text-zinc-400'
                         }`}
                         type="button"
                         onClick={() => open({ module: module.id })}
@@ -296,7 +296,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: 'ok
     <div className={card}>
       <p className={muted}>{label}</p>
       <p
-        className={`mt-2 text-2xl font-semibold ${tone === 'warn' ? 'text-rose-700' : 'text-zinc-950'}`}
+        className={`mt-2 text-2xl font-semibold ${tone === 'warn' ? 'text-rose-300' : 'text-white'}`}
       >
         {value}
       </p>
@@ -320,12 +320,12 @@ function MostConnected({
   }
   return (
     <section className={card}>
-      <h2 className="text-sm font-semibold text-zinc-900">Most connected folders</h2>
+      <h2 className="text-sm font-semibold text-white">Most connected folders</h2>
       <ul className="mt-3 space-y-2 text-sm">
         {ranked.map((module) => (
           <li key={module.id} className="flex items-center justify-between gap-3">
             <button
-              className="text-left text-indigo-600 hover:text-indigo-500"
+              className="text-left text-brand hover:text-brand-2"
               type="button"
               onClick={() => onSelect(module.id)}
             >
@@ -366,7 +366,7 @@ function ModuleDetail({
   if (!module) {
     return (
       <section className={card}>
-        <h2 className="text-sm font-semibold text-zinc-900">Folder</h2>
+        <h2 className="text-sm font-semibold text-white">Folder</h2>
         <p className={`mt-3 ${muted}`}>Select a folder on the map to see what it depends on.</p>
       </section>
     );
@@ -375,7 +375,7 @@ function ModuleDetail({
   return (
     <section className={card}>
       <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Folder</p>
-      <h2 className="mt-1 text-lg font-semibold text-zinc-950">{module.path}</h2>
+      <h2 className="mt-1 text-lg font-semibold text-white">{module.path}</h2>
       <p className={`mt-2 ${muted}`}>
         {module.fileCount} files · {module.fanOut} depends on · {module.fanIn} used by
         {module.inCycle ? ' · in a cycle' : ''}
@@ -394,12 +394,12 @@ function ModuleDetail({
         onSelect={onSelectModule}
       />
 
-      <h3 className="mt-5 text-sm font-semibold text-zinc-900">Files</h3>
+      <h3 className="mt-5 text-sm font-semibold text-white">Files</h3>
       <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-sm">
         {module.files.map((file) => (
           <li key={file.id}>
             <button
-              className={`text-left ${selectedFileId === file.id ? 'font-medium text-indigo-700' : 'text-indigo-600 hover:text-indigo-500'}`}
+              className={`text-left ${selectedFileId === file.id ? 'font-medium text-brand-2' : 'text-brand hover:text-brand-2'}`}
               type="button"
               onClick={() => onSelectFile(file.id)}
             >
@@ -439,24 +439,24 @@ function FileNeighbors({
   const dependents = useGraphDependentsQuery(workspaceId, repositoryId, fileId, depth);
 
   return (
-    <div className="mt-5 border-t border-zinc-100 pt-5">
+    <div className="mt-5 border-t border-white/5 pt-5">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-zinc-900">This file</h3>
+        <h3 className="text-sm font-semibold text-white">This file</h3>
         <div className="flex items-center gap-3">
           <Link
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-xs font-medium text-brand hover:text-brand-2"
             to={repositoryCodePath(workspaceId, repositoryId, { file: fileId })}
           >
             Open in Code
           </Link>
           <Link
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-xs font-medium text-brand hover:text-brand-2"
             to={repositoryImpactPath(workspaceId, repositoryId, { file: fileId })}
           >
             Check impact
           </Link>
           <Link
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-xs font-medium text-brand hover:text-brand-2"
             to={repositoryEvolutionPath(workspaceId, repositoryId, { file: fileId })}
           >
             Evolution
@@ -488,11 +488,11 @@ function NeighborList({
       ) : !query.data?.items.length ? (
         <p className={`mt-2 ${muted}`}>None</p>
       ) : (
-        <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+        <ul className="mt-2 space-y-1 text-sm text-zinc-200">
           {query.data.items.map((item) => (
             <li key={item.fileId}>
               <button
-                className="text-left text-indigo-600 hover:text-indigo-500"
+                className="text-left text-brand hover:text-brand-2"
                 type="button"
                 onClick={() => onSelectFile(item.fileId)}
               >
@@ -520,7 +520,7 @@ function RelationList({
 }) {
   return (
     <div className="mt-5">
-      <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
+      <h3 className="text-sm font-semibold text-white">{title}</h3>
       {edges.length === 0 ? (
         <p className={`mt-2 ${muted}`}>None</p>
       ) : (
@@ -530,7 +530,7 @@ function RelationList({
             return (
               <li key={`${edge.sourceId}-${edge.targetId}`}>
                 <button
-                  className="text-left text-indigo-600 hover:text-indigo-500"
+                  className="text-left text-brand hover:text-brand-2"
                   type="button"
                   onClick={() => onSelect(id)}
                 >
@@ -583,7 +583,7 @@ function ArchitectureCanvas({
               key={`${edge.sourceId}-${edge.targetId}`}
               d={`M ${from.x} ${from.y} Q 360 360 ${to.x} ${to.y}`}
               fill="none"
-              stroke={active ? '#4f46e5' : cyclic ? '#e11d48' : '#d4d4d8'}
+              stroke={active ? '#8b8cff' : cyclic ? '#fb7185' : '#3f3f4a'}
               strokeWidth={active ? 2.4 : 1.4}
               opacity={selectedId && !active ? 0.25 : 0.9}
             />
@@ -601,15 +601,15 @@ function ArchitectureCanvas({
                 cx={point.x}
                 cy={point.y}
                 r={selected ? 28 : 24}
-                fill={selected ? '#eef2ff' : '#ffffff'}
-                stroke={module.inCycle ? '#e11d48' : selected ? '#4f46e5' : '#a1a1aa'}
+                fill={selected ? '#2a2a44' : '#141625'}
+                stroke={module.inCycle ? '#fb7185' : selected ? '#8b8cff' : '#52525b'}
                 strokeWidth={selected ? 2.5 : 1.5}
               />
               <text
                 x={point.x}
                 y={point.y + 42}
                 textAnchor="middle"
-                className="fill-zinc-700"
+                className="fill-zinc-300"
                 fontSize="11"
               >
                 {truncateLabel(module.path)}

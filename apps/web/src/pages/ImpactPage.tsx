@@ -77,7 +77,7 @@ export function ImpactPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Impact</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Impact Analysis</h1>
             <p className={`mt-2 ${muted}`}>
               What would change if you touch this file — from the architecture map, not a guess
               {impact?.revision ? ` · ${shortRevision(impact.revision)}` : ''}
@@ -112,7 +112,7 @@ export function ImpactPage() {
         </div>
 
         {!repository?.lastGraphRevision ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+          <section className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5 text-sm text-amber-900">
             Sync now so impact can walk the architecture map.
           </section>
         ) : null}
@@ -120,7 +120,7 @@ export function ImpactPage() {
         <div className="grid gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
           <div className="space-y-4">
             <section className={card}>
-              <h2 className="text-sm font-semibold text-zinc-900">Choose a file</h2>
+              <h2 className="text-sm font-semibold text-white">Choose a file</h2>
               <form className="mt-3 space-y-2" onSubmit={submit}>
                 <input
                   className={fieldClass()}
@@ -158,7 +158,7 @@ export function ImpactPage() {
 
           {!selected ? (
             <section className={card}>
-              <h2 className="text-sm font-semibold text-zinc-900">What would change</h2>
+              <h2 className="text-sm font-semibold text-white">What would change</h2>
               <p className={`mt-3 ${muted}`}>
                 Select a file to see what depends on it, what it depends on, and which tests or HTTP entry files sit in that set.
               </p>
@@ -169,7 +169,7 @@ export function ImpactPage() {
             </section>
           ) : impactQuery.isError || !impact ? (
             <section className={card}>
-              <p className="text-red-600">{errorMessage(impactQuery.error, 'Impact could not be calculated.')}</p>
+              <p className="text-red-300">{errorMessage(impactQuery.error, 'Impact could not be calculated.')}</p>
             </section>
           ) : (
             <ImpactResult workspaceId={workspaceId} repositoryId={repositoryId} impact={impact} />
@@ -197,32 +197,32 @@ function ImpactResult({
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               {impact.origin.subjectType === 'SYMBOL' ? 'Symbol' : 'File'}
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-zinc-950">{impact.origin.name}</h2>
+            <h2 className="mt-1 text-lg font-semibold text-white">{impact.origin.name}</h2>
             <p className={`mt-1 ${muted}`}>{impact.origin.path}</p>
           </div>
           <RiskBadge level={impact.origin.riskLevel} score={impact.origin.riskScore} />
         </div>
         <div className="mt-4 flex flex-wrap gap-3 text-sm font-medium">
-          <Link className="text-indigo-600 hover:text-indigo-500" to={repositoryCodePath(workspaceId, repositoryId, {
+          <Link className="text-brand hover:text-brand-2" to={repositoryCodePath(workspaceId, repositoryId, {
             file: impact.origin.fileId,
             symbol: impact.origin.symbolId ?? undefined,
           })}>
             Open in Code
           </Link>
-          <Link className="text-indigo-600 hover:text-indigo-500" to={repositoryDnaPath(workspaceId, repositoryId, {
+          <Link className="text-brand hover:text-brand-2" to={repositoryDnaPath(workspaceId, repositoryId, {
             file: impact.origin.fileId,
             symbol: impact.origin.symbolId ?? undefined,
           })}>
             Code DNA
           </Link>
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryGraphPath(workspaceId, repositoryId, { file: impact.origin.fileId })}
           >
             Architecture
           </Link>
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryEvolutionPath(workspaceId, repositoryId, {
               file: impact.origin.fileId,
               symbol: impact.origin.symbolId ?? undefined,
@@ -231,7 +231,7 @@ function ImpactResult({
             Evolution
           </Link>
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryAskPath(workspaceId, repositoryId, {
               file: impact.origin.fileId,
               symbol: impact.origin.symbolId ?? undefined,
@@ -249,7 +249,7 @@ function ImpactResult({
       </div>
 
       {impact.stats.truncated ? (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-900">
           This walk hit the size limit. The lists show the closest, riskiest files first.
         </p>
       ) : null}
@@ -289,15 +289,15 @@ function ImpactResult({
       </div>
 
       <section className={card}>
-        <h2 className="text-sm font-semibold text-zinc-900">Folders</h2>
+        <h2 className="text-sm font-semibold text-white">Folders</h2>
         {impact.modules.length === 0 ? (
           <p className={`mt-3 ${muted}`}>No other folders in this walk.</p>
         ) : (
-          <ul className="mt-3 space-y-2 text-sm text-zinc-700">
+          <ul className="mt-3 space-y-2 text-sm text-zinc-200">
             {impact.modules.map((module) => (
               <li key={module.id} className="flex justify-between gap-3">
                 <Link
-                  className="text-indigo-600 hover:text-indigo-500"
+                  className="text-brand hover:text-brand-2"
                   to={repositoryGraphPath(workspaceId, repositoryId, { module: module.id })}
                 >
                   {module.path}
@@ -329,7 +329,7 @@ function NodeList({
 }) {
   return (
     <section className={card}>
-      <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+      <h2 className="text-sm font-semibold text-white">{title}</h2>
       {items.length === 0 ? (
         <p className={`mt-3 ${muted}`}>{empty}</p>
       ) : (
@@ -337,10 +337,10 @@ function NodeList({
           {items.map((item) => (
             <li key={`${title}-${item.fileId}-${item.direction}`}>
               <Link
-                className="block rounded-xl border border-zinc-200 px-3 py-2 text-sm hover:bg-zinc-50"
+                className="block rounded-xl border border-white/10 px-3 py-2 text-sm hover:bg-white/5"
                 to={repositoryImpactPath(workspaceId, repositoryId, { file: item.fileId, depth: '2' })}
               >
-                <span className="block truncate font-medium text-zinc-900">{item.path}</span>
+                <span className="block truncate font-medium text-white">{item.path}</span>
                 <span className="mt-1 block text-xs text-zinc-500">
                   Depth {item.depth} · {formatRiskLevel(item.riskLevel)} · {item.riskScore}
                   {item.role !== 'file' ? ` · ${item.role}` : ''}
@@ -375,8 +375,8 @@ function FilePickList({
           <button
             className={`w-full rounded-xl border px-3 py-2 text-left text-sm ${
               selectedId === item.id
-                ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
-                : 'border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                ? 'border-brand/40 bg-brand/15 text-brand-2'
+                : 'border-white/10 text-zinc-200 hover:bg-white/5'
             }`}
             type="button"
             onClick={() => onSelect(item.id)}
@@ -402,7 +402,7 @@ function InsightPickList({
 }) {
   return (
     <section className={card}>
-      <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+      <h2 className="text-sm font-semibold text-white">{title}</h2>
       {items.length === 0 ? (
         <p className={`mt-3 ${muted}`}>None yet</p>
       ) : (
@@ -412,8 +412,8 @@ function InsightPickList({
               <button
                 className={`w-full rounded-xl border px-3 py-2 text-left text-sm ${
                   selectedId === item.subjectId
-                    ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
-                    : 'border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                    ? 'border-brand/40 bg-brand/15 text-brand-2'
+                    : 'border-white/10 text-zinc-200 hover:bg-white/5'
                 }`}
                 type="button"
                 onClick={() => onSelect(item)}
@@ -435,7 +435,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: 'wa
   return (
     <div className={card}>
       <p className={muted}>{label}</p>
-      <p className={`mt-2 text-2xl font-semibold ${tone === 'warn' ? 'text-rose-700' : 'text-zinc-950'}`}>{value}</p>
+      <p className={`mt-2 text-2xl font-semibold ${tone === 'warn' ? 'text-rose-300' : 'text-white'}`}>{value}</p>
     </div>
   );
 }
@@ -443,10 +443,10 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: 'wa
 function RiskBadge({ level, score }: { level: string; score: number }) {
   const tone =
     level === 'CRITICAL' || level === 'HIGH'
-      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      ? 'border-rose-400/30 bg-rose-500/10 text-rose-200'
       : level === 'MEDIUM'
-        ? 'border-amber-200 bg-amber-50 text-amber-900'
-        : 'border-zinc-200 bg-zinc-50 text-zinc-700';
+        ? 'border-amber-400/30 bg-amber-500/10 text-amber-900'
+        : 'border-white/10 bg-white/5 text-zinc-200';
   return (
     <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${tone}`}>
       {formatRiskLevel(level)} · {score}

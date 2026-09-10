@@ -6,6 +6,7 @@ import {
   type LlmProvider,
 } from '@code-archaeologist/ai';
 import {
+  INVESTIGATION_LIMITATIONS,
   buildDeterministicAnswer,
   buildInvestigationContext,
   classifyInvestigationIntent,
@@ -91,7 +92,7 @@ export async function processInvestigation(
         });
         if (generated.content.trim()) {
           const checked = validateCitedAnswer(generated.content, numbered.length);
-          answer = `${checked.answer}\n\nLimitations: symbol locations come from the current tree; commit-to-symbol links are scored, never certain; no issue or pull-request text is available yet.`;
+          answer = `${checked.answer}\n\n${INVESTIGATION_LIMITATIONS}`;
           cited = checked.cited;
           invented = checked.invented;
           usedModel = true;

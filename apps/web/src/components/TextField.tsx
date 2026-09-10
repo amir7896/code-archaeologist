@@ -25,7 +25,7 @@ export function TextField({
 
   return (
     <div className="block text-sm">
-      <label className="font-medium text-zinc-700" htmlFor={name}>
+      <label className="font-medium text-zinc-300" htmlFor={name}>
         {label}
       </label>
       <Field name={name}>
@@ -42,7 +42,7 @@ export function TextField({
               />
               {isPassword ? (
                 <button
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400 hover:text-zinc-700"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-zinc-500 hover:text-white"
                   type="button"
                   aria-label={visible ? 'Hide password' : 'Show password'}
                   aria-pressed={visible}

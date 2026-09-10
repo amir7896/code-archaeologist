@@ -1,4 +1,5 @@
 export * from './generic-parser';
+export * from './gitignore';
 export * from './hash';
 export * from './language';
 export * from './python-parser';

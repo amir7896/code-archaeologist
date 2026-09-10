@@ -80,7 +80,7 @@ export function EvolutionPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Evolution</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Evolution</h1>
             <p className={`mt-2 ${muted}`}>
               How this code changed — scored from commits and line ranges, never certain
               {evolution?.revision ? ` · ${shortRevision(evolution.revision)}` : ''}
@@ -99,7 +99,7 @@ export function EvolutionPage() {
         </div>
 
         {!repository?.lastEvidenceRevision ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+          <section className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5 text-sm text-amber-900">
             Sync now to link commits to symbols. File history is still available until then.
           </section>
         ) : null}
@@ -107,7 +107,7 @@ export function EvolutionPage() {
         <div className="grid gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
           <div className="space-y-4">
             <section className={card}>
-              <h2 className="text-sm font-semibold text-zinc-900">Choose a file</h2>
+              <h2 className="text-sm font-semibold text-white">Choose a file</h2>
               <form className="mt-3 space-y-2" onSubmit={submit}>
                 <input
                   className={fieldClass()}
@@ -145,7 +145,7 @@ export function EvolutionPage() {
 
           {!selected ? (
             <section className={card}>
-              <h2 className="text-sm font-semibold text-zinc-900">How it changed</h2>
+              <h2 className="text-sm font-semibold text-white">How it changed</h2>
               <p className={`mt-3 ${muted}`}>
                 Select a file to see the commits that likely touched it, and how strongly each link is
                 scored.
@@ -157,7 +157,7 @@ export function EvolutionPage() {
             </section>
           ) : evolutionQuery.isError || !evolution ? (
             <section className={card}>
-              <p className="text-red-600">{errorMessage(evolutionQuery.error, 'Evolution could not be loaded.')}</p>
+              <p className="text-red-300">{errorMessage(evolutionQuery.error, 'Evolution could not be loaded.')}</p>
             </section>
           ) : (
             <EvolutionResult workspaceId={workspaceId} repositoryId={repositoryId} evolution={evolution} />
@@ -183,12 +183,12 @@ function EvolutionResult({
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
           {evolution.origin.subjectType === 'SYMBOL' ? 'Symbol' : 'File'}
         </p>
-        <h2 className="mt-1 text-lg font-semibold text-zinc-950">{evolution.origin.name}</h2>
+        <h2 className="mt-1 text-lg font-semibold text-white">{evolution.origin.name}</h2>
         <p className={`mt-1 ${muted}`}>{evolution.origin.path}</p>
         <p className={`mt-3 text-sm ${muted}`}>{evolution.note}</p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm font-medium">
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryCodePath(workspaceId, repositoryId, {
               file: evolution.origin.fileId,
               symbol: evolution.origin.symbolId ?? undefined,
@@ -197,7 +197,7 @@ function EvolutionResult({
             Open in Code
           </Link>
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryDnaPath(workspaceId, repositoryId, {
               file: evolution.origin.fileId,
               symbol: evolution.origin.symbolId ?? undefined,
@@ -206,7 +206,7 @@ function EvolutionResult({
             Code DNA
           </Link>
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryImpactPath(workspaceId, repositoryId, {
               file: evolution.origin.fileId,
               symbol: evolution.origin.symbolId ?? undefined,
@@ -215,13 +215,13 @@ function EvolutionResult({
             Check impact
           </Link>
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryHistoryPath(workspaceId, repositoryId, { path: evolution.origin.path })}
           >
             File history
           </Link>
           <Link
-            className="text-indigo-600 hover:text-indigo-500"
+            className="text-brand hover:text-brand-2"
             to={repositoryAskPath(workspaceId, repositoryId, {
               file: evolution.origin.fileId,
               symbol: evolution.origin.symbolId ?? undefined,
@@ -240,7 +240,7 @@ function EvolutionResult({
       </div>
 
       <section className={card}>
-        <h3 className="text-sm font-semibold text-zinc-900">Timeline</h3>
+        <h3 className="text-sm font-semibold text-white">Timeline</h3>
         {evolution.timeline.length === 0 ? (
           <p className={`mt-3 ${muted}`}>No linked commits yet.</p>
         ) : (
@@ -260,8 +260,8 @@ function EvolutionResult({
 
       {evolution.versions.length > 0 ? (
         <section className={card}>
-          <h3 className="text-sm font-semibold text-zinc-900">Recorded versions</h3>
-          <ul className="mt-3 space-y-2 text-sm text-zinc-700">
+          <h3 className="text-sm font-semibold text-white">Recorded versions</h3>
+          <ul className="mt-3 space-y-2 text-sm text-zinc-200">
             {evolution.versions.map((version) => (
               <li key={`${version.revision}-${version.contentHash}`} className="flex flex-wrap justify-between gap-2">
                 <span>
@@ -290,10 +290,10 @@ function TimelineItem({
   path: string;
 }) {
   return (
-    <li className="rounded-xl border border-zinc-200 px-3 py-3">
+    <li className="rounded-xl border border-white/10 px-3 py-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <Link
-          className="font-medium text-zinc-950 hover:text-indigo-600"
+          className="font-medium text-white hover:text-brand"
           to={repositoryHistoryPath(workspaceId, repositoryId, { commit: event.sha, path })}
         >
           {commitSubject(event.message)}
@@ -318,8 +318,8 @@ function ConfidenceBadge({ label }: { label: string }) {
     label === 'strong'
       ? 'bg-emerald-50 text-emerald-800'
       : label === 'likely'
-        ? 'bg-amber-50 text-amber-800'
-        : 'bg-zinc-100 text-zinc-700';
+        ? 'bg-amber-500/10 text-amber-800'
+        : 'bg-white/10 text-zinc-200';
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>{formatConfidenceLabel(label)}</span>
   );
@@ -346,8 +346,8 @@ function FilePickList({
           <button
             className={`w-full rounded-xl border px-3 py-2 text-left text-sm ${
               selectedId === item.id
-                ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
-                : 'border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                ? 'border-brand/40 bg-brand/15 text-brand-2'
+                : 'border-white/10 text-zinc-200 hover:bg-white/5'
             }`}
             type="button"
             onClick={() => onSelect(item.id)}
@@ -373,7 +373,7 @@ function InsightPickList({
 }) {
   return (
     <section className={card}>
-      <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+      <h2 className="text-sm font-semibold text-white">{title}</h2>
       {items.length === 0 ? (
         <p className={`mt-3 ${muted}`}>None yet</p>
       ) : (
@@ -383,8 +383,8 @@ function InsightPickList({
               <button
                 className={`w-full rounded-xl border px-3 py-2 text-left text-sm ${
                   selectedId === item.subjectId
-                    ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
-                    : 'border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                    ? 'border-brand/40 bg-brand/15 text-brand-2'
+                    : 'border-white/10 text-zinc-200 hover:bg-white/5'
                 }`}
                 type="button"
                 onClick={() => onSelect(item)}
@@ -406,7 +406,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <section className={card}>
       <p className={muted}>{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-zinc-950">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </section>
   );
 }

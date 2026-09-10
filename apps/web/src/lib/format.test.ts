@@ -4,11 +4,14 @@ import {
   formatActivity,
   formatChange,
   formatDiffstat,
+  formatDuration,
+  formatLanguage,
   formatRole,
   formatStatus,
   formatTask,
   formatWhen,
   repositoryHost,
+  repositorySlug,
   repositorySummary,
 } from './format';
 
@@ -39,11 +42,20 @@ describe('format', () => {
   it('returns an empty string for invalid dates', () => {
     expect(formatWhen('not-a-date')).toBe('');
   });
+
+  it('formats analysis duration and language labels', () => {
+    expect(formatDuration('2026-09-10T12:00:00Z', '2026-09-10T12:04:12Z')).toBe('4m 12s');
+    expect(formatLanguage('typescript')).toBe('TypeScript');
+    expect(formatLanguage('other')).toBe('Other');
+  });
 });
 
 describe('repositorySummary', () => {
   it('shows status, branch, and short revision', () => {
     expect(repositoryHost('https://github.com/amir7896/fastapi-nexus.git')).toBe('github.com');
+    expect(repositorySlug('https://github.com/amir7896/fastapi-nexus.git', 'Nexus')).toBe(
+      'amir7896/fastapi-nexus',
+    );
     expect(
       repositorySummary({
         status: 'READY',

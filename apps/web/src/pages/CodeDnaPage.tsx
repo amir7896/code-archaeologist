@@ -51,7 +51,7 @@ export function CodeDnaPage() {
   if (healthQuery.isError) {
     return (
       <PageFrame>
-        <p className="text-red-600">{errorMessage(healthQuery.error, 'Profiles could not be loaded.')}</p>
+        <p className="text-red-300">{errorMessage(healthQuery.error, 'Profiles could not be loaded.')}</p>
       </PageFrame>
     );
   }
@@ -61,7 +61,7 @@ export function CodeDnaPage() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-950">Code DNA</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Code DNA</h1>
             <p className={`mt-2 ${muted}`}>
               History, coupling, and risk for files
               {health?.revision ? ` · ${shortRevision(health.revision)}` : ''}
@@ -80,7 +80,7 @@ export function CodeDnaPage() {
         </div>
 
         {!repository?.lastDnaRevision ? (
-          <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+          <section className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5 text-sm text-amber-900">
             Sync now to compute risk and history profiles from Git and the architecture map.
           </section>
         ) : null}
@@ -114,14 +114,14 @@ export function CodeDnaPage() {
               </section>
             ) : profileQuery.isError || !profile ? (
               <section className={card}>
-                <p className="text-red-600">{errorMessage(profileQuery.error, 'This profile could not be loaded.')}</p>
+                <p className="text-red-300">{errorMessage(profileQuery.error, 'This profile could not be loaded.')}</p>
               </section>
             ) : (
               <ProfileCard workspaceId={workspaceId} repositoryId={repositoryId} profile={profile} />
             )
           ) : (
             <section className={card}>
-              <h2 className="text-sm font-semibold text-zinc-900">Profile</h2>
+              <h2 className="text-sm font-semibold text-white">Profile</h2>
               <p className={`mt-3 ${muted}`}>Select a hotspot or risky file to see why it looks that way.</p>
             </section>
           )}
@@ -135,7 +135,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: 'wa
   return (
     <div className={card}>
       <p className={muted}>{label}</p>
-      <p className={`mt-2 text-2xl font-semibold ${tone === 'warn' ? 'text-rose-700' : 'text-zinc-950'}`}>{value}</p>
+      <p className={`mt-2 text-2xl font-semibold ${tone === 'warn' ? 'text-rose-300' : 'text-white'}`}>{value}</p>
     </div>
   );
 }
@@ -153,7 +153,7 @@ function InsightList({
 }) {
   return (
     <section className={card}>
-      <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
+      <h2 className="text-sm font-semibold text-white">{title}</h2>
       {items.length === 0 ? (
         <p className={`mt-3 ${muted}`}>None yet</p>
       ) : (
@@ -163,8 +163,8 @@ function InsightList({
               <button
                 className={`w-full rounded-xl border px-3 py-2 text-left text-sm ${
                   selectedId === item.subjectId
-                    ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
-                    : 'border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                    ? 'border-brand/40 bg-brand/15 text-brand-2'
+                    : 'border-white/10 text-zinc-200 hover:bg-white/5'
                 }`}
                 type="button"
                 onClick={() => onSelect(item)}
@@ -196,7 +196,7 @@ function ProfileCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">{profile.subjectType.toLowerCase()}</p>
-          <h2 className="mt-1 text-lg font-semibold text-zinc-950">{profile.name}</h2>
+          <h2 className="mt-1 text-lg font-semibold text-white">{profile.name}</h2>
           {profile.path ? <p className={`mt-1 ${muted}`}>{profile.path}</p> : null}
         </div>
         <RiskBadge level={profile.risk.level} score={profile.risk.score} />
@@ -218,7 +218,7 @@ function ProfileCard({
       <div className="mt-5 flex flex-wrap gap-2">
         {profile.subjectType === 'FILE' ? (
           <Link
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-sm font-medium text-brand hover:text-brand-2"
             to={repositoryCodePath(workspaceId, repositoryId, { file: profile.subjectId })}
           >
             Open in Code
@@ -226,7 +226,7 @@ function ProfileCard({
         ) : null}
         {profile.subjectType === 'SYMBOL' ? (
           <Link
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-sm font-medium text-brand hover:text-brand-2"
             to={repositoryCodePath(workspaceId, repositoryId, { symbol: profile.subjectId })}
           >
             Open in Code
@@ -234,14 +234,14 @@ function ProfileCard({
         ) : null}
         {profile.path ? (
           <Link
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-sm font-medium text-brand hover:text-brand-2"
             to={repositoryHistoryPath(workspaceId, repositoryId, { path: profile.path })}
           >
             File history
           </Link>
         ) : null}
         <Link
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          className="text-sm font-medium text-brand hover:text-brand-2"
           to={repositoryImpactPath(workspaceId, repositoryId, {
             file: profile.subjectType === 'FILE' ? profile.subjectId : undefined,
             symbol: profile.subjectType === 'SYMBOL' ? profile.subjectId : undefined,
@@ -250,7 +250,7 @@ function ProfileCard({
           Check impact
         </Link>
         <Link
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          className="text-sm font-medium text-brand hover:text-brand-2"
           to={repositoryEvolutionPath(workspaceId, repositoryId, {
             file: profile.subjectType === 'FILE' ? profile.subjectId : undefined,
             symbol: profile.subjectType === 'SYMBOL' ? profile.subjectId : undefined,
@@ -260,8 +260,8 @@ function ProfileCard({
         </Link>
       </div>
 
-      <h3 className="mt-6 text-sm font-semibold text-zinc-900">Why this risk</h3>
-      <ul className="mt-3 space-y-2 text-sm text-zinc-700">
+      <h3 className="mt-6 text-sm font-semibold text-white">Why this risk</h3>
+      <ul className="mt-3 space-y-2 text-sm text-zinc-200">
         {profile.risk.factors.map((factor) => (
           <li key={factor.key} className="flex items-center justify-between gap-3">
             <span>{factor.label}</span>
@@ -270,11 +270,11 @@ function ProfileCard({
         ))}
       </ul>
 
-      <h3 className="mt-6 text-sm font-semibold text-zinc-900">Authors</h3>
+      <h3 className="mt-6 text-sm font-semibold text-white">Authors</h3>
       {profile.contributors.length === 0 ? (
         <p className={`mt-2 ${muted}`}>No commit authors yet</p>
       ) : (
-        <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+        <ul className="mt-2 space-y-1 text-sm text-zinc-200">
           {profile.contributors.map((author) => (
             <li key={author.email}>
               {author.name} <span className={muted}>· {author.commits}</span>
@@ -283,7 +283,7 @@ function ProfileCard({
         </ul>
       )}
 
-      <h3 className="mt-6 text-sm font-semibold text-zinc-900">Related commits</h3>
+      <h3 className="mt-6 text-sm font-semibold text-white">Related commits</h3>
       {profile.relatedCommits.length === 0 ? (
         <p className={`mt-2 ${muted}`}>None yet</p>
       ) : (
@@ -291,7 +291,7 @@ function ProfileCard({
           {profile.relatedCommits.map((commit) => (
             <li key={commit.sha}>
               <Link
-                className="text-indigo-600 hover:text-indigo-500"
+                className="text-brand hover:text-brand-2"
                 to={repositoryHistoryPath(workspaceId, repositoryId, { commit: commit.sha })}
               >
                 {commitSubject(commit.message)}
@@ -306,8 +306,8 @@ function ProfileCard({
 
       {profile.versions.length > 0 ? (
         <>
-          <h3 className="mt-6 text-sm font-semibold text-zinc-900">Symbol versions</h3>
-          <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+          <h3 className="mt-6 text-sm font-semibold text-white">Symbol versions</h3>
+          <ul className="mt-2 space-y-1 text-sm text-zinc-200">
             {profile.versions.map((version) => (
               <li key={`${version.revision}-${version.changeType}-${version.loc}`}>
                 {formatChange(version.changeType)} · {shortRevision(version.revision)} · complexity {version.complexity}
@@ -324,7 +324,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-wide text-zinc-400">{label}</dt>
-      <dd className="mt-1 text-sm text-zinc-800">{value}</dd>
+      <dd className="mt-1 text-sm text-zinc-100">{value}</dd>
     </div>
   );
 }
@@ -332,10 +332,10 @@ function Fact({ label, value }: { label: string; value: string }) {
 function RiskBadge({ level, score }: { level: string; score: number }) {
   const tone =
     level === 'CRITICAL' || level === 'HIGH'
-      ? 'border-rose-200 bg-rose-50 text-rose-800'
+      ? 'border-rose-400/30 bg-rose-500/10 text-rose-200'
       : level === 'MEDIUM'
-        ? 'border-amber-200 bg-amber-50 text-amber-900'
-        : 'border-zinc-200 bg-zinc-50 text-zinc-700';
+        ? 'border-amber-400/30 bg-amber-500/10 text-amber-900'
+        : 'border-white/10 bg-white/5 text-zinc-200';
   return (
     <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${tone}`}>
       {formatRiskLevel(level)} · {score}
