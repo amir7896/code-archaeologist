@@ -18,7 +18,7 @@ datasource db {
 
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("10-github")
+  phase     String   @default("11-harden")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")

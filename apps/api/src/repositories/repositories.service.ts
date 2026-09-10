@@ -13,6 +13,7 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { type RequestUser } from '../auth/auth.types';
 import { ApiErrors } from '../common/api-exception';
+import { assertWorkspaceSyncQuota, dayAgo } from '../common/workspace-quota';
 import {
   type PaginationQueryDto,
   paginationMeta,
@@ -117,6 +118,7 @@ export class RepositoriesService {
     const parsed = parseRepositoryUrl(input.url);
     assertSourceMatchesProvider(input.source, parsed.provider);
     await this.assertUniqueUrl(workspaceId, parsed.compareKey);
+    await this.assertSyncQuota(workspaceId);
 
     const settings = repositorySettingsFromInput({
       includePullRequests: input.includePullRequests,
@@ -301,6 +303,7 @@ export class RepositoriesService {
     if (repository.status === 'SYNCING') {
       throw ApiErrors.conflict('REPOSITORY_SYNCING', 'This repository is already syncing');
     }
+    await this.assertSyncQuota(workspaceId);
     if (input.revision) {
       await this.prisma.repository.update({
         where: { id: repositoryId },
@@ -375,6 +378,20 @@ export class RepositoriesService {
         rotatedAt: new Date(),
       },
     });
+  }
+
+  private async assertSyncQuota(workspaceId: string): Promise<void> {
+    await assertWorkspaceSyncQuota(
+      () =>
+        this.prisma.analysisRun.count({
+          where: {
+            type: 'INGESTION',
+            createdAt: { gte: dayAgo() },
+            repository: { workspaceId },
+          },
+        }),
+      this.env.WORKSPACE_SYNC_DAILY_LIMIT,
+    );
   }
 
   private async requireWorkspace(workspaceId: string) {

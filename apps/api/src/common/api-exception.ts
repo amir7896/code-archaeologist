@@ -24,4 +24,6 @@ export const ApiErrors = {
   conflict: (code: string, message: string) => new ApiException(HttpStatus.CONFLICT, code, message),
   badRequest: (code: string, message: string) =>
     new ApiException(HttpStatus.BAD_REQUEST, code, message),
+  tooManyRequests: (code: string, message: string) =>
+    new ApiException(HttpStatus.TOO_MANY_REQUESTS, code, message),
 };

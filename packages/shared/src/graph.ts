@@ -105,14 +105,19 @@ export function findCycles(links: DirectedLink[]): string[][] {
   return cycles;
 }
 
+/** Hard stop so a hub file cannot walk the whole repository. */
+export const GRAPH_WALK_CAP = 400;
+
 /** Breadth-first walk. `start` is omitted from the result. */
 export function walkNeighbors(
   links: DirectedLink[],
   start: string,
   direction: 'out' | 'in',
   maxDepth: number,
+  maxNodes = GRAPH_WALK_CAP,
 ): Array<{ id: string; depth: number }> {
   const depthLimit = Math.max(1, maxDepth);
+  const nodeLimit = Math.max(1, maxNodes);
   const adjacency = new Map<string, string[]>();
   for (const { from, to } of links) {
     const origin = direction === 'out' ? from : to;
@@ -141,6 +146,9 @@ export function walkNeighbors(
       seen.add(next);
       const hop = { id: next, depth: current.depth + 1 };
       found.push(hop);
+      if (found.length >= nodeLimit) {
+        return found;
+      }
       queue.push(hop);
     }
   }

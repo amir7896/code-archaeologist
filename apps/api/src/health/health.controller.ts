@@ -1,10 +1,11 @@
 import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { LivenessDocs, ReadinessDocs } from './swagger/health.swagger';
+import { LivenessDocs, MetricsDocs, ReadinessDocs } from './swagger/health.swagger';
 import { APP_VERSION } from '@code-archaeologist/shared';
+import { snapshotMetrics } from '../common/metrics';
 import { PrismaService } from '../database/prisma.service';
 import { RedisService } from '../database/redis.service';
-import { HealthResponseDto } from './dto/health-response.dto';
+import { HealthResponseDto, MetricsResponseDto } from './dto/health-response.dto';
 
 @ApiTags('health')
 @Controller()
@@ -22,6 +23,12 @@ export class HealthController {
       service: 'api',
       version: APP_VERSION,
     };
+  }
+
+  @Get('metrics')
+  @MetricsDocs()
+  metrics(): MetricsResponseDto {
+    return snapshotMetrics();
   }
 
   @Get('health/ready')

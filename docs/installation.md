@@ -36,6 +36,7 @@ Pull a model after the container is healthy, for example `llama3.1:8b`. Phase 0 
 
 - API liveness: `GET /api/v1/health`
 - API readiness: `GET /api/v1/health/ready` (PostgreSQL + Redis)
+- API metrics: `GET /api/v1/metrics` (in-memory request counts)
 
 ## Notes
 

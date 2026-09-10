@@ -3,6 +3,7 @@ import { OllamaProvider } from '@code-archaeologist/ai';
 import { investigationConfidenceLabel, type AppEnv } from '@code-archaeologist/shared';
 import { AuditService } from '../audit/audit.service';
 import { ApiErrors } from '../common/api-exception';
+import { assertWorkspaceAskQuota, dayAgo } from '../common/workspace-quota';
 import { paginationMeta, paginationSkip, resolvePagination } from '../common/pagination.dto';
 import { APP_ENV } from '../config/env.service';
 import { PrismaService } from '../database/prisma.service';
@@ -39,6 +40,13 @@ export class InvestigationsService {
     body: CreateInvestigationDto,
   ): Promise<InvestigationResponseDto> {
     await this.requireRepository(workspaceId, repositoryId);
+    await assertWorkspaceAskQuota(
+      () =>
+        this.prisma.investigation.count({
+          where: { createdAt: { gte: dayAgo() }, repository: { workspaceId } },
+        }),
+      this.env.WORKSPACE_ASK_DAILY_LIMIT,
+    );
     if (body.fileId) {
       const file = await this.prisma.repoFile.findFirst({
         where: { id: body.fileId, repositoryId },

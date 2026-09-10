@@ -4,6 +4,13 @@ export const healthResponseExample = {
   version: '0.1.0',
 };
 
+export const metricsResponseExample = {
+  requests: 12,
+  errors: 0,
+  status: { '200': 12 },
+  uptimeSeconds: 80,
+};
+
 export const readyResponseExample = {
   status: 'ok',
   service: 'api',

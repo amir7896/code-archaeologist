@@ -6,7 +6,7 @@ Thank you for contributing to Code Archaeologist.
 
 Follow the project scope. Do not start with the chatbot. The graph and evidence engine are the product; the AI layer is an interface over that foundation.
 
-Current work is **CLI/SDK** (PDF checklist 12). Next is hardening. The CLI talks to the self-hosted API; it does not invent a second analysis path. GitLab stays later on the same integration contract.
+Current work is **hardening** (PDF checklist 13). Docs and the v1 release come next. The CLI talks to the self-hosted API; it does not invent a second analysis path. GitLab stays later on the same integration contract.
 
 ## Setup
 
@@ -26,6 +26,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+./scripts/security-check.sh
 ```
 
 ## Pull requests

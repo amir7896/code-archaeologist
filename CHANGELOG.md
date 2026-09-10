@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Hardening: refresh throttle, workspace daily sync/Ask quotas, graph walk cap, Git clone size limit, audit log retention, request ids, in-memory `/metrics`, secret redaction in API errors, Postgres backup/restore scripts, k6 health load script, and a critical-level `pnpm audit` in CI.
 - CLI and typed SDK: `code-archaeologist` commands (init, analyze, status, ask, impact, hotspots, report, doctor), JSON/exit codes for CI, secret-safe config, and an example GitHub Action. The SDK covers auth, pagination, repository/investigation clients, and webhook signature verification.
 - GitHub integration: workspace connection (token or optional OAuth), issue/PR/review ingest, verified webhooks with replay protection, and scored links from threads to commits, files, and symbols.
 - React explorer/graph: folder tree in Code, source line highlighting, and Architecture filters (grouping, connected/cycles, depth) for large repositories.

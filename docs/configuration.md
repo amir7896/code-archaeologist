@@ -28,6 +28,10 @@ Copy `.env.example` to `.env`. The API and worker validate environment variables
 | `GITHUB_CLIENT_ID` | unset | Optional GitHub OAuth app client id |
 | `GITHUB_CLIENT_SECRET` | unset | Optional GitHub OAuth app client secret |
 | `GITHUB_OAUTH_CALLBACK` | unset | Frontend callback, e.g. `http://localhost:5173/oauth/github/callback` |
+| `AUDIT_RETENTION_DAYS` | `90` | Worker deletes older audit rows |
+| `GIT_CLONE_MAX_MB` | `512` | Reject and delete oversized Git mirrors |
+| `WORKSPACE_SYNC_DAILY_LIMIT` | `40` | Ingestion runs per workspace per 24 hours |
+| `WORKSPACE_ASK_DAILY_LIMIT` | `80` | Ask questions per workspace per 24 hours |
 
 CLI/SDK (client only; not read by the API process):
 
@@ -39,4 +43,4 @@ CLI/SDK (client only; not read by the API process):
 | `CA_EMAIL` / `CA_PASSWORD` | unset | `init` login in CI |
 | `CA_CONFIG` | `~/.config/code-archaeologist/config.json` | User config path |
 
-A personal access token in Settings always works. Do not log tokens, webhook secrets, or repository credentials.
+A personal access token in Settings always works. Do not log tokens, webhook secrets, or repository credentials. Back up `CREDENTIALS_ENCRYPTION_KEY` with the database; see [operations](operations.md).

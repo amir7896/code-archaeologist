@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findCycles, moduleKey, parseModuleGrouping, walkNeighbors } from './graph';
+import { GRAPH_WALK_CAP, findCycles, moduleKey, parseModuleGrouping, walkNeighbors } from './graph';
 
 test('moduleKey uses the first folder, or two levels under src/app', () => {
   assert.equal(moduleKey('alembic/env.py'), 'alembic');
@@ -29,6 +29,17 @@ test('findCycles returns the A→B→C→A loop and ignores a line', () => {
 
 test('findCycles treats a self-loop as a cycle', () => {
   assert.deepEqual(findCycles([{ from: 'a', to: 'a' }]), [['a']]);
+});
+
+test('walkNeighbors stops at the node cap on a dense graph', () => {
+  const links = Array.from({ length: 2_000 }, (_, index) => ({
+    from: 'hub',
+    to: `n${index}`,
+  }));
+  const started = Date.now();
+  const found = walkNeighbors(links, 'hub', 'out', 3);
+  assert.equal(found.length, GRAPH_WALK_CAP);
+  assert.ok(Date.now() - started < 200);
 });
 
 test('walkNeighbors follows outgoing edges up to the depth cap', () => {

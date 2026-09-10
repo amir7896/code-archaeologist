@@ -9,6 +9,7 @@ export * from './impact';
 export * from './investigation';
 export * from './load-env';
 export * from './queues';
+export * from './redact';
 export * from './repository-settings';
 export * from './resolve-import';
 export * from './risk';

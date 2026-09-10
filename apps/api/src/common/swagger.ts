@@ -16,7 +16,7 @@ export function setupSwagger(app: INestApplication): void {
     )
     .setVersion(APP_VERSION)
     .addBearerAuth()
-    .addTag('health', 'Liveness and readiness')
+    .addTag('health', 'Liveness, readiness, and process metrics')
     .addTag('auth', 'Email/password sessions')
     .addTag('users', 'Current user')
     .addTag('workspaces', 'Workspaces, members, and audit')

@@ -21,7 +21,7 @@ describe('InvestigationsService', () => {
           createdAt: new Date('2026-09-10'),
           updatedAt: new Date('2026-09-10'),
         }),
-        count: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
         findMany: jest.fn(),
         findFirst: jest.fn().mockResolvedValue({
           id: 'inv-1',
@@ -46,7 +46,11 @@ describe('InvestigationsService', () => {
     const service = new InvestigationsService(
       prisma as never,
       audit as never,
-      { OLLAMA_BASE_URL: 'http://127.0.0.1:9', OLLAMA_MODEL: 'llama3.1:8b' } as never,
+      {
+        OLLAMA_BASE_URL: 'http://127.0.0.1:9',
+        OLLAMA_MODEL: 'llama3.1:8b',
+        WORKSPACE_ASK_DAILY_LIMIT: 80,
+      } as never,
     );
     return { service, prisma, audit };
   }
