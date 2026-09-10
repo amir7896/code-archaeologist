@@ -103,6 +103,18 @@ export class RegisterDto {
 Unknown fields are rejected. Failed validation returns `400` with `code: VALIDATION_ERROR`.
 
 
+## CLI
+
+After `pnpm --filter @code-archaeologist/shared --filter @code-archaeologist/sdk --filter @code-archaeologist/cli build`:
+
+```bash
+pnpm ca doctor --json
+pnpm ca init --email you@example.com --workspace-name Demo --url https://github.com/org/repo.git
+pnpm ca analyze --json
+```
+
+See [CLI and SDK](cli.md). Tokens stay out of `.code-archaeologist.json`.
+
 ## Common commands
 
 ```bash

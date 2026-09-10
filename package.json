@@ -20,7 +20,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm --filter @code-archaeologist/shared --filter @code-archaeologist/parser --filter @code-archaeologist/git --filter @code-archaeologist/ai --filter @code-archaeologist/core --filter @code-archaeologist/sdk --filter @code-archaeologist/cli build && pnpm --filter @code-archaeologist/api --filter @code-archaeologist/worker --filter @code-archaeologist/web typecheck",
-    "pretest": "pnpm --filter @code-archaeologist/shared --filter @code-archaeologist/core --filter @code-archaeologist/parser --filter @code-archaeologist/git --filter @code-archaeologist/ai build",
+    "pretest": "pnpm --filter @code-archaeologist/shared --filter @code-archaeologist/core --filter @code-archaeologist/parser --filter @code-archaeologist/git --filter @code-archaeologist/ai --filter @code-archaeologist/sdk build",
     "test": "pnpm --recursive --if-present test",
     "db:generate": "pnpm --filter @code-archaeologist/core db:generate",
     "db:migrate": "pnpm --filter @code-archaeologist/core db:migrate",
@@ -29,7 +29,9 @@
     "docker:up": "docker compose up -d postgres redis",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
-    "clean": "pnpm --recursive exec rm -rf dist coverage .turbo"
+    "clean": "pnpm --recursive exec rm -rf dist coverage .turbo",
+    "ca": "node ./packages/cli/dist/index.js",
+    "code-archaeologist": "node ./packages/cli/dist/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

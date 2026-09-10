@@ -19,3 +19,4 @@ docker-data
 .pnpm-store
 packages/core/generated
 .data
+.code-archaeologist.json

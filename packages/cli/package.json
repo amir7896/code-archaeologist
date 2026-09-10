@@ -11,7 +11,8 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test src/argv.test.ts src/output.test.ts src/git-remote.test.ts src/run.test.ts"
   },
   "dependencies": {
     "@code-archaeologist/sdk": "workspace:*",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.17.19",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
 }

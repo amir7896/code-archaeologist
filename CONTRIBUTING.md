@@ -6,7 +6,7 @@ Thank you for contributing to Code Archaeologist.
 
 Follow the project scope. Do not start with the chatbot. The graph and evidence engine are the product; the AI layer is an interface over that foundation.
 
-Current work is **GitHub** (PDF checklist 11). Next is CLI/SDK. Connect a workspace token or optional OAuth app; issues, PRs, reviews, and verified webhooks link to indexed commits and files. GitLab stays later on the same contract.
+Current work is **CLI/SDK** (PDF checklist 12). Next is hardening. The CLI talks to the self-hosted API; it does not invent a second analysis path. GitLab stays later on the same integration contract.
 
 ## Setup
 

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi, integrationApi, repositoryApi, workspaceApi, type AuthSession } from './api';
+import { authApi, integrationApi, repositoryApi, sdkClient, workspaceApi, type AuthSession } from './api';
 import { sessionCleared, sessionEstablished } from './store/auth-slice';
 import { useAppDispatch } from './store/hooks';
 import { type AppDispatch } from './store/store';
@@ -586,6 +586,13 @@ export function useAiStatusQuery(workspaceId: string, repositoryId: string) {
     queryKey: queryKeys.aiStatus(workspaceId, repositoryId),
     queryFn: () => repositoryApi.aiStatus(workspaceId, repositoryId),
     enabled: Boolean(workspaceId && repositoryId),
+  });
+}
+
+export function useSdkStatusQuery() {
+  return useQuery({
+    queryKey: ['sdk', 'health'] as const,
+    queryFn: () => sdkClient.health.live(),
   });
 }
 
