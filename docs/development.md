@@ -116,7 +116,7 @@ pnpm db:migrate:deploy   # apply committed migrations
 
 ## Ollama (optional)
 
-Ask works without a local model: it returns cited indexed evidence. When Ollama is up, it may write the explanation. It cannot invent citations or change the repository. GitHub OAuth is later.
+Ask works without a local model: it returns cited indexed evidence. When Ollama is up, it may write the explanation. It cannot invent citations or change the repository. GitHub issues and pull requests are included when the workspace is connected and those items were synced.
 
 ```bash
 docker compose --profile ai up -d ollama

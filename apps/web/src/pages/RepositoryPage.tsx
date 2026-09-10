@@ -16,6 +16,7 @@ import { workspacePath, workspaceRepositoriesPath } from '../lib/paths';
 import {
   useDeleteRepositoryMutation,
   useRepositoryQuery,
+  useRepositoryThreadsQuery,
   useSyncRepositoryMutation,
   useUpdateRepositoryMutation,
   useWorkspaceQuery,
@@ -148,8 +149,48 @@ export function RepositoryOverviewPage() {
           <RepositoryStats repository={repository} />
           <RecentRuns runs={repository.analysisRuns ?? (run ? [run] : [])} />
         </div>
+        <GithubThreads workspaceId={repo.workspaceId} repositoryId={repository.id} />
       </div>
     </PageFrame>
+  );
+}
+
+function GithubThreads({ workspaceId, repositoryId }: { workspaceId: string; repositoryId: string }) {
+  const query = useRepositoryThreadsQuery(workspaceId, repositoryId);
+  const items = query.data?.items ?? [];
+  return (
+    <section className={PANEL}>
+      <h2 className="text-[15px] font-semibold text-white">Issues & pull requests</h2>
+      {items.length === 0 ? (
+        <p className={`mt-6 ${muted}`}>
+          Connect GitHub in Settings and include issues when you add a repository. Indexed items appear here
+          with links to files and commits.
+        </p>
+      ) : (
+        <ul className="mt-5 space-y-3">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-start justify-between gap-3 text-sm">
+              <div>
+                <p className="font-medium text-white">
+                  {item.kind === 'PULL_REQUEST' ? 'PR' : 'Issue'} #{item.number ?? '—'} · {item.title}
+                </p>
+                <p className={`mt-1 ${muted}`}>
+                  {item.state}
+                  {item.authorLogin ? ` · @${item.authorLogin}` : ''}
+                  {item.linkCount ? ` · ${item.linkCount} code links` : ''}
+                  {item.reviewCount ? ` · ${item.reviewCount} reviews` : ''}
+                </p>
+              </div>
+              {item.url ? (
+                <a className="shrink-0 text-brand hover:text-brand-2" href={item.url} target="_blank" rel="noreferrer">
+                  Open
+                </a>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

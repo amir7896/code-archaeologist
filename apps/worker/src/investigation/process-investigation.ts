@@ -178,7 +178,7 @@ async function collectFacts(
   const facts: InvestigationFact[] = [];
   const tokens = input.tokens.slice(0, 4);
   const wantsOverview = input.intent === 'overview' || input.intent === 'general';
-  const [files, symbols, commits, risks] = await Promise.all([
+  const [files, symbols, commits, risks, threads] = await Promise.all([
     prisma.repoFile.findMany({
       where: {
         repositoryId: input.repositoryId,
@@ -223,6 +223,22 @@ async function collectFacts(
       orderBy: { score: 'desc' },
       take: 6,
     }),
+    prisma.repositoryThread.findMany({
+      where: {
+        repositoryId: input.repositoryId,
+        ...(tokens.length > 0
+          ? {
+              OR: tokens.flatMap((token) => [
+                { title: { contains: token, mode: 'insensitive' as const } },
+                { body: { contains: token, mode: 'insensitive' as const } },
+              ]),
+            }
+          : {}),
+      },
+      select: { id: true, kind: true, number: true, title: true, state: true, url: true },
+      orderBy: { providerUpdatedAt: 'desc' },
+      take: wantsOverview ? 4 : 6,
+    }),
   ]);
 
   if (files.length === 0 && !input.fileId && (tokens.length === 0 || wantsOverview)) {
@@ -260,6 +276,16 @@ async function collectFacts(
       fileId: symbol.fileId,
       symbolId: symbol.id,
       path: symbol.file.path,
+    });
+  }
+  for (const thread of threads) {
+    const label = thread.kind === 'PULL_REQUEST' ? 'PR' : 'Issue';
+    facts.push({
+      sourceType: 'THREAD',
+      sourceId: thread.id,
+      citation: `${label} #${thread.number ?? '?'}`,
+      excerpt: `${thread.title} · ${thread.state}${thread.url ? ` · ${thread.url}` : ''}`,
+      relevance: tokens.length > 0 ? 0.72 : 0.5,
     });
   }
   for (const commit of commits) {

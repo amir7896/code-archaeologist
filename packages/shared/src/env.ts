@@ -28,6 +28,9 @@ export const envSchema = z.object({
     .min(32)
     .default('local-dev-credentials-secret-change-me-32'),
   REPOSITORY_WORK_DIR: z.string().min(1).optional(),
+  GITHUB_CLIENT_ID: z.string().optional().default(''),
+  GITHUB_CLIENT_SECRET: z.string().optional().default(''),
+  GITHUB_OAUTH_CALLBACK: z.string().optional().default(''),
 });
 
 type ParsedEnv = z.infer<typeof envSchema>;

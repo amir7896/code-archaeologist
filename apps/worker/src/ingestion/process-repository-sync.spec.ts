@@ -13,6 +13,12 @@ describe('processRepositorySync', () => {
     const computeDna = jest.fn().mockResolvedValue(undefined);
     const linkEvidence = jest.fn().mockResolvedValue(undefined);
     const fetchThreads = jest.fn().mockResolvedValue({ issueCount: 2, pullRequestCount: 1 });
+    const syncGithub = jest.fn().mockResolvedValue({
+      issueCount: 2,
+      pullRequestCount: 1,
+      reviewCount: 0,
+      linkCount: 0,
+    });
     const updates: unknown[] = [];
     const prisma = {
       analysisRun: {
@@ -32,6 +38,7 @@ describe('processRepositorySync', () => {
           ],
           repository: {
             id: 'repo-1',
+            workspaceId: 'ws-1',
             url: 'https://github.com/acme/platform.git',
             provider: 'GITHUB',
             defaultBranch: null,
@@ -63,6 +70,7 @@ describe('processRepositorySync', () => {
         computeDna,
         linkEvidence,
         fetchThreads,
+        syncGithub,
       },
     );
 
@@ -107,13 +115,14 @@ describe('processRepositorySync', () => {
         gitDir: '/tmp/ca-test/mirrors/repo-1',
       }),
     );
-    expect(fetchThreads).toHaveBeenCalledWith(
+    expect(syncGithub).toHaveBeenCalledWith(
       expect.objectContaining({
         repositoryId: 'repo-1',
+        workspaceId: 'ws-1',
         url: 'https://github.com/acme/platform.git',
-        provider: 'GITHUB',
       }),
     );
+    expect(fetchThreads).not.toHaveBeenCalled();
     expect(prisma.repository.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: 'READY', currentRevision: 'abc123' }),
@@ -166,6 +175,7 @@ describe('processRepositorySync', () => {
           ],
           repository: {
             id: 'repo-1',
+            workspaceId: 'ws-1',
             url: 'https://github.com/acme/platform.git',
             provider: 'GITHUB',
             defaultBranch: 'main',
@@ -199,6 +209,7 @@ describe('processRepositorySync', () => {
         computeDna: jest.fn().mockResolvedValue(undefined),
         linkEvidence: jest.fn().mockResolvedValue(undefined),
         fetchThreads,
+        syncGithub: jest.fn(),
       },
     );
 

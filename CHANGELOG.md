@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- GitHub integration: workspace connection (token or optional OAuth), issue/PR/review ingest, verified webhooks with replay protection, and scored links from threads to commits, files, and symbols.
 - React explorer/graph: folder tree in Code, source line highlighting, and Architecture filters (grouping, connected/cycles, depth) for large repositories.
 - Ollama/RAG investigation: cited Ask answers from indexed code, history, and architecture. A local model is optional.
 - Ask retrieval prefers subject tokens over filler (`introduced`), includes commit authors, and answers repository-overview questions from indexed repo facts.

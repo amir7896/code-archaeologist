@@ -38,6 +38,17 @@ vi.mock('../queries', () => ({
     },
   }),
   useAiStatusQuery: () => ({ data: { available: true, provider: 'ollama', model: 'llama3.1:8b' } }),
+  useGithubIntegrationQuery: () => ({
+    data: {
+      connected: false,
+      oauthAvailable: false,
+      webhookConfigured: false,
+      webhookUrl: 'http://localhost:3000/api/v1/webhooks/github/ws-1',
+    },
+  }),
+  useConnectGithubMutation: () => ({ mutateAsync: vi.fn(), data: null, error: null, isPending: false }),
+  useSyncGithubMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useDisconnectGithubMutation: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 function renderSettings(search = '') {
@@ -53,7 +64,7 @@ function renderSettings(search = '') {
 }
 
 describe('WorkspaceSettingsPage', () => {
-  it('matches the settings layout without inventing hosted AI or incremental sync', () => {
+  it('shows only the AI provider card on the default tab', () => {
     renderSettings();
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy();
     expect(
@@ -64,17 +75,48 @@ describe('WorkspaceSettingsPage', () => {
     expect(screen.getByText('Active')).toBeTruthy();
     expect(screen.getByText('Hosted provider (opt-in)')).toBeTruthy();
     expect(screen.getByText('Disabled')).toBeTruthy();
+    expect(screen.queryByText('Ignore vendor/generated files')).toBeNull();
+    expect(screen.queryByText('Webhooks')).toBeNull();
+    expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Archive Workspace' })).toBeNull();
+  });
+
+  it('opens the analysis rules tab without claiming incremental sync', () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Analysis Rules' }));
     expect(screen.getByText('Ignore vendor/generated files')).toBeTruthy();
     expect(screen.getByText('Incremental sync')).toBeTruthy();
     expect(screen.getByText(/Every analysis run is Full/)).toBeTruthy();
+    expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
+  });
+
+  it('opens the integrations tab with GitHub connect controls', () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Integrations' }));
+    expect(screen.getByRole('heading', { name: 'GitHub' })).toBeTruthy();
     expect(screen.getByText('Webhooks')).toBeTruthy();
-    expect(screen.getByText('Not available')).toBeTruthy();
+    expect(screen.getByText('Not configured')).toBeTruthy();
+    expect(screen.getByLabelText('GitHub personal access token')).toBeTruthy();
+    expect(screen.queryByText('Ollama (local)')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Archive Workspace' })).toBeNull();
+  });
+
+  it('opens the retention tab with danger-zone actions', () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Retention' }));
     expect(screen.getByRole('button', { name: 'Archive Workspace' })).toBeTruthy();
+    expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();
   });
 
   it('opens the members tab', () => {
     renderSettings();
     fireEvent.click(screen.getByRole('button', { name: 'Members' }));
     expect(screen.getByLabelText('Email')).toBeTruthy();
+  });
+
+  it('deep-links to the integrations tab', () => {
+    renderSettings('?tab=integrations');
+    expect(screen.getByLabelText('GitHub personal access token')).toBeTruthy();
+    expect(screen.queryByText('Ollama (local)')).toBeNull();
   });
 });

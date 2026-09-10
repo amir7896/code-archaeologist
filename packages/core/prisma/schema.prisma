@@ -18,7 +18,7 @@ datasource db {
 
 model SchemaMeta {
   id        String   @id @default("code-archaeologist")
-  phase     String   @default("9-ollama-rag")
+  phase     String   @default("10-github")
   appliedAt DateTime @default(now()) @map("applied_at")
 
   @@map("schema_meta")
@@ -167,6 +167,30 @@ enum EvidenceMethod {
   FILE_RENAMED
 }
 
+enum IntegrationProvider {
+  GITHUB
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  DISCONNECTED
+}
+
+enum WebhookEventStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+enum ThreadLinkMethod {
+  PR_COMMIT
+  PR_FILE
+  REVIEW_PATH
+  TEXT_PATH
+  TEXT_SYMBOL
+}
+
 enum AnalysisTaskStatus {
   PENDING
   RUNNING
@@ -207,6 +231,7 @@ model Workspace {
   members      WorkspaceMember[]
   auditLogs    AuditLog[]
   repositories Repository[]
+  integrations Integration[]
 
   @@index([ownerId])
   @@map("workspaces")
@@ -329,10 +354,17 @@ model RepositoryThread {
   url                String?
   mergedAt           DateTime?            @map("merged_at")
   providerCreatedAt  DateTime?            @map("provider_created_at")
+  providerUpdatedAt  DateTime?            @map("provider_updated_at")
+  mergeCommitSha     String?              @map("merge_commit_sha")
+  headSha            String?              @map("head_sha")
   createdAt          DateTime             @default(now()) @map("created_at")
   updatedAt          DateTime             @updatedAt @map("updated_at")
 
-  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  repository Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  reviews    ThreadReview[]
+  comments   ThreadComment[]
+  commits    ThreadCommit[]
+  links      ThreadLink[]
 
   @@unique([repositoryId, kind, externalId])
   @@index([repositoryId, kind])
@@ -431,6 +463,7 @@ model Commit {
   headOfBranches Branch[]       @relation("BranchHead")
   symbolVersions SymbolVersion[]
   evidence       Evidence[]
+  threadCommits  ThreadCommit[]
 
   @@unique([repositoryId, sha])
   @@index([repositoryId, committedAt])
@@ -726,6 +759,112 @@ model InvestigationMessage {
   @@map("investigation_messages")
 }
 
-// Planned later:
-// issues, pull_requests, reviews,
-// documents, document_chunks, integrations, webhook_events
+model Integration {
+  id                 String              @id @default(uuid()) @db.Uuid
+  workspaceId        String              @map("workspace_id") @db.Uuid
+  provider           IntegrationProvider
+  status             IntegrationStatus   @default(ACTIVE)
+  accountLogin       String?             @map("account_login")
+  accountId          String?             @map("account_id")
+  encryptedSecretRef String              @unique @map("encrypted_secret_ref")
+  encryptedPayload   String              @map("encrypted_payload")
+  webhookSecretEnc   String?             @map("webhook_secret_enc")
+  lastSyncedAt       DateTime?           @map("last_synced_at")
+  syncRequestedAt    DateTime?           @map("sync_requested_at")
+  lastError          String?             @map("last_error")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  webhookEvents WebhookEvent[]
+
+  @@unique([workspaceId, provider])
+  @@index([status, syncRequestedAt])
+  @@map("integrations")
+}
+
+model WebhookEvent {
+  id              String             @id @default(uuid()) @db.Uuid
+  integrationId   String             @map("integration_id") @db.Uuid
+  providerEventId String             @map("provider_event_id")
+  type            String
+  payloadHash     String             @map("payload_hash")
+  status          WebhookEventStatus @default(RECEIVED)
+  action          String?
+  repositoryId    String?            @map("repository_id") @db.Uuid
+  externalNumber  Int?               @map("external_number")
+  error           String?
+  receivedAt      DateTime           @default(now()) @map("received_at")
+  processedAt     DateTime?          @map("processed_at")
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, providerEventId])
+  @@index([status, receivedAt])
+  @@map("webhook_events")
+}
+
+model ThreadReview {
+  id          String    @id @default(uuid()) @db.Uuid
+  threadId    String    @map("thread_id") @db.Uuid
+  externalId  String    @map("external_id")
+  authorLogin String?   @map("author_login")
+  state       String
+  body        String    @default("")
+  submittedAt DateTime? @map("submitted_at")
+
+  thread RepositoryThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, externalId])
+  @@map("thread_reviews")
+}
+
+model ThreadComment {
+  id          String    @id @default(uuid()) @db.Uuid
+  threadId    String    @map("thread_id") @db.Uuid
+  externalId  String    @map("external_id")
+  authorLogin String?   @map("author_login")
+  body        String    @default("")
+  path        String?
+  line        Int?
+  submittedAt DateTime? @map("submitted_at")
+
+  thread RepositoryThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, externalId])
+  @@index([threadId, path])
+  @@map("thread_comments")
+}
+
+model ThreadCommit {
+  threadId String  @map("thread_id") @db.Uuid
+  sha      String
+  commitId String? @map("commit_id") @db.Uuid
+
+  thread RepositoryThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  commit Commit?          @relation(fields: [commitId], references: [id], onDelete: SetNull)
+
+  @@id([threadId, sha])
+  @@index([commitId])
+  @@map("thread_commits")
+}
+
+model ThreadLink {
+  id         String           @id @default(uuid()) @db.Uuid
+  threadId   String           @map("thread_id") @db.Uuid
+  fileId     String?          @map("file_id") @db.Uuid
+  symbolId   String?          @map("symbol_id") @db.Uuid
+  commitId   String?          @map("commit_id") @db.Uuid
+  path       String?
+  method     ThreadLinkMethod
+  confidence Float
+  excerpt    String?
+
+  thread RepositoryThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, method])
+  @@index([fileId])
+  @@map("thread_links")
+}
+
+// Planned later: documents, document_chunks, GitLab/Bitbucket adapters on the same integration contract.

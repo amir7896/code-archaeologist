@@ -3,15 +3,18 @@ import { Queue, Worker, type Job } from 'bullmq';
 import Redis from 'ioredis';
 import { PrismaClient } from '@code-archaeologist/core';
 import {
+  INTEGRATION_SYNC_JOB,
   INVESTIGATION_JOB,
   QUEUE_NAMES,
   REPOSITORY_SYNC_JOB,
   loadLocalEnv,
   validateEnv,
   type AppEnv,
+  type IntegrationSyncJobData,
   type InvestigationJobData,
   type RepositorySyncJobData,
 } from '@code-archaeologist/shared';
+import { processGithubSync } from './ingestion/process-github-sync';
 import { processRepositorySync } from './ingestion/process-repository-sync';
 import { processInvestigation } from './investigation/process-investigation';
 
@@ -24,8 +27,10 @@ export class WorkerRuntimeService implements OnModuleDestroy {
   private readonly queues: Queue[];
   private readonly syncQueue: Queue<RepositorySyncJobData>;
   private readonly investigationQueue: Queue<InvestigationJobData>;
+  private readonly integrationQueue: Queue<IntegrationSyncJobData>;
   private syncWorker?: Worker<RepositorySyncJobData>;
   private investigationWorker?: Worker<InvestigationJobData>;
+  private integrationWorker?: Worker<IntegrationSyncJobData>;
   private dispatchTimer?: NodeJS.Timeout;
 
   constructor() {
@@ -50,6 +55,9 @@ export class WorkerRuntimeService implements OnModuleDestroy {
     this.investigationQueue = this.queues.find(
       (queue) => queue.name === QUEUE_NAMES.investigation,
     ) as Queue<InvestigationJobData>;
+    this.integrationQueue = this.queues.find(
+      (queue) => queue.name === QUEUE_NAMES.integrationSync,
+    ) as Queue<IntegrationSyncJobData>;
   }
 
   async check(): Promise<{ postgres: boolean; redis: boolean }> {
@@ -81,11 +89,24 @@ export class WorkerRuntimeService implements OnModuleDestroy {
     this.investigationWorker.on('failed', (job, error) => {
       this.logger.warn(`Investigation job ${job?.id ?? 'unknown'} failed: ${error.message}`);
     });
+    this.integrationWorker = new Worker<IntegrationSyncJobData>(
+      QUEUE_NAMES.integrationSync,
+      (job) => this.handleIntegration(job),
+      {
+        connection: { url: this.env.REDIS_URL },
+        concurrency: Math.max(1, Math.min(2, this.env.WORKER_CONCURRENCY)),
+      },
+    );
+    this.integrationWorker.on('failed', (job, error) => {
+      this.logger.warn(`GitHub sync job ${job?.id ?? 'unknown'} failed: ${error.message}`);
+    });
     await this.dispatchQueuedRuns();
     await this.dispatchQueuedInvestigations();
+    await this.dispatchGithubWork();
     let tick = 0;
     this.dispatchTimer = setInterval(() => {
       void this.dispatchQueuedInvestigations();
+      void this.dispatchGithubWork();
       tick += 1;
       if (tick % 4 === 0) {
         void this.dispatchQueuedRuns();
@@ -99,6 +120,7 @@ export class WorkerRuntimeService implements OnModuleDestroy {
     }
     await this.syncWorker?.close();
     await this.investigationWorker?.close();
+    await this.integrationWorker?.close();
     await Promise.all(this.queues.map((queue) => queue.close()));
     await this.redis.quit();
     await this.prisma.$disconnect();
@@ -118,6 +140,64 @@ export class WorkerRuntimeService implements OnModuleDestroy {
       env: this.env,
       logger: this.logger,
     });
+  }
+
+  private async handleIntegration(job: Job<IntegrationSyncJobData>): Promise<void> {
+    await processGithubSync(job.data, {
+      prisma: this.prisma,
+      env: this.env,
+      logger: this.logger,
+    });
+  }
+
+  private async dispatchGithubWork(): Promise<void> {
+    const events = await this.prisma.webhookEvent.findMany({
+      where: { status: 'RECEIVED' },
+      orderBy: { receivedAt: 'asc' },
+      take: 20,
+      include: { integration: { select: { workspaceId: true, status: true } } },
+    });
+    for (const event of events) {
+      if (event.integration.status !== 'ACTIVE') {
+        continue;
+      }
+      await this.integrationQueue.add(
+        INTEGRATION_SYNC_JOB,
+        {
+          workspaceId: event.integration.workspaceId,
+          integrationId: event.integrationId,
+          webhookEventId: event.id,
+        },
+        {
+          jobId: event.id,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2_000 },
+          removeOnComplete: 100,
+          removeOnFail: 100,
+        },
+      );
+    }
+
+    const pending = await this.prisma.integration.findMany({
+      where: { provider: 'GITHUB', status: 'ACTIVE', syncRequestedAt: { not: null } },
+      take: 10,
+    });
+    for (const row of pending) {
+      if (row.lastSyncedAt && row.syncRequestedAt && row.lastSyncedAt >= row.syncRequestedAt) {
+        continue;
+      }
+      await this.integrationQueue.add(
+        INTEGRATION_SYNC_JOB,
+        { workspaceId: row.workspaceId, integrationId: row.id },
+        {
+          jobId: `github-sync-${row.id}-${row.syncRequestedAt?.getTime() ?? 0}`,
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2_000 },
+          removeOnComplete: 50,
+          removeOnFail: 50,
+        },
+      );
+    }
   }
 
   private async dispatchQueuedInvestigations(): Promise<void> {

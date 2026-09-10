@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { EnvModule } from './config/env.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { InvestigationsModule } from './investigations/investigations.module';
 import { RepositoriesModule } from './repositories/repositories.module';
 import { UsersModule } from './users/users.module';
@@ -28,6 +29,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     UsersModule,
     WorkspacesModule,
     RepositoriesModule,
+    IntegrationsModule,
     InvestigationsModule,
     HealthModule,
   ],

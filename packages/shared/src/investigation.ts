@@ -2,7 +2,7 @@
 export const INVESTIGATION_MAX_CONFIDENCE = 0.92;
 export const INVESTIGATION_FACT_LIMIT = 12;
 export const INVESTIGATION_LIMITATIONS =
-  'Limitations: symbol locations come from the current tree; commit-to-symbol links are scored, never certain; issue and pull-request text is stored when you include it at connect time, but answers do not search it yet.';
+  'Limitations: symbol locations come from the current tree; commit-to-symbol links are scored, never certain; issue and pull-request text is included only when GitHub (or another host) was synced.';
 
 export type InvestigationIntent =
   | 'why_exists'
@@ -17,7 +17,7 @@ export type InvestigationIntent =
   | 'general';
 
 export type InvestigationFact = {
-  sourceType: 'FILE' | 'SYMBOL' | 'COMMIT' | 'EVIDENCE' | 'RISK' | 'GRAPH' | 'REPO';
+  sourceType: 'FILE' | 'SYMBOL' | 'COMMIT' | 'EVIDENCE' | 'RISK' | 'GRAPH' | 'REPO' | 'THREAD';
   sourceId: string;
   citation: string;
   excerpt: string;

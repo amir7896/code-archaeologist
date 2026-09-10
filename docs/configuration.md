@@ -25,5 +25,8 @@ Copy `.env.example` to `.env`. The API and worker validate environment variables
 | `JWT_REFRESH_TTL_DAYS` | `7` | Refresh session lifetime in days |
 | `CREDENTIALS_ENCRYPTION_KEY` | local-dev placeholder (32+ chars) | Encrypts repository tokens. Keep this out of the database. |
 | `REPOSITORY_WORK_DIR` | OS temp dir | Isolated clone directory for the worker |
+| `GITHUB_CLIENT_ID` | unset | Optional GitHub OAuth app client id |
+| `GITHUB_CLIENT_SECRET` | unset | Optional GitHub OAuth app client secret |
+| `GITHUB_OAUTH_CALLBACK` | unset | Frontend callback, e.g. `http://localhost:5173/oauth/github/callback` |
 
-GitHub OAuth is later. Do not log secrets.
+A personal access token in Settings always works. Do not log tokens, webhook secrets, or repository credentials.

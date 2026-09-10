@@ -2,6 +2,7 @@ export * from './constants';
 export * from './env';
 export * from './evidence';
 export * from './file-tree';
+export * from './github';
 export * from './graph';
 export * from './health';
 export * from './impact';
