@@ -1,0 +1,62 @@
+# Example workflow: analyze a repository through a self-hosted Code Archaeologist API.
+# Copy into .github/workflows/ and set repository secrets. Do not put tokens in this file.
+#
+# Exit codes from the CLI: 0 ok, 2 usage, 3 analysis/ready failed, 4 auth, 5 not found.
+
+name: Code Archaeologist
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm --filter @code-archaeologist/shared --filter @code-archaeologist/sdk --filter @code-archaeologist/cli build
+
+      - name: Doctor
+        env:
+          CA_API_URL: ${{ secrets.CA_API_URL }}
+          CA_ACCESS_TOKEN: ${{ secrets.CA_ACCESS_TOKEN }}
+          CA_REFRESH_TOKEN: ${{ secrets.CA_REFRESH_TOKEN }}
+          CA_WORKSPACE_ID: ${{ secrets.CA_WORKSPACE_ID }}
+          CA_REPOSITORY_ID: ${{ secrets.CA_REPOSITORY_ID }}
+        run: pnpm ca doctor --json
+
+      - name: Analyze
+        env:
+          CA_API_URL: ${{ secrets.CA_API_URL }}
+          CA_ACCESS_TOKEN: ${{ secrets.CA_ACCESS_TOKEN }}
+          CA_REFRESH_TOKEN: ${{ secrets.CA_REFRESH_TOKEN }}
+          CA_WORKSPACE_ID: ${{ secrets.CA_WORKSPACE_ID }}
+          CA_REPOSITORY_ID: ${{ secrets.CA_REPOSITORY_ID }}
+        run: pnpm ca analyze --json --timeout 600
+
+      - name: Report
+        env:
+          CA_API_URL: ${{ secrets.CA_API_URL }}
+          CA_ACCESS_TOKEN: ${{ secrets.CA_ACCESS_TOKEN }}
+          CA_REFRESH_TOKEN: ${{ secrets.CA_REFRESH_TOKEN }}
+          CA_WORKSPACE_ID: ${{ secrets.CA_WORKSPACE_ID }}
+          CA_REPOSITORY_ID: ${{ secrets.CA_REPOSITORY_ID }}
+        run: pnpm ca report --format json

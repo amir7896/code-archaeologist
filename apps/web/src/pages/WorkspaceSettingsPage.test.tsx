@@ -38,6 +38,7 @@ vi.mock('../queries', () => ({
     },
   }),
   useAiStatusQuery: () => ({ data: { available: true, provider: 'ollama', model: 'llama3.1:8b' } }),
+  useSdkStatusQuery: () => ({ data: { status: 'ok', service: 'api', version: '0.1.0' } }),
   useGithubIntegrationQuery: () => ({
     data: {
       connected: false,
@@ -75,6 +76,8 @@ describe('WorkspaceSettingsPage', () => {
     expect(screen.getByText('Active')).toBeTruthy();
     expect(screen.getByText('Hosted provider (opt-in)')).toBeTruthy();
     expect(screen.getByText('Disabled')).toBeTruthy();
+    expect(screen.getByText('Typed SDK')).toBeTruthy();
+    expect(screen.getByText('API ok')).toBeTruthy();
     expect(screen.queryByText('Ignore vendor/generated files')).toBeNull();
     expect(screen.queryByText('Webhooks')).toBeNull();
     expect(screen.queryByLabelText('GitHub personal access token')).toBeNull();

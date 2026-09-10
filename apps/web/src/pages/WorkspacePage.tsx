@@ -7,10 +7,12 @@ import { useAuth } from '../hooks/useAuth';
 import { errorMessage } from '../lib/errors';
 import { formatActivity, formatProvider, formatRole, formatStatus, formatWhen } from '../lib/format';
 import { homePath, repositoryPath, workspacePath, workspacePeoplePath } from '../lib/paths';
+import { SDK_VERSION } from '@code-archaeologist/sdk';
 import { integrationApi } from '../api';
 import { rememberGithubOAuthWorkspace } from './GithubCallbackPage';
 import {
   useAiStatusQuery,
+  useSdkStatusQuery,
   useAuditLogsQuery,
   useConnectGithubMutation,
   useDeleteWorkspaceMutation,
@@ -305,6 +307,7 @@ export function WorkspaceSettingsPage() {
   const repositories = repositoriesQuery.data?.items ?? [];
   const firstRepoId = repositories[0]?.id ?? '';
   const aiQuery = useAiStatusQuery(workspace.id, firstRepoId);
+  const sdkQuery = useSdkStatusQuery();
   const tab = parseSettingsTab(params.get('tab'));
 
   if (workspace.loading) {
@@ -355,6 +358,7 @@ export function WorkspaceSettingsPage() {
             repositories={repositories}
             ollamaAvailable={aiQuery.data?.available}
             ollamaModel={aiQuery.data?.model}
+            sdkReady={sdkQuery.data?.status === 'ok'}
           />
         )}
       </div>
@@ -368,12 +372,14 @@ function SettingsOverview({
   repositories,
   ollamaAvailable,
   ollamaModel,
+  sdkReady,
 }: {
   tab: SettingsTab;
   workspace: ReturnType<typeof useWorkspaceContext>;
   repositories: Repository[];
   ollamaAvailable: boolean | undefined;
   ollamaModel: string | undefined;
+  sdkReady: boolean;
 }) {
   const navigate = useNavigate();
   const confirm = useConfirm();
@@ -514,6 +520,13 @@ function SettingsOverview({
         <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 bg-white/5">
           <p className="text-sm font-medium text-zinc-300">Hosted provider (opt-in)</p>
           <span className="text-sm text-zinc-500">Disabled</span>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 bg-white/5">
+          <div>
+            <p className="text-sm font-medium text-zinc-300">Typed SDK</p>
+            <p className={`mt-0.5 text-xs ${muted}`}>{SDK_VERSION}</p>
+          </div>
+          <SettingStatus on={sdkReady} onLabel="API ok" offLabel="Checking" />
         </div>
       </div>
       <p className={`mt-3 text-xs ${muted}`}>

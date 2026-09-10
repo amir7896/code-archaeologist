@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- CLI and typed SDK: `code-archaeologist` commands (init, analyze, status, ask, impact, hotspots, report, doctor), JSON/exit codes for CI, secret-safe config, and an example GitHub Action. The SDK covers auth, pagination, repository/investigation clients, and webhook signature verification.
 - GitHub integration: workspace connection (token or optional OAuth), issue/PR/review ingest, verified webhooks with replay protection, and scored links from threads to commits, files, and symbols.
 - React explorer/graph: folder tree in Code, source line highlighting, and Architecture filters (grouping, connected/cycles, depth) for large repositories.
 - Ollama/RAG investigation: cited Ask answers from indexed code, history, and architecture. A local model is optional.

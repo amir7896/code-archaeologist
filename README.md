@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **GitHub integration**: workspaces can connect a GitHub token (or optional OAuth app), sync issues/PRs/reviews, verify webhooks, and link those items to indexed commits and files. A local model is optional for Ask.
+This repository is at **CLI/SDK**: a typed client and `code-archaeologist` CLI talk to the self-hosted API for analyze, status, ask, impact, hotspots, and CI JSON reports. A local model is optional for Ask.
 
 ## Requirements
 
@@ -46,11 +46,11 @@ packages/shared   Env validation, queue names, API prefix
 packages/parser   Language parser adapter contract
 packages/git      Git provider interface
 packages/ai       Ollama-first LLM provider interface
-packages/sdk      Typed SDK stub
-packages/cli      CLI stub
+packages/sdk      Typed API client, pagination, webhook verify
+packages/cli      `code-archaeologist` commands and CI exit codes
 infra/docker      Containerfiles
-docs/             Architecture and local development
-examples/         Demo repositories (later)
+docs/             Architecture, local development, and CLI
+examples/         Example GitHub Action (demo repos later)
 ```
 
 ## Docker
@@ -83,6 +83,7 @@ docker compose --profile ai up -d ollama
 ## Documentation
 
 - [Development setup](docs/development.md)
+- [CLI and SDK](docs/cli.md)
 - [Architecture](docs/architecture.md)
 - [Installation / Docker](docs/installation.md)
 - [Configuration](docs/configuration.md)

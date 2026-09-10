@@ -24,6 +24,8 @@ Provider implementations stay behind interfaces so they can change independently
 - `@code-archaeologist/git` — clone, fetch, history, blame
 - `@code-archaeologist/parser` — `parse` / `normalize` / `compare`
 - `@code-archaeologist/ai` — `LlmProvider.chat` / `embed` / `health` (Ollama first)
+- `@code-archaeologist/sdk` — typed `/api/v1` client, pagination, webhook verify
+- `@code-archaeologist/cli` — `code-archaeologist` commands over the SDK
 
 `@code-archaeologist/core` owns Prisma and domain constants. `@code-archaeologist/shared` owns environment validation, queue names, workspace roles, and the API prefix.
 

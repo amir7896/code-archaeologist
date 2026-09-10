@@ -29,4 +29,14 @@ Copy `.env.example` to `.env`. The API and worker validate environment variables
 | `GITHUB_CLIENT_SECRET` | unset | Optional GitHub OAuth app client secret |
 | `GITHUB_OAUTH_CALLBACK` | unset | Frontend callback, e.g. `http://localhost:5173/oauth/github/callback` |
 
+CLI/SDK (client only; not read by the API process):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `CA_API_URL` | `http://127.0.0.1:3000` | Self-hosted API origin |
+| `CA_ACCESS_TOKEN` / `CA_REFRESH_TOKEN` | unset | Session tokens |
+| `CA_WORKSPACE_ID` / `CA_REPOSITORY_ID` | unset | Default command scope |
+| `CA_EMAIL` / `CA_PASSWORD` | unset | `init` login in CI |
+| `CA_CONFIG` | `~/.config/code-archaeologist/config.json` | User config path |
+
 A personal access token in Settings always works. Do not log tokens, webhook secrets, or repository credentials.

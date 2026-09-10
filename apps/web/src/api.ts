@@ -1,6 +1,21 @@
+import { ApiError as SdkError, createClient } from '@code-archaeologist/sdk';
 import { peekTokens, putTokens } from './session';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
+
+const sdk = createClient({
+  baseUrl: apiBase,
+  onTokens: (tokens) => {
+    putTokens({
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      tokenType: 'Bearer',
+      expiresIn: tokens.expiresIn ?? 0,
+    });
+  },
+});
+
+export const sdkClient = sdk;
 
 export type User = {
   id: string;
@@ -64,10 +79,8 @@ export class ApiError extends Error {
   }
 }
 
-let refreshInFlight: Promise<boolean> | null = null;
-
 export function isTransientApiError(error: unknown): boolean {
-  if (error instanceof ApiError) {
+  if (error instanceof ApiError || error instanceof SdkError) {
     return error.status === 0 || error.status === 408 || error.status === 429 || error.status >= 500;
   }
   return true;
@@ -77,14 +90,25 @@ export async function api<T>(
   path: string,
   init: RequestInit & { json?: unknown } = {},
 ): Promise<T> {
-  const response = await request(path, init);
-  if (response.status === 401 && peekTokens()?.refreshToken) {
-    const refreshed = await refreshTokens();
-    if (refreshed) {
-      return parseResponse<T>(await request(path, init));
+  const tokens = peekTokens();
+  sdk.setTokens({
+    accessToken: tokens?.accessToken,
+    refreshToken: tokens?.refreshToken,
+  });
+  try {
+    return await sdk.request<T>(path, {
+      method: init.method,
+      json: init.json,
+    });
+  } catch (error) {
+    if (error instanceof SdkError) {
+      if (error.status === 401 && !path.startsWith('/auth/')) {
+        putTokens(null);
+      }
+      throw new ApiError(error.status, error.message, error.code);
     }
+    throw error;
   }
-  return parseResponse<T>(response);
 }
 
 export const authApi = {
@@ -837,68 +861,3 @@ function toQuery(query?: Record<string, string | number | undefined>): string {
   return encoded ? `?${encoded}` : '';
 }
 
-async function refreshTokens(): Promise<boolean> {
-  if (!refreshInFlight) {
-    refreshInFlight = (async () => {
-      const current = peekTokens();
-      if (!current?.refreshToken) {
-        return false;
-      }
-      let response: Response;
-      try {
-        response = await fetch(`${apiBase}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: current.refreshToken }),
-        });
-      } catch {
-        return false;
-      }
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          putTokens(null);
-        }
-        return false;
-      }
-      const next = (await response.json()) as Tokens;
-      putTokens(next);
-      return true;
-    })().finally(() => {
-      refreshInFlight = null;
-    });
-  }
-  return refreshInFlight;
-}
-
-async function request(path: string, init: RequestInit & { json?: unknown }): Promise<Response> {
-  const tokens = peekTokens();
-  const headers = new Headers(init.headers);
-  if (init.json !== undefined) {
-    headers.set('Content-Type', 'application/json');
-  }
-  if (tokens?.accessToken) {
-    headers.set('Authorization', `Bearer ${tokens.accessToken}`);
-  }
-  return fetch(`${apiBase}${path}`, {
-    ...init,
-    headers,
-    body: init.json !== undefined ? JSON.stringify(init.json) : init.body,
-  });
-}
-
-async function parseResponse<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => ({}))) as {
-    message?: string | string[];
-    code?: string;
-    details?: Array<{ field: string; message: string }>;
-  };
-  if (!response.ok) {
-    const detail = body.details?.map((item) => item.message).join(' ');
-    const message =
-      detail ||
-      (Array.isArray(body.message) ? body.message.join(' ') : body.message) ||
-      'Request failed';
-    throw new ApiError(response.status, message, body.code);
-  }
-  return body as T;
-}
