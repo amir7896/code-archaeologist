@@ -5,9 +5,8 @@ describe('fetchRepositoryThreads', () => {
     const created: unknown[] = [];
     const prisma = {
       repositoryThread: {
-        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-        createMany: jest.fn(async ({ data }: { data: unknown[] }) => {
-          created.push(...data);
+        upsert: jest.fn(async ({ create }: { create: unknown }) => {
+          created.push(create);
         }),
       },
     };
@@ -76,8 +75,7 @@ describe('fetchRepositoryThreads', () => {
   it('does not fail ingestion when the provider API errors', async () => {
     const prisma = {
       repositoryThread: {
-        deleteMany: jest.fn(),
-        createMany: jest.fn(),
+        upsert: jest.fn(),
       },
     };
     const counts = await fetchRepositoryThreads({
@@ -89,6 +87,6 @@ describe('fetchRepositoryThreads', () => {
       logger: { log: jest.fn(), warn: jest.fn() },
     });
     expect(counts).toEqual({ issueCount: 0, pullRequestCount: 0 });
-    expect(prisma.repositoryThread.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.repositoryThread.upsert).not.toHaveBeenCalled();
   });
 });

@@ -181,6 +181,60 @@ export const workspaceApi = {
   auditLogs: (id: string) => api<Paginated<AuditEvent>>(`/workspaces/${id}/audit-logs`),
 };
 
+export type GithubIntegration = {
+  provider: 'GITHUB';
+  connected: boolean;
+  oauthAvailable: boolean;
+  accountLogin: string | null;
+  lastSyncedAt: string | null;
+  lastError: string | null;
+  webhookUrl: string;
+  webhookConfigured: boolean;
+  webhookSecret: string | null;
+};
+
+export type RepositoryThread = {
+  id: string;
+  kind: 'ISSUE' | 'PULL_REQUEST' | string;
+  number: number | null;
+  title: string;
+  state: string;
+  authorLogin: string | null;
+  url: string | null;
+  mergedAt: string | null;
+  reviewCount: number;
+  linkCount: number;
+};
+
+export const integrationApi = {
+  github: (workspaceId: string) =>
+    api<GithubIntegration>(`/workspaces/${workspaceId}/integrations/github`),
+  connectGithub: (workspaceId: string, token: string) =>
+    api<GithubIntegration>(`/workspaces/${workspaceId}/integrations/github`, {
+      method: 'POST',
+      json: { token },
+    }),
+  authorizeGithub: (workspaceId: string) =>
+    api<{ url: string }>(`/workspaces/${workspaceId}/integrations/github/authorize`),
+  finishGithubOAuth: (workspaceId: string, body: { code: string; state: string }) =>
+    api<GithubIntegration>(`/workspaces/${workspaceId}/integrations/github/oauth`, {
+      method: 'POST',
+      json: body,
+    }),
+  syncGithub: (workspaceId: string) =>
+    api<GithubIntegration>(`/workspaces/${workspaceId}/integrations/github/sync`, { method: 'POST' }),
+  disconnectGithub: (workspaceId: string) =>
+    api<{ status: string }>(`/workspaces/${workspaceId}/integrations/github`, { method: 'DELETE' }),
+  threads: (
+    workspaceId: string,
+    repositoryId: string,
+    query?: { kind?: string; page?: number; limit?: number },
+  ) =>
+    api<Paginated<RepositoryThread>>(
+      `/workspaces/${workspaceId}/repositories/${repositoryId}/threads${toQuery(query)}`,
+    ),
+};
+
 export const repositoryApi = {
   list: (workspaceId: string) =>
     api<Paginated<Repository>>(`/workspaces/${workspaceId}/repositories`),

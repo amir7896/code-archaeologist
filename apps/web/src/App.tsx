@@ -23,6 +23,7 @@ import {
   LegacyWorkspaceRedirect,
   LegacyWorkspaceSettingsRedirect,
 } from './pages/LegacyRedirects';
+import { GithubCallbackPage } from './pages/GithubCallbackPage';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -64,6 +65,7 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<RequireAuth />}>
+        <Route path="/oauth/github/callback" element={<GithubCallbackPage />} />
         <Route element={<AppShell />}>
           <Route path="/home" element={<DashboardPage />} />
           <Route path="/work-space/:workspaceId" element={<WorkspaceReposPage />} />

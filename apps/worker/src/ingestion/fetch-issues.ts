@@ -59,23 +59,30 @@ export async function fetchRepositoryThreads(input: {
     return { issueCount: 0, pullRequestCount: 0 };
   }
 
-  await input.prisma.repositoryThread.deleteMany({ where: { repositoryId: input.repositoryId } });
-  if (rows.length > 0) {
-    await input.prisma.repositoryThread.createMany({
-      data: rows.map((row) => ({
-        repositoryId: input.repositoryId,
-        kind: row.kind,
-        provider: row.provider,
-        externalId: row.externalId.slice(0, 80),
-        number: row.number,
-        title: row.title.slice(0, 500),
-        body: row.body.slice(0, 8000),
-        state: row.state.slice(0, 40),
-        authorLogin: row.authorLogin?.slice(0, 120) ?? null,
-        url: row.url?.slice(0, 1000) ?? null,
-        mergedAt: row.mergedAt,
-        providerCreatedAt: row.providerCreatedAt,
-      })),
+  for (const row of rows) {
+    const data = {
+      kind: row.kind,
+      provider: row.provider,
+      externalId: row.externalId.slice(0, 80),
+      number: row.number,
+      title: row.title.slice(0, 500),
+      body: row.body.slice(0, 8000),
+      state: row.state.slice(0, 40),
+      authorLogin: row.authorLogin?.slice(0, 120) ?? null,
+      url: row.url?.slice(0, 1000) ?? null,
+      mergedAt: row.mergedAt,
+      providerCreatedAt: row.providerCreatedAt,
+    };
+    await input.prisma.repositoryThread.upsert({
+      where: {
+        repositoryId_kind_externalId: {
+          repositoryId: input.repositoryId,
+          kind: row.kind,
+          externalId: data.externalId,
+        },
+      },
+      create: { repositoryId: input.repositoryId, ...data },
+      update: data,
     });
   }
 

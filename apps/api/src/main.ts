@@ -9,7 +9,7 @@ import { createValidationPipe } from './common/validation.pipe';
 async function bootstrap(): Promise<void> {
   loadLocalEnv();
   const env = validateEnv();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.setGlobalPrefix(API_PREFIX);
   app.enableCors({ origin: env.WEB_ORIGIN, credentials: true });
   app.useGlobalPipes(createValidationPipe());

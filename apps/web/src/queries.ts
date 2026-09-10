@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi, repositoryApi, workspaceApi, type AuthSession } from './api';
+import { authApi, integrationApi, repositoryApi, workspaceApi, type AuthSession } from './api';
 import { sessionCleared, sessionEstablished } from './store/auth-slice';
 import { useAppDispatch } from './store/hooks';
 import { type AppDispatch } from './store/store';
@@ -102,6 +102,9 @@ export const queryKeys = {
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbol', symbolId] as const,
   symbolHistory: (workspaceId: string, repositoryId: string, symbolId: string) =>
     ['workspaces', workspaceId, 'repositories', repositoryId, 'code', 'symbol', symbolId, 'history'] as const,
+  github: (workspaceId: string) => ['workspaces', workspaceId, 'integrations', 'github'] as const,
+  threads: (workspaceId: string, repositoryId: string, kind?: string, page?: number) =>
+    ['workspaces', workspaceId, 'repositories', repositoryId, 'threads', kind ?? '', page ?? 1] as const,
   evidence: (workspaceId: string, repositoryId: string, fileId?: string, symbolId?: string) =>
     [
       'workspaces',
@@ -649,6 +652,56 @@ export function useSymbolQuery(workspaceId: string, repositoryId: string, symbol
     queryKey: queryKeys.symbol(workspaceId, repositoryId, symbolId),
     queryFn: () => repositoryApi.symbol(workspaceId, repositoryId, symbolId),
     enabled: Boolean(workspaceId && repositoryId && symbolId),
+  });
+}
+
+export function useGithubIntegrationQuery(workspaceId: string) {
+  return useQuery({
+    queryKey: queryKeys.github(workspaceId),
+    queryFn: () => integrationApi.github(workspaceId),
+    enabled: Boolean(workspaceId),
+  });
+}
+
+export function useConnectGithubMutation(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) => integrationApi.connectGithub(workspaceId, token),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.github(workspaceId) });
+    },
+  });
+}
+
+export function useSyncGithubMutation(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => integrationApi.syncGithub(workspaceId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.github(workspaceId) });
+    },
+  });
+}
+
+export function useDisconnectGithubMutation(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => integrationApi.disconnectGithub(workspaceId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.github(workspaceId) });
+    },
+  });
+}
+
+export function useRepositoryThreadsQuery(
+  workspaceId: string,
+  repositoryId: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.threads(workspaceId, repositoryId),
+    queryFn: () => integrationApi.threads(workspaceId, repositoryId, { limit: 8 }),
+    enabled: Boolean(workspaceId && repositoryId && enabled),
   });
 }
 

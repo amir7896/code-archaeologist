@@ -7,13 +7,20 @@ import { useAuth } from '../hooks/useAuth';
 import { errorMessage } from '../lib/errors';
 import { formatActivity, formatProvider, formatRole, formatStatus, formatWhen } from '../lib/format';
 import { homePath, repositoryPath, workspacePath, workspacePeoplePath } from '../lib/paths';
-import { useAiStatusQuery, useRepositoriesQuery } from '../queries';
+import { integrationApi } from '../api';
+import { rememberGithubOAuthWorkspace } from './GithubCallbackPage';
 import {
+  useAiStatusQuery,
   useAuditLogsQuery,
+  useConnectGithubMutation,
   useDeleteWorkspaceMutation,
+  useDisconnectGithubMutation,
+  useGithubIntegrationQuery,
   useInviteMemberMutation,
   useMembersQuery,
   useRemoveMemberMutation,
+  useRepositoriesQuery,
+  useSyncGithubMutation,
   useUpdateMemberMutation,
   useUpdateWorkspaceMutation,
   useWorkspaceQuery,
@@ -24,6 +31,7 @@ import {
   fieldClass,
   muted,
   primaryButton,
+  secondaryButton,
 } from '../ui';
 import type { Repository } from '../api';
 import { inviteMemberSchema, workspaceNameSchema } from '../validation';
@@ -342,6 +350,7 @@ export function WorkspaceSettingsPage() {
           <MembersPanel workspace={workspace} userId={user?.id} />
         ) : (
           <SettingsOverview
+            tab={tab}
             workspace={workspace}
             repositories={repositories}
             ollamaAvailable={aiQuery.data?.available}
@@ -354,11 +363,13 @@ export function WorkspaceSettingsPage() {
 }
 
 function SettingsOverview({
+  tab,
   workspace,
   repositories,
   ollamaAvailable,
   ollamaModel,
 }: {
+  tab: SettingsTab;
   workspace: ReturnType<typeof useWorkspaceContext>;
   repositories: Repository[];
   ollamaAvailable: boolean | undefined;
@@ -368,168 +379,170 @@ function SettingsOverview({
   const confirm = useConfirm();
   const gitignoreOn =
     repositories.length === 0 || repositories.every((item) => item.settings?.respectGitignore !== false);
-  const github = repositories.some((item) => item.provider === 'GITHUB');
-  const gitlab = repositories.some((item) => item.provider === 'GITLAB');
 
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-4 xl:grid-cols-2">
-        <section className={SETTINGS_PANEL}>
-          <h2 className="text-sm font-semibold text-white">AI Provider</h2>
-          <div className="mt-4 space-y-2">
-            <div
-              className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 ${
-                ollamaAvailable ? 'bg-brand/20' : 'bg-white/5'
-              }`}
-            >
-              <div>
-                <p className="text-sm font-medium text-white">Ollama (local)</p>
-                {ollamaModel ? <p className={`mt-0.5 text-xs ${muted}`}>{ollamaModel}</p> : null}
-              </div>
-              <SettingStatus on={Boolean(ollamaAvailable)} onLabel="Active" offLabel="Unavailable" />
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 bg-white/5">
-              <p className="text-sm font-medium text-zinc-300">Hosted provider (opt-in)</p>
-              <span className="text-sm text-zinc-500">Disabled</span>
-            </div>
-          </div>
-          <p className={`mt-3 text-xs ${muted}`}>
-            Provider disclosure required before source is ever sent to a hosted model.
-          </p>
-        </section>
+  if (tab === 'integrations') {
+    return (
+      <div className="space-y-6">
+        <GithubSettingsCard workspaceId={workspace.id} canManage={Boolean(workspace.canEdit)} />
+        <ActivityCard workspace={workspace} />
+      </div>
+    );
+  }
 
-        <section className={SETTINGS_PANEL}>
-          <h2 className="text-sm font-semibold text-white">Analysis Rules</h2>
-          <ul className="mt-4 divide-y divide-white/5 text-sm">
-            <SettingRow label="Ignore vendor/generated files" value="On" on />
-            <SettingRow label="Respect .gitignore" value={gitignoreOn ? 'On' : 'Off'} on={gitignoreOn} />
-            <SettingRow label="Incremental sync" value="Off" />
-            <SettingRow label="Max analysis depth" value="6 levels" />
-          </ul>
-          <p className={`mt-3 text-xs ${muted}`}>
-            Vendor paths are always skipped. Gitignore is chosen when you connect a repository. Every analysis
-            run is Full. Impact walks up to 6 levels.
-          </p>
-        </section>
+  if (tab === 'rules') {
+    return (
+      <section className={SETTINGS_PANEL}>
+        <h2 className="text-sm font-semibold text-white">Analysis Rules</h2>
+        <ul className="mt-4 divide-y divide-white/5 text-sm">
+          <SettingRow label="Ignore vendor/generated files" value="On" on />
+          <SettingRow label="Respect .gitignore" value={gitignoreOn ? 'On' : 'Off'} on={gitignoreOn} />
+          <SettingRow label="Incremental sync" value="Off" />
+          <SettingRow label="Max analysis depth" value="6 levels" />
+        </ul>
+        <p className={`mt-3 text-xs ${muted}`}>
+          Vendor paths are always skipped. Gitignore is chosen when you connect a repository. Every analysis
+          run is Full. Impact walks up to 6 levels.
+        </p>
+      </section>
+    );
+  }
 
-        <section className={SETTINGS_PANEL}>
-          <h2 className="text-sm font-semibold text-white">Integrations</h2>
-          <ul className="mt-4 divide-y divide-white/5 text-sm">
-            <SettingRow label="GitHub" value={github ? 'Connected' : 'Not connected'} on={github} />
-            <SettingRow label="GitLab" value={gitlab ? 'Connected' : 'Not connected'} on={gitlab} />
-            <SettingRow label="Webhooks" value="Not available" />
-          </ul>
-          <p className={`mt-3 text-xs ${muted}`}>
-            Connected means this workspace has a repository from that host. There is no GitHub OAuth or webhook
-            listener yet.
-          </p>
-        </section>
-
-        <section className={SETTINGS_PANEL}>
-          <h2 className="text-sm font-semibold text-white">Retention & Danger Zone</h2>
-          {workspace.canEdit && workspace.data ? (
-            <Formik
-              enableReinitialize
-              initialValues={{ name: workspace.data.name }}
-              validationSchema={workspaceNameSchema}
-              onSubmit={async (values) => {
-                try {
-                  await workspace.updateWorkspace.mutateAsync({ name: values.name.trim() });
-                } catch {
-                  // Shown in the page-level error.
+  if (tab === 'retention') {
+    return (
+      <section className={SETTINGS_PANEL}>
+        <h2 className="text-sm font-semibold text-white">Retention & Danger Zone</h2>
+        {workspace.canEdit && workspace.data ? (
+          <Formik
+            enableReinitialize
+            initialValues={{ name: workspace.data.name }}
+            validationSchema={workspaceNameSchema}
+            onSubmit={async (values) => {
+              try {
+                await workspace.updateWorkspace.mutateAsync({ name: values.name.trim() });
+              } catch {
+                // Shown in the page-level error.
+              }
+            }}
+          >
+            {({ errors, touched, isSubmitting }) => (
+              <Form className="mt-4 flex flex-col gap-3 sm:flex-row" noValidate>
+                <div className="flex-1">
+                  <Field
+                    className={fieldClass(Boolean(touched.name && errors.name))}
+                    name="name"
+                    aria-label="Workspace name"
+                  />
+                  {touched.name && errors.name ? <p className={errorText}>{errors.name}</p> : null}
+                </div>
+                <button className={primaryButton} type="submit" disabled={isSubmitting}>
+                  Save name
+                </button>
+              </Form>
+            )}
+          </Formik>
+        ) : null}
+        <ul className="mt-4 divide-y divide-white/5 text-sm">
+          <SettingRow label="Data retention" value="Until you delete" />
+          <SettingRow label="Audit log retention" value="Kept with this workspace" />
+        </ul>
+        {workspace.isOwner ? (
+          <div className="mt-5 space-y-3">
+            <button
+              className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl border border-red-400/40 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+              type="button"
+              disabled={workspace.updateWorkspace.isPending}
+              onClick={() => {
+                if (workspace.archived) {
+                  void workspace.updateWorkspace.mutate({ status: 'ACTIVE' });
+                  return;
                 }
+                void confirm({
+                  title: 'Archive workspace',
+                  message:
+                    'Archive this workspace? People will not be able to make changes until it is restored.',
+                  confirmLabel: 'Archive',
+                  danger: true,
+                }).then((ok) => {
+                  if (ok) {
+                    void workspace.updateWorkspace.mutate({ status: 'ARCHIVED' });
+                  }
+                });
               }}
             >
-              {({ errors, touched, isSubmitting }) => (
-                <Form className="mt-4 flex flex-col gap-3 sm:flex-row" noValidate>
-                  <div className="flex-1">
-                    <Field
-                      className={fieldClass(Boolean(touched.name && errors.name))}
-                      name="name"
-                      aria-label="Workspace name"
-                    />
-                    {touched.name && errors.name ? <p className={errorText}>{errors.name}</p> : null}
-                  </div>
-                  <button className={primaryButton} type="submit" disabled={isSubmitting}>
-                    Save name
-                  </button>
-                </Form>
-              )}
-            </Formik>
-          ) : null}
-          <ul className="mt-4 divide-y divide-white/5 text-sm">
-            <SettingRow label="Data retention" value="Until you delete" />
-            <SettingRow label="Audit log retention" value="Kept with this workspace" />
-          </ul>
-          {workspace.isOwner ? (
-            <div className="mt-5 space-y-3">
-              <button
-                className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl border border-red-400/40 px-4 py-2.5 text-sm font-medium text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
-                type="button"
-                disabled={workspace.updateWorkspace.isPending}
-                onClick={() => {
-                  if (workspace.archived) {
-                    void workspace.updateWorkspace.mutate({ status: 'ACTIVE' });
-                    return;
+              {workspace.archived ? 'Restore workspace' : 'Archive Workspace'}
+            </button>
+            <button
+              className={`${dangerButton} w-full`}
+              type="button"
+              disabled={workspace.deleteWorkspace.isPending}
+              onClick={() => {
+                void confirm({
+                  title: 'Delete workspace',
+                  message: 'Delete this workspace? This cannot be undone.',
+                  confirmLabel: 'Delete',
+                  danger: true,
+                }).then((ok) => {
+                  if (ok) {
+                    void workspace.deleteWorkspace.mutateAsync().then(() => navigate(homePath, { replace: true }));
                   }
-                  void confirm({
-                    title: 'Archive workspace',
-                    message:
-                      'Archive this workspace? People will not be able to make changes until it is restored.',
-                    confirmLabel: 'Archive',
-                    danger: true,
-                  }).then((ok) => {
-                    if (ok) {
-                      void workspace.updateWorkspace.mutate({ status: 'ARCHIVED' });
-                    }
-                  });
-                }}
-              >
-                {workspace.archived ? 'Restore workspace' : 'Archive Workspace'}
-              </button>
-              <button
-                className={`${dangerButton} w-full`}
-                type="button"
-                disabled={workspace.deleteWorkspace.isPending}
-                onClick={() => {
-                  void confirm({
-                    title: 'Delete workspace',
-                    message: 'Delete this workspace? This cannot be undone.',
-                    confirmLabel: 'Delete',
-                    danger: true,
-                  }).then((ok) => {
-                    if (ok) {
-                      void workspace.deleteWorkspace.mutateAsync().then(() => navigate(homePath, { replace: true }));
-                    }
-                  });
-                }}
-              >
-                Delete workspace
-              </button>
-            </div>
-          ) : null}
-        </section>
-      </div>
-
-      <section className={SETTINGS_PANEL}>
-        <h2 className="text-sm font-semibold text-white">Activity</h2>
-        {workspace.auditQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading activity…</p> : null}
-        <ul className="mt-4 space-y-2 text-sm text-zinc-200">
-          {workspace.activity.map((event) => {
-            const when = formatWhen(event.createdAt);
-            return (
-              <li key={event.id}>
-                <span className="font-medium">{formatActivity(event.action)}</span>
-                {when ? <span className="ml-2 text-zinc-500">{when}</span> : null}
-              </li>
-            );
-          })}
-          {!workspace.auditQuery.isPending && workspace.activity.length === 0 ? (
-            <li className="text-zinc-500">No activity yet.</li>
-          ) : null}
-        </ul>
+                });
+              }}
+            >
+              Delete workspace
+            </button>
+          </div>
+        ) : null}
       </section>
-    </div>
+    );
+  }
+
+  return (
+    <section className={SETTINGS_PANEL}>
+      <h2 className="text-sm font-semibold text-white">AI Provider</h2>
+      <div className="mt-4 space-y-2">
+        <div
+          className={`flex items-center justify-between gap-3 rounded-2xl px-4 py-3 ${
+            ollamaAvailable ? 'bg-brand/20' : 'bg-white/5'
+          }`}
+        >
+          <div>
+            <p className="text-sm font-medium text-white">Ollama (local)</p>
+            {ollamaModel ? <p className={`mt-0.5 text-xs ${muted}`}>{ollamaModel}</p> : null}
+          </div>
+          <SettingStatus on={Boolean(ollamaAvailable)} onLabel="Active" offLabel="Unavailable" />
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 bg-white/5">
+          <p className="text-sm font-medium text-zinc-300">Hosted provider (opt-in)</p>
+          <span className="text-sm text-zinc-500">Disabled</span>
+        </div>
+      </div>
+      <p className={`mt-3 text-xs ${muted}`}>
+        Provider disclosure required before source is ever sent to a hosted model.
+      </p>
+    </section>
+  );
+}
+
+function ActivityCard({ workspace }: { workspace: ReturnType<typeof useWorkspaceContext> }) {
+  return (
+    <section className={SETTINGS_PANEL}>
+      <h2 className="text-sm font-semibold text-white">Activity</h2>
+      {workspace.auditQuery.isPending ? <p className={`mt-4 ${muted}`}>Loading activity…</p> : null}
+      <ul className="mt-4 space-y-2 text-sm text-zinc-200">
+        {workspace.activity.map((event) => {
+          const when = formatWhen(event.createdAt);
+          return (
+            <li key={event.id}>
+              <span className="font-medium">{formatActivity(event.action)}</span>
+              {when ? <span className="ml-2 text-zinc-500">{when}</span> : null}
+            </li>
+          );
+        })}
+        {!workspace.auditQuery.isPending && workspace.activity.length === 0 ? (
+          <li className="text-zinc-500">No activity yet.</li>
+        ) : null}
+      </ul>
+    </section>
   );
 }
 
@@ -807,6 +820,137 @@ function WorkspaceMissing({ error }: { error: unknown }) {
     <PageFrame>
       <p className="text-red-300">{errorMessage(error, 'This workspace could not be found.')}</p>
     </PageFrame>
+  );
+}
+
+function GithubSettingsCard({ workspaceId, canManage }: { workspaceId: string; canManage: boolean }) {
+  const github = useGithubIntegrationQuery(workspaceId);
+  const connect = useConnectGithubMutation(workspaceId);
+  const sync = useSyncGithubMutation(workspaceId);
+  const disconnect = useDisconnectGithubMutation(workspaceId);
+  const confirm = useConfirm();
+  const data = github.data;
+  const secret = connect.data?.webhookSecret ?? null;
+
+  return (
+    <section className={SETTINGS_PANEL}>
+      <h2 className="text-sm font-semibold text-white">GitHub</h2>
+      <ul className="mt-4 divide-y divide-white/5 text-sm">
+        <SettingRow
+          label="Connection"
+          value={data?.connected ? `Connected${data.accountLogin ? ` as @${data.accountLogin}` : ''}` : 'Not connected'}
+          on={Boolean(data?.connected)}
+        />
+        <SettingRow
+          label="Last synced"
+          value={
+            data?.lastSyncedAt
+              ? formatWhen(data.lastSyncedAt) || 'Just now'
+              : data?.connected
+                ? 'Not yet — click Sync issues & PRs'
+                : '—'
+          }
+        />
+        <SettingRow
+          label="Webhooks"
+          value={data?.webhookConfigured ? 'Listening' : 'Not configured'}
+          on={Boolean(data?.webhookConfigured)}
+        />
+        <SettingRow label="GitLab" value="Later" />
+      </ul>
+      {data?.lastError ? <p className={`mt-3 text-xs ${errorText}`}>{data.lastError}</p> : null}
+      {data?.webhookUrl ? (
+        <p className={`mt-3 break-all text-xs ${muted}`}>Webhook URL: {data.webhookUrl}</p>
+      ) : null}
+      {secret ? (
+        <p className="mt-2 break-all text-xs text-amber-200">
+          Webhook secret (copy now): {secret}
+        </p>
+      ) : null}
+      {canManage ? (
+        <Formik
+          initialValues={{ token: '' }}
+          onSubmit={async (values, helpers) => {
+            try {
+              await connect.mutateAsync(values.token.trim());
+              helpers.resetForm();
+            } catch {
+              // Shown below.
+            }
+          }}
+        >
+          {({ isSubmitting }) => (
+            <Form className="mt-4 space-y-3" noValidate>
+              <Field
+                className={fieldClass()}
+                name="token"
+                type="password"
+                placeholder="GitHub personal access token"
+                aria-label="GitHub personal access token"
+                autoComplete="off"
+              />
+              {connect.error ? (
+                <p className={errorText}>{errorMessage(connect.error, 'GitHub could not be connected.')}</p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <button className={primaryButton} type="submit" disabled={isSubmitting}>
+                  {data?.connected ? 'Update token' : 'Connect GitHub'}
+                </button>
+                {data?.oauthAvailable ? (
+                  <button
+                    className={secondaryButton}
+                    type="button"
+                    onClick={() => {
+                      rememberGithubOAuthWorkspace(workspaceId);
+                      void integrationApi.authorizeGithub(workspaceId).then((result) => {
+                        window.location.assign(result.url);
+                      });
+                    }}
+                  >
+                    Continue with GitHub
+                  </button>
+                ) : null}
+                {data?.connected ? (
+                  <>
+                    <button
+                      className={secondaryButton}
+                      type="button"
+                      disabled={sync.isPending}
+                      onClick={() => sync.mutate()}
+                    >
+                      {sync.isPending ? 'Syncing…' : 'Sync issues & PRs'}
+                    </button>
+                    <button
+                      className={dangerButton}
+                      type="button"
+                      disabled={disconnect.isPending}
+                      onClick={() => {
+                        void confirm({
+                          title: 'Disconnect GitHub',
+                          message: 'Stop syncing issues, pull requests, and webhooks for this workspace?',
+                          confirmLabel: 'Disconnect',
+                          danger: true,
+                        }).then((ok) => {
+                          if (ok) {
+                            disconnect.mutate();
+                          }
+                        });
+                      }}
+                    >
+                      Disconnect
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </Form>
+          )}
+        </Formik>
+      ) : null}
+      <p className={`mt-3 text-xs ${muted}`}>
+        A workspace token is used for issues, pull requests, reviews, and verified webhooks. Cloning a
+        github.com URL is not the same as connecting GitHub. GitLab uses the same contract later.
+      </p>
+    </section>
   );
 }
 

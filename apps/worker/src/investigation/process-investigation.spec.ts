@@ -24,6 +24,7 @@ describe('processInvestigation', () => {
       codeSymbol: { findMany: jest.fn().mockResolvedValue([]) },
       commit: { findMany: jest.fn().mockResolvedValue([]) },
       riskScore: { findMany: jest.fn().mockResolvedValue([]) },
+      repositoryThread: { findMany: jest.fn().mockResolvedValue([]) },
       evidence: { findMany: jest.fn().mockResolvedValue([]) },
       graphEdge: {
         findMany: jest.fn().mockResolvedValue([{ sourceId: 'file-2', targetId: 'file-1' }]),
@@ -78,6 +79,7 @@ describe('processInvestigation', () => {
       codeSymbol: { findMany: jest.fn().mockResolvedValue([]) },
       commit: { findMany: jest.fn().mockResolvedValue([]) },
       riskScore: { findMany: jest.fn().mockResolvedValue([]) },
+      repositoryThread: { findMany: jest.fn().mockResolvedValue([]) },
       evidence: { findMany: jest.fn().mockResolvedValue([]) },
       graphEdge: { findMany: jest.fn().mockResolvedValue([]) },
       investigationEvidence: { deleteMany: jest.fn(), createMany: jest.fn() },
@@ -137,6 +139,7 @@ describe('processInvestigation', () => {
         ]),
       },
       riskScore: { findMany: jest.fn().mockResolvedValue([]) },
+      repositoryThread: { findMany: jest.fn().mockResolvedValue([]) },
       evidence: {
         findMany: jest.fn().mockResolvedValue([
           {

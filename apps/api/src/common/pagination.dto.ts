@@ -46,7 +46,7 @@ export function paginationSkip(page: number, limit: number): number {
   return (page - 1) * limit;
 }
 
-export function resolvePagination(query: PaginationQueryDto): { page: number; limit: number } {
+export function resolvePagination(query: { page?: number; limit?: number }): { page: number; limit: number } {
   const page = Number(query.page) || 1;
   const limit = Number(query.limit) || 20;
   return {

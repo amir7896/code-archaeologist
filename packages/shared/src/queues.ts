@@ -21,6 +21,7 @@ export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 
 export const REPOSITORY_SYNC_JOB = 'sync';
 export const INVESTIGATION_JOB = 'investigate';
+export const INTEGRATION_SYNC_JOB = 'sync';
 
 export type InvestigationJobData = {
   investigationId: string;
@@ -32,4 +33,11 @@ export type RepositorySyncJobData = {
   repositoryId: string;
   analysisRunId: string;
   workspaceId: string;
+};
+
+export type IntegrationSyncJobData = {
+  workspaceId: string;
+  integrationId: string;
+  repositoryId?: string;
+  webhookEventId?: string;
 };

@@ -21,6 +21,8 @@ export function setupSwagger(app: INestApplication): void {
     .addTag('users', 'Current user')
     .addTag('workspaces', 'Workspaces, members, and audit')
     .addTag('repositories', 'Repository ingestion and settings')
+    .addTag('integrations', 'GitHub connection, issues, and pull requests')
+    .addTag('webhooks', 'Verified GitHub webhook receiver')
     .addTag('history', 'Indexed Git history')
     .addTag('source', 'Indexed files and symbols')
     .build();
