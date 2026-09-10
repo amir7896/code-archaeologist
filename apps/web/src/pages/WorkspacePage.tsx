@@ -449,7 +449,7 @@ function SettingsOverview({
         ) : null}
         <ul className="mt-4 divide-y divide-white/5 text-sm">
           <SettingRow label="Data retention" value="Until you delete" />
-          <SettingRow label="Audit log retention" value="Kept with this workspace" />
+          <SettingRow label="Audit log retention" value="90 days" />
         </ul>
         {workspace.isOwner ? (
           <div className="mt-5 space-y-3">

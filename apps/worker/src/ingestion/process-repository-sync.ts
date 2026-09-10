@@ -21,7 +21,8 @@ export async function processRepositorySync(
   deps: {
     prisma: PrismaClient;
     env: AppEnv;
-    git?: GitProvider;
+    git?: GitProvider & { assertMirrorWithinMb?: (path: string, maxMb: number) => Promise<void> };
+    assertMirrorSize?: (path: string, maxMb: number) => Promise<void>;
     indexHistory?: typeof indexGitHistory;
     parseAst?: typeof indexAst;
     buildGraph?: typeof indexGraph;
@@ -33,6 +34,10 @@ export async function processRepositorySync(
   },
 ): Promise<void> {
   const git = deps.git ?? new GitCliProvider();
+  const assertMirrorSize =
+    deps.assertMirrorSize ??
+    ((path: string, maxMb: number) =>
+      git.assertMirrorWithinMb ? git.assertMirrorWithinMb(path, maxMb) : Promise.resolve());
   const indexHistory = deps.indexHistory ?? indexGitHistory;
   const parseAst = deps.parseAst ?? indexAst;
   const buildGraph = deps.buildGraph ?? indexGraph;
@@ -73,6 +78,7 @@ export async function processRepositorySync(
       branch: run.revision || run.repository.defaultBranch || undefined,
       credential,
     });
+    await assertMirrorSize(mirrorDir, env.GIT_CLONE_MAX_MB);
     await markTask(prisma, cloneTask?.id, 'SUCCEEDED');
     await prisma.analysisRun.update({ where: { id: run.id }, data: { progress: 40 } });
 

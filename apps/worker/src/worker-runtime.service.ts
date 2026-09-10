@@ -17,6 +17,7 @@ import {
 import { processGithubSync } from './ingestion/process-github-sync';
 import { processRepositorySync } from './ingestion/process-repository-sync';
 import { processInvestigation } from './investigation/process-investigation';
+import { purgeExpiredAuditLogs } from './ops/purge-audit-logs';
 
 @Injectable()
 export class WorkerRuntimeService implements OnModuleDestroy {
@@ -110,6 +111,9 @@ export class WorkerRuntimeService implements OnModuleDestroy {
       tick += 1;
       if (tick % 4 === 0) {
         void this.dispatchQueuedRuns();
+      }
+      if (tick % 120 === 0) {
+        void purgeExpiredAuditLogs(this.prisma, this.env.AUDIT_RETENTION_DAYS, this.logger);
       }
     }, 500);
   }

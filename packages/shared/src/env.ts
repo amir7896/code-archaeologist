@@ -31,6 +31,10 @@ export const envSchema = z.object({
   GITHUB_CLIENT_ID: z.string().optional().default(''),
   GITHUB_CLIENT_SECRET: z.string().optional().default(''),
   GITHUB_OAUTH_CALLBACK: z.string().optional().default(''),
+  AUDIT_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
+  GIT_CLONE_MAX_MB: z.coerce.number().int().positive().default(512),
+  WORKSPACE_SYNC_DAILY_LIMIT: z.coerce.number().int().positive().default(40),
+  WORKSPACE_ASK_DAILY_LIMIT: z.coerce.number().int().positive().default(80),
 });
 
 type ParsedEnv = z.infer<typeof envSchema>;

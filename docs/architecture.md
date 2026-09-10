@@ -49,3 +49,4 @@ PostgreSQL tables are listed in the project scope. Investigation adds `investiga
 - AI never silently changes repositories in v1.
 - Unsupported historical claims are labeled unknown or uncertain.
 - Local/self-hosted operation is first-class.
+- Request ids, redacted logs, quotas, clone size caps, and audit retention are operator concerns; see [operations](operations.md).

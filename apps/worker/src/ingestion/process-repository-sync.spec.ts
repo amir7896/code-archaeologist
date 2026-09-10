@@ -62,6 +62,7 @@ describe('processRepositorySync', () => {
         env: {
           REPOSITORY_WORK_DIR: '/tmp/ca-test',
           CREDENTIALS_ENCRYPTION_KEY: 'local-dev-credentials-secret-change-me-32',
+          GIT_CLONE_MAX_MB: 512,
         } as never,
         git: git as never,
         indexHistory,
@@ -197,6 +198,7 @@ describe('processRepositorySync', () => {
         env: {
           REPOSITORY_WORK_DIR: '/tmp/ca-test',
           CREDENTIALS_ENCRYPTION_KEY: 'local-dev-credentials-secret-change-me-32',
+          GIT_CLONE_MAX_MB: 512,
         } as never,
         git: {
           ensureMirror: jest.fn().mockResolvedValue(undefined),

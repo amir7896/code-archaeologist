@@ -4,7 +4,7 @@ An open-source AI system that reconstructs not only what a codebase does, but wh
 
 It turns a Git repository into an evidence-backed historical knowledge graph: Git history, AST symbols, dependency graph, Code DNA, impact analysis, and cited investigation. AI never silently changes repositories in v1.
 
-This repository is at **CLI/SDK**: a typed client and `code-archaeologist` CLI talk to the self-hosted API for analyze, status, ask, impact, hotspots, and CI JSON reports. A local model is optional for Ask.
+This repository is at **hardening**: rate limits, workspace quotas, clone and graph caps, request ids, backups, and operator docs on top of the self-hosted API, CLI, and SDK. A local model is optional for Ask.
 
 ## Requirements
 
@@ -30,6 +30,7 @@ Then open:
 - Web: http://localhost:5173
 - API health: http://localhost:3000/api/v1/health
 - API readiness: http://localhost:3000/api/v1/health/ready
+- API metrics: http://localhost:3000/api/v1/metrics
 - Swagger UI: http://localhost:3000/api/docs
 - OpenAPI JSON: http://localhost:3000/api/docs/json
 
@@ -49,7 +50,7 @@ packages/ai       Ollama-first LLM provider interface
 packages/sdk      Typed API client, pagination, webhook verify
 packages/cli      `code-archaeologist` commands and CI exit codes
 infra/docker      Containerfiles
-docs/             Architecture, local development, and CLI
+docs/             Architecture, operations, security audit, local development, and CLI
 examples/         Example GitHub Action (demo repos later)
 ```
 
@@ -87,6 +88,8 @@ docker compose --profile ai up -d ollama
 - [Architecture](docs/architecture.md)
 - [Installation / Docker](docs/installation.md)
 - [Configuration](docs/configuration.md)
+- [Operations](docs/operations.md)
+- [Security audit](docs/security-audit.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
 

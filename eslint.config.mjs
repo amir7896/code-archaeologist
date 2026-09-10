@@ -12,6 +12,7 @@ export default tseslint.config(
       'packages/core/generated/**',
       'packages/core/prisma/seed.cjs',
       'packages/core/scripts/**/*.cjs',
+      'tests/load/**',
       'eslint.config.mjs',
     ],
   },

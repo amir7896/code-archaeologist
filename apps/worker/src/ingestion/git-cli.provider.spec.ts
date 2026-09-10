@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { GitCliProvider } from './git-cli.provider';
+import { GitCliProvider, gitSizeExceedsLimit, parseGitCountObjectsKb } from './git-cli.provider';
 
 const exec = promisify(execFile);
 
@@ -35,5 +35,12 @@ describe('GitCliProvider', () => {
     expect(history.changes[history.commits[0].sha]?.some((change) => change.newPath === 'readme.md')).toBe(
       true,
     );
+    await expect(git.assertMirrorWithinMb(mirror, 1)).resolves.toBeUndefined();
   }, 30_000);
+
+  it('parses git count-objects sizes in KiB', () => {
+    expect(parseGitCountObjectsKb('count: 3\nsize: 12\nin-pack: 4\nsize-pack: 2048\n')).toBe(2060);
+    expect(gitSizeExceedsLimit(1024, 1)).toBe(false);
+    expect(gitSizeExceedsLimit(1025, 1)).toBe(true);
+  });
 });

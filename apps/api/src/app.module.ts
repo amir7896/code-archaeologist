@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { RedactingExceptionFilter } from './common/redacting-exception.filter';
+import { RequestContextInterceptor } from './common/request-context.interceptor';
 import { EnvModule } from './config/env.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
@@ -21,7 +23,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
       throttlers: [{ name: 'default', ttl: 60_000, limit: 60 }],
       skipIf: (context) => {
         const path = context.switchToHttp().getRequest<{ url?: string }>().url ?? '';
-        return path.includes('/health');
+        return path.includes('/health') || path.includes('/metrics');
       },
     }),
     AuditModule,
@@ -33,6 +35,10 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     InvestigationsModule,
     HealthModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
+    { provide: APP_FILTER, useClass: RedactingExceptionFilter },
+  ],
 })
 export class AppModule {}

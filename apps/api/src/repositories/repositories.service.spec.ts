@@ -11,7 +11,10 @@ describe('RepositoriesService', () => {
 
   function createService(prisma: Record<string, unknown>) {
     const audit = { record: jest.fn().mockResolvedValue(undefined) };
-    const env = { CREDENTIALS_ENCRYPTION_KEY: 'local-dev-credentials-secret-change-me-32' };
+    const env = {
+      CREDENTIALS_ENCRYPTION_KEY: 'local-dev-credentials-secret-change-me-32',
+      WORKSPACE_SYNC_DAILY_LIMIT: 40,
+    };
     return new RepositoriesService(prisma as never, audit as never, env as never);
   }
 
@@ -77,7 +80,12 @@ describe('RepositoriesService', () => {
     const service = createService({
       workspace: { findFirst: jest.fn().mockResolvedValue(workspace) },
       repository,
-      analysisRun: { updateMany: jest.fn(), create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      analysisRun: {
+        count: jest.fn().mockResolvedValue(0),
+        updateMany: jest.fn(),
+        create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       commit: { count: jest.fn().mockResolvedValue(0), findFirst: jest.fn().mockResolvedValue(null) },
       branch: { count: jest.fn().mockResolvedValue(0) },
       repoFile: {

@@ -32,6 +32,7 @@ If ports 5432 or 6379 are already in use, set `POSTGRES_PORT` and `REDIS_PORT` i
 | API | http://localhost:3000/api/v1 |
 | Liveness | http://localhost:3000/api/v1/health |
 | Readiness | http://localhost:3000/api/v1/health/ready |
+| Metrics | http://localhost:3000/api/v1/metrics |
 | Swagger UI | http://localhost:3000/api/docs |
 | OpenAPI JSON | http://localhost:3000/api/docs/json |
 
@@ -41,7 +42,7 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 |---|---|---|
 | POST | `/auth/register` | Email/password. Creates a personal workspace. Rate-limited. |
 | POST | `/auth/login` | Rate-limited. |
-| POST | `/auth/refresh` | Rotates the refresh session. |
+| POST | `/auth/refresh` | Rotates the refresh session. Rate-limited (10/min). |
 | POST | `/auth/logout` | Revokes the current session. Bearer required. |
 | GET | `/me` | Current user. |
 | GET/POST | `/workspaces` | List or create. |
@@ -52,7 +53,7 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET/POST | `/workspaces/:workspaceId/repositories` | List or add a Git repository. Add is Admin+. |
 | GET/PATCH/DELETE | `/workspaces/:workspaceId/repositories/:repositoryId` | Object-level RBAC. Delete is Admin+. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/status` | Ingestion progress and latest run. |
-| POST | `/workspaces/:workspaceId/repositories/:repositoryId/sync` | Analyst+. Rate-limited. |
+| POST | `/workspaces/:workspaceId/repositories/:repositoryId/sync` | Analyst+. Workspace daily quota. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/branches` | Indexed branches. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/commits` | Optional `branch` query. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/commits/:sha` | Commit details and changed files. |
@@ -77,7 +78,7 @@ Auth, workspace, and repository routes (all under `/api/v1`):
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/insights/evolution` | Evolution timeline. Requires `fileId` or `symbolId`. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/code/symbols/:symbolId/history` | Scored commit history for a symbol. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/ai/status` | Whether the local model is reachable. |
-| GET/POST | `/workspaces/:workspaceId/repositories/:repositoryId/investigations` | List or ask. Ask is Analyst+. |
+| GET/POST | `/workspaces/:workspaceId/repositories/:repositoryId/investigations` | List or ask. Ask is Analyst+. Workspace daily quota. |
 | GET | `/workspaces/:workspaceId/repositories/:repositoryId/investigations/:investigationId` | Answer, messages, and citations. |
 
 ## API DTOs and ValidationPipe
@@ -124,7 +125,11 @@ pnpm test
 pnpm build
 pnpm db:migrate          # interactive Prisma migrate during later schema work
 pnpm db:migrate:deploy   # apply committed migrations
+./scripts/backup-postgres.sh
+./scripts/security-check.sh
 ```
+
+See [operations](operations.md) and [security audit](security-audit.md).
 
 ## Ollama (optional)
 

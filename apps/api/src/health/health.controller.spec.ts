@@ -1,4 +1,5 @@
 import { ServiceUnavailableException } from '@nestjs/common';
+import { recordHttpResult, resetMetricsForTests } from '../common/metrics';
 import { HealthController } from './health.controller';
 
 describe('HealthController', () => {
@@ -11,10 +12,21 @@ describe('HealthController', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    resetMetricsForTests();
   });
 
   it('returns liveness without checking dependencies', () => {
     expect(controller.liveness()).toMatchObject({ status: 'ok', service: 'api' });
+  });
+
+  it('returns in-memory request counts without secrets', () => {
+    recordHttpResult(200);
+    recordHttpResult(500);
+    expect(controller.metrics()).toMatchObject({
+      requests: 2,
+      errors: 1,
+      status: { '200': 1, '500': 1 },
+    });
   });
 
   it('returns ready when postgres and redis ping', async () => {

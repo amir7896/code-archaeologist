@@ -169,6 +169,15 @@ export class GitCliProvider implements GitProvider {
     return this.run(['show', `${revision}:${path}`], { cwd: repositoryPath });
   }
 
+  async assertMirrorWithinMb(repositoryPath: string, maxMb: number): Promise<void> {
+    const raw = await this.run(['count-objects', '-v'], { cwd: repositoryPath });
+    const sizeKb = parseGitCountObjectsKb(raw);
+    if (gitSizeExceedsLimit(sizeKb, maxMb)) {
+      await rm(repositoryPath, { recursive: true, force: true });
+      throw new Error(`Repository exceeds GIT_CLONE_MAX_MB (${maxMb})`);
+    }
+  }
+
   private run(
     args: string[],
     options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
@@ -216,6 +225,26 @@ export class GitCliProvider implements GitProvider {
 
 const RECORD_SHA = '%x1e%H';
 const RECORD_VALUE = '\x1e';
+
+export function parseGitCountObjectsKb(raw: string): number {
+  let loose = 0;
+  let packed = 0;
+  for (const line of raw.split('\n')) {
+    const size = /^size:\s+(\d+)/.exec(line);
+    const packedSize = /^size-pack:\s+(\d+)/.exec(line);
+    if (size) {
+      loose = Number.parseInt(size[1], 10) || 0;
+    }
+    if (packedSize) {
+      packed = Number.parseInt(packedSize[1], 10) || 0;
+    }
+  }
+  return loose + packed;
+}
+
+export function gitSizeExceedsLimit(sizeKb: number, maxMb: number): boolean {
+  return sizeKb > maxMb * 1024;
+}
 
 export function parseLsTree(raw: string): GitTreeEntry[] {
   const rows: GitTreeEntry[] = [];

@@ -23,6 +23,10 @@ test('validateEnv accepts postgres parts and builds a URL', () => {
   assert.ok(env.REPOSITORY_WORK_DIR.endsWith('repositories'));
   assert.ok(defaultRepositoryWorkDir().endsWith(`${join('.data', 'repositories')}`));
   assert.equal(env.CREDENTIALS_ENCRYPTION_KEY.length >= 32, true);
+  assert.equal(env.AUDIT_RETENTION_DAYS, 90);
+  assert.equal(env.GIT_CLONE_MAX_MB, 512);
+  assert.equal(env.WORKSPACE_SYNC_DAILY_LIMIT, 40);
+  assert.equal(env.WORKSPACE_ASK_DAILY_LIMIT, 80);
 });
 
 test('validateEnv rejects missing postgres user', () => {

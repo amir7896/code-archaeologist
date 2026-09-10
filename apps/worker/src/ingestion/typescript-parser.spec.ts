@@ -56,6 +56,17 @@ describe('TypeScriptParser', () => {
     expect(login?.metrics.complexity).toBeGreaterThan(1);
   });
 
+  it('stays bounded on oversized and malformed input', async () => {
+    const huge = `${'export const x = 1;\n'.repeat(8_000)}export function broken( {`;
+    const parsed = await typescriptParser.parse({
+      path: 'src/huge.ts',
+      language: 'typescript',
+      content: huge,
+    });
+    expect(parsed.symbols.length).toBeLessThanOrEqual(400);
+    expect(parsed.diagnostics.length).toBeGreaterThan(0);
+  });
+
   it('collects diagnostics without throwing on malformed source', async () => {
     const parsed = await typescriptParser.parse({
       path: 'src/broken.ts',

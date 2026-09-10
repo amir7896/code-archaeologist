@@ -8,6 +8,20 @@ export class HealthChecksDto {
   redis!: boolean;
 }
 
+export class MetricsResponseDto {
+  @ApiProperty({ type: Number, example: 12 })
+  requests!: number;
+
+  @ApiProperty({ type: Number, example: 0 })
+  errors!: number;
+
+  @ApiProperty({ type: Object, example: { '200': 12 } })
+  status!: Record<string, number>;
+
+  @ApiProperty({ type: Number, example: 80 })
+  uptimeSeconds!: number;
+}
+
 export class HealthResponseDto {
   @ApiProperty({ type: String, example: 'ok', enum: ['ok', 'degraded'] })
   status!: string;
