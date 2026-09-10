@@ -20,9 +20,8 @@ body:
     attributes:
       label: Roadmap phase
       options:
-        - Phase 0 Foundation
-        - Phase 1 Identity
-        - Phase 2 Repository ingestion
-        - Phase 3 Git engine
-        - Phase 4 AST engine
+        - Post-v1 language adapter
+        - GitLab or Bitbucket (same contract)
+        - Docs or DX
+        - Bugfix disguised as a feature
         - Later / unsure

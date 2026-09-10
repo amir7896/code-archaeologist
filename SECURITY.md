@@ -26,4 +26,4 @@ Please include:
 - Workspace isolation and RBAC apply to every repository query. Daily sync and Ask quotas are per workspace.
 - Webhooks require HMAC verification. Health and metrics probes skip the request throttle.
 
-See [docs/security-audit.md](docs/security-audit.md) and [docs/operations.md](docs/operations.md).
+See [docs/security.md](docs/security.md), [docs/security-audit.md](docs/security-audit.md), [docs/privacy.md](docs/privacy.md), and [docs/operations.md](docs/operations.md).

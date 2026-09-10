@@ -30,7 +30,7 @@ Web is published on port 5173 and proxies `/api/` to the API container.
 docker compose --profile ai up -d ollama
 ```
 
-Pull a model after the container is healthy, for example `llama3.1:8b`. Phase 0 does not call Ollama.
+Pull a model after the container is healthy, for example `llama3.1:8b`. Ask works without Ollama; the model is optional prose over citations. See [AI provider](ai-provider.md).
 
 ## Health
 

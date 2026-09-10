@@ -2,7 +2,7 @@
 export const SDK_API_PREFIX = 'api/v1';
 
 /** SDK release. Bump with `@code-archaeologist/sdk` in package.json. */
-export const SDK_VERSION = '0.1.0';
+export const SDK_VERSION = '1.0.0';
 
 /** HTTP API this SDK is compiled against. */
 export const SDK_API_VERSION = 'v1';

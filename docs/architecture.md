@@ -29,11 +29,13 @@ Provider implementations stay behind interfaces so they can change independently
 
 `@code-archaeologist/core` owns Prisma and domain constants. `@code-archaeologist/shared` owns environment validation, queue names, workspace roles, and the API prefix.
 
-## NestJS modules (planned)
+## NestJS modules
 
-auth • users • workspaces • repositories • git • analysis • parsers • files • symbols • graph • metrics • risks • insights • investigations • ai • embeddings • integrations • webhooks • reports • notifications • audit
+Wired today: `auth`, `users`, `workspaces`, `repositories` (history, source, graph, DNA, impact, evidence), `investigations`, `integrations` / `webhooks`, `audit`, `health`.
 
-Investigation wires `auth`, `users`, `workspaces`, `repositories`, history, source/symbols, graph, Code DNA/risk insights, deterministic impact, evidence, investigations, `audit`, the `repository-sync` worker, and the `investigation` worker. Remaining modules stay planned. Controllers stay thin. Business rules live in services and domain packages.
+Queue names for `analysis-run`, `embedding`, `report-generation`, and similar stay reserved. Processors that do not exist yet are not implied by the name. Controllers stay thin. Business rules live in services and domain packages.
+
+Provider guides: [parser](parser.md), [git](git-provider.md), [AI](ai-provider.md), [evidence](evidence.md).
 
 ## Data
 

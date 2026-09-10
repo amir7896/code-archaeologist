@@ -4,8 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## 1.0.0
+
 ### Added
 
+- v1.0.0 release candidate: versioned packages, demo TypeScript tree, release notes, community announcement draft, tag-triggered GitHub Release workflow, and updated issue templates.
+- Documentation set for Section 26: docs index, REST reference, parser/Git/AI/evidence guides, FAQ, troubleshooting, testing, roadmap, and privacy (no telemetry).
 - Hardening: refresh throttle, workspace daily sync/Ask quotas, graph walk cap, Git clone size limit, audit log retention, request ids, in-memory `/metrics`, secret redaction in API errors, Postgres backup/restore scripts, k6 health load script, and a critical-level `pnpm audit` in CI.
 - CLI and typed SDK: `code-archaeologist` commands (init, analyze, status, ask, impact, hotspots, report, doctor), JSON/exit codes for CI, secret-safe config, and an example GitHub Action. The SDK covers auth, pagination, repository/investigation clients, and webhook signature verification.
 - GitHub integration: workspace connection (token or optional OAuth), issue/PR/review ingest, verified webhooks with replay protection, and scored links from threads to commits, files, and symbols.

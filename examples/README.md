@@ -1,5 +1,6 @@
 # Examples
 
-- `github-action/analyze.yml` — copy-paste workflow that runs `doctor`, `analyze`, and `report --format json` against a self-hosted API.
+- `github-action/analyze.yml` — `doctor`, `analyze`, and `report --format json` against a self-hosted API.
+- [`demo-ts/`](demo-ts/README.md) — small TypeScript shop (auth, users, payments) for a first ingest and six golden Ask questions.
 
-Demo repositories used for screenshots, GIFs, and AI evidence benchmarks will live here later. The v1 release phase adds a public TypeScript/JavaScript example that can be ingested end to end.
+Connect an HTTPS Git remote. This folder is not analyzed by itself. After v1 is on GitHub you can ingest https://github.com/amir7896/code-archaeologist.git and open `examples/demo-ts/src`.

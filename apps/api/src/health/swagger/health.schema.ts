@@ -1,7 +1,7 @@
 export const healthResponseExample = {
   status: 'ok',
   service: 'api',
-  version: '0.1.0',
+  version: '1.0.0',
 };
 
 export const metricsResponseExample = {
@@ -14,7 +14,7 @@ export const metricsResponseExample = {
 export const readyResponseExample = {
   status: 'ok',
   service: 'api',
-  version: '0.1.0',
+  version: '1.0.0',
   checks: {
     postgres: true,
     redis: true,

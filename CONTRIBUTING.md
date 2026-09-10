@@ -6,7 +6,7 @@ Thank you for contributing to Code Archaeologist.
 
 Follow the project scope. Do not start with the chatbot. The graph and evidence engine are the product; the AI layer is an interface over that foundation.
 
-Current work is **hardening** (PDF checklist 13). Docs and the v1 release come next. The CLI talks to the self-hosted API; it does not invent a second analysis path. GitLab stays later on the same integration contract.
+This repository is at **v1.0.0**. Post-v1 work is on the [roadmap](docs/roadmap.md). The CLI talks to the self-hosted API; it does not invent a second analysis path. GitLab stays later on the same integration contract. Read [docs/README.md](docs/README.md) and [docs/faq.md](docs/faq.md) before proposing a feature the FAQ already marks as out of scope.
 
 ## Setup
 

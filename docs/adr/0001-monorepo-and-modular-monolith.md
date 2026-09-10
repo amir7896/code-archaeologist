@@ -19,4 +19,4 @@ The product needs a NestJS API, a background worker, a React app, Git/parser/AI 
 
 ## Consequences
 
-Phase 0 can boot API, worker, and web against Dockerized Postgres and Redis without implementing auth or analysis. Later phases fill NestJS modules and Prisma tables without changing the repository shape.
+The workspace shape is stable. Auth, ingest, graph, Ask, GitHub, CLI/SDK, and hardening filled modules without splitting into microservices. Ollama remains optional. `pgvector` stays off.

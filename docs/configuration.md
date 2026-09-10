@@ -1,5 +1,7 @@
 # Configuration reference
 
+See the [documentation index](README.md) for related operator guides.
+
 Copy `.env.example` to `.env`. The API and worker validate environment variables at startup and refuse to boot with an invalid config.
 
 | Variable | Default | Purpose |

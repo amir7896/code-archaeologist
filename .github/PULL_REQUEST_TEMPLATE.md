@@ -8,6 +8,7 @@
 - [ ] `pnpm typecheck`
 - [ ] `pnpm test`
 - [ ] `pnpm build`
+- [ ] `./scripts/security-check.sh`
 
 ## Notes
 
