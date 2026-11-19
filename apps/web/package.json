@@ -23,7 +23,7 @@
     "yup": "^1.7.1"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.0.14",
+    "@tailwindcss/vite": "^4.3.5",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/react": "^19.0.10",
